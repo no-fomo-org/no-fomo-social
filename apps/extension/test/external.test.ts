@@ -12,6 +12,33 @@ function deps(over: Partial<ExternalDeps> = {}): ExternalDeps {
 }
 
 describe("handleExternalMessage", () => {
+  it("passes profile search, load and following update to the Instagram tab", async () => {
+    const d = deps({ sendToTab: vi.fn(async () => ({ ok: true, users: [] })) });
+    await handleExternalMessage({ type: "profile:search", query: " nasa " }, "http://localhost:4747/profiles", d);
+    await handleExternalMessage({ type: "profile:load", mode: "add", username: "nasa" }, "http://localhost:4747/", d);
+    await handleExternalMessage({ type: "profile:load", mode: "older", authorId: "77" }, "http://localhost:4747/", d);
+    await handleExternalMessage({ type: "following:update" }, "http://localhost:4747/", d);
+    expect((d.sendToTab as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[1])).toEqual([
+      { type: "profile:search", query: "nasa" },
+      { type: "profile:load", serverUrl: "http://localhost:4747", request: { mode: "add", username: "nasa" } },
+      { type: "profile:load", serverUrl: "http://localhost:4747", request: { mode: "older", authorId: "77" } },
+      { type: "following:update", serverUrl: "http://localhost:4747" },
+    ]);
+  });
+
+  it("rejects bad profile messages", async () => {
+    const d = deps();
+    const bad = [
+      { type: "profile:search", query: "x" },
+      { type: "profile:search", query: "a".repeat(61) },
+      { type: "profile:load", mode: "add", username: "../etc" },
+      { type: "profile:load", mode: "older", authorId: "abc" },
+      { type: "profile:load", mode: "all", username: "nasa" },
+    ];
+    for (const m of bad) expect(await handleExternalMessage(m, "http://localhost:4747/", d)).toEqual({ ok: false, error: "bad_message" });
+    expect(d.sendToTab).not.toHaveBeenCalled();
+  });
+
   it("answers ping", async () => {
     expect(await handleExternalMessage({ type: "ping" }, undefined, deps())).toEqual({ ok: true, version: "0.1.0" });
   });
