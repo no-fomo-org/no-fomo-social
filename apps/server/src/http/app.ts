@@ -10,9 +10,9 @@ import type { ServerConfig } from "../config";
 import type { Db } from "../db/open";
 import { authors, posts } from "../db/schema";
 import { imageType, type MediaStore } from "../media/store";
-import { listAuthors, listCollections, listPosts, syncStatus } from "../queries";
+import { getPostMedia, listAuthors, listCollections, listPosts, syncStatus } from "../queries";
 import {
-  finishRun, ingestCollections, ingestSavedPage, NotFoundError, RunNotActiveError, startRun,
+  finishRun, ingestCollections, ingestMediaInfo, ingestSavedPage, MismatchError, NotFoundError, RunNotActiveError, startRun,
 } from "../sync/ingest";
 import { security } from "./security";
 
@@ -64,6 +64,7 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     if (err instanceof ZodError) return c.json({ error: "bad_request", issues: err.issues }, 400);
     if (err instanceof NotFoundError) return c.json({ error: err.message }, 404);
     if (err instanceof RunNotActiveError) return c.json({ error: err.message }, 409);
+    if (err instanceof MismatchError) return c.json({ error: err.message }, 422);
     console.error(err);
     return c.json({ error: "internal_error" }, 500);
   });
@@ -93,8 +94,19 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     return c.json({ ok: true });
   });
 
+  app.post("/api/sync/media/:id", async (c) => {
+    const id = Id.parse(c.req.param("id"));
+    const { payload } = PageBody.parse(await c.req.json());
+    media.enqueue(ingestMediaInfo(db, id, payload));
+    return c.json(getPostMedia(db, id));
+  });
+
   app.get("/api/sync/status", (c) => c.json(syncStatus(db)));
   app.get("/api/posts", (c) => c.json(listPosts(db, PostsQuerySchema.parse(c.req.query()))));
+  app.get("/api/posts/:id/media", (c) => {
+    const found = getPostMedia(db, Id.parse(c.req.param("id")));
+    return found ? c.json(found) : c.json({ error: "not_found" }, 404);
+  });
   app.get("/api/authors", (c) => c.json(listAuthors(db)));
   app.get("/api/collections", (c) => c.json(listCollections(db)));
   app.all("/api/*", (c) => c.json({ error: "not_found" }, 404));

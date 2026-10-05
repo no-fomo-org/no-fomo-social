@@ -85,22 +85,51 @@ function upsertPost(q: Q, p: ParsedPost, runId: number, keyIfNew: number, keyUpd
       .where(eq(posts.id, p.id))
       .run();
   }
-  q.delete(postParts).where(eq(postParts.postId, p.id)).run();
-  if (p.parts.length > 0) {
-    q.insert(postParts)
-      .values(p.parts.map((part) => ({
-        postId: p.id, idx: part.index, kind: part.kind, imageUrl: part.imageUrl, videoUrl: part.videoUrl,
-        width: part.width, height: part.height, accessibilityCaption: part.accessibilityCaption,
-      })))
-      .run();
-  }
+  replaceParts(q, p);
   syncCollectionLinks(q, p, runId);
-  q.run(sql`DELETE FROM post_search WHERE post_id = ${p.id}`);
-  q.run(sql`INSERT INTO post_search (post_id, body) VALUES (${p.id}, ${searchBody(p)})`);
+  replaceSearch(q, p);
   if (!existing?.thumbPath && p.thumbnailUrl) jobs.push({ kind: "thumb", id: p.id, url: p.thumbnailUrl });
   // "Known" means first seen by an earlier run that finished walking the saved feed.
   // Posts from a run that was cut off may sit above a gap of posts nobody fetched yet.
   return { isNew: !existing, knownBefore: !!existing && existing.firstSeenRunId < runId && existing.firstRunComplete === true };
+}
+
+function replaceParts(q: Q, p: ParsedPost) {
+  q.delete(postParts).where(eq(postParts.postId, p.id)).run();
+  if (p.parts.length === 0) return;
+  q.insert(postParts)
+    .values(p.parts.map((part) => ({
+      postId: p.id, idx: part.index, kind: part.kind, imageUrl: part.imageUrl, videoUrl: part.videoUrl,
+      width: part.width, height: part.height, accessibilityCaption: part.accessibilityCaption,
+    })))
+    .run();
+}
+
+function replaceSearch(q: Q, p: ParsedPost) {
+  q.run(sql`DELETE FROM post_search WHERE post_id = ${p.id}`);
+  q.run(sql`INSERT INTO post_search (post_id, body) VALUES (${p.id}, ${searchBody(p)})`);
+}
+
+export class MismatchError extends Error {}
+
+/**
+ * Fresh links for one post from Instagram's media info.
+ * Keeps the post's feed position, run ids and collections: this answer says nothing about them.
+ */
+export function ingestMediaInfo(db: Db, id: string, raw: unknown): MediaJob[] {
+  const p = parseMediaPage(raw).items[0];
+  if (!p || p.id !== id) throw new MismatchError(`Instagram answered about a different post than ${id}`);
+  const jobs: MediaJob[] = [];
+  db.transaction((tx) => {
+    const existing = tx.select({ thumbPath: posts.thumbPath }).from(posts).where(eq(posts.id, id)).get();
+    if (!existing) throw new NotFoundError(`Post ${id} is not in your library`);
+    upsertAuthor(tx, p.author, jobs);
+    tx.update(posts).set(postFields(p)).where(eq(posts.id, id)).run();
+    replaceParts(tx, p);
+    replaceSearch(tx, p);
+    if (!existing.thumbPath && p.thumbnailUrl) jobs.push({ kind: "thumb", id, url: p.thumbnailUrl });
+  });
+  return jobs;
 }
 
 /** What a user may remember about a post. Must match the backfill in drizzle/0003_post_search.sql. */

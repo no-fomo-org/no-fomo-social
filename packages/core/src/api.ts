@@ -24,6 +24,22 @@ export interface PostListItem {
   permalink: string;
 }
 
+export interface MediaPart {
+  index: number;
+  kind: "image" | "video";
+  imageUrl: string | null;
+  videoUrl: string | null;
+  width: number | null;
+  height: number | null;
+}
+export interface PostMedia {
+  id: string;
+  kind: MediaKind;
+  parts: MediaPart[];
+  /** Unix seconds when the first of these links stops working. Null when unknown. */
+  expiresAt: number | null;
+}
+
 export interface PostsPage { items: PostListItem[]; nextCursor: number | null; total: number }
 export interface PostsQuery { q?: string; author?: string; collection?: string; kind?: MediaKind; cursor?: number; limit: number }
 export interface AuthorFacet { id: string; username: string; fullName: string | null; avatarUrl: string; count: number }
