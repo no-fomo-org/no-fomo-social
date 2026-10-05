@@ -1,0 +1,24 @@
+export function formatDuration(sec: number): string {
+  const s = Math.floor(sec);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const r = String(s % 60).padStart(2, "0");
+  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${r}` : `${m}:${r}`;
+}
+
+const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+export const formatCount = (n: number) => compact.format(n);
+
+const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+export function formatAgo(ms: number, now = Date.now()): string {
+  const sec = Math.round((ms - now) / 1000);
+  if (Math.abs(sec) < 45) return "just now";
+  const min = Math.round(sec / 60);
+  if (Math.abs(min) < 60) return rtf.format(min, "minute");
+  const h = Math.round(min / 60);
+  if (Math.abs(h) < 24) return rtf.format(h, "hour");
+  return rtf.format(Math.round(h / 24), "day");
+}
+
+const dateFmt = new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" });
+export const formatDate = (unixSec: number) => dateFmt.format(new Date(unixSec * 1000));
