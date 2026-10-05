@@ -63,3 +63,14 @@ body { font-family: var(--font-sans); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+
+.report-md { font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+.report-md h1 { font-size: 17px; font-weight: 600; margin: 0 0 12px; }
+.report-md h2 { font-size: 15px; font-weight: 600; margin: 20px 0 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.report-md p, .report-md ul, .report-md ol { margin: 0 0 8px; }
+.report-md ul { list-style: disc; padding-inline-start: 20px; }
+.report-md ol { list-style: decimal; padding-inline-start: 20px; }
+.report-md li { margin: 2px 0; }
+.report-md a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+.report-md code { font-family: var(--font-mono); font-size: 13px; background: var(--surface); border-radius: 4px; padding: 1px 4px; }
+.report-md pre { background: var(--surface); border-radius: var(--radius-control); padding: 8px 12px; overflow-x: auto; }

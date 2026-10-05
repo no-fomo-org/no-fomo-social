@@ -40,6 +40,14 @@ export function FilterBar({ filters, total, onChange }: { filters: Filters; tota
         />
       )}
       <KindSwitch value={filters.kind} onChange={(kind) => onChange({ kind })} />
+      <button
+        type="button"
+        aria-pressed={filters.report}
+        onClick={() => onChange({ report: !filters.report })}
+        className="h-9 rounded-control border border-line bg-surface px-3 text-[14px] text-muted transition-colors duration-200 hover:text-text focus-visible:outline-2 focus-visible:outline-accent aria-pressed:border-accent-line aria-pressed:bg-accent-soft aria-pressed:text-text"
+      >
+        Has report
+      </button>
       <div className="ms-auto flex items-center gap-2">
         {activeCount(filters) > 1 && (
           <Button variant="ghost" className="hidden md:inline-flex" onClick={() => onChange(NO_FILTERS)}>Clear all</Button>
@@ -52,4 +60,4 @@ export function FilterBar({ filters, total, onChange }: { filters: Filters; tota
   );
 }
 
-const activeCount = (f: Filters) => [f.q, f.author, f.collection, f.kind].filter(Boolean).length;
+const activeCount = (f: Filters) => [f.q, f.author, f.collection, f.kind, f.report].filter(Boolean).length;

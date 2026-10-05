@@ -1,20 +1,30 @@
 import { Dialog } from "@base-ui/react/dialog";
+import { Tabs } from "@base-ui/react/tabs";
 import type { PostListItem } from "@no-fomo/core";
 import { ArrowDown01Icon, ArrowUp01Icon, Cancel01Icon, Location01Icon, MusicNote01Icon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
 import { formatCount, formatDate, formatDuration } from "../../lib/format";
 import { Button, buttonClass } from "../ui/button";
 import { Icon } from "../ui/icon";
+import { ReportPanel } from "./report-panel";
+
+export type DetailsTab = "details" | "report";
 
 export function PostDetails({
   post: p,
   onPrev,
   onNext,
   onShowAuthor,
+  tab,
+  onTabChange,
+  extensionId,
 }: {
   post: PostListItem;
   onPrev: (() => void) | null;
   onNext: (() => void) | null;
   onShowAuthor: (id: string) => void;
+  tab: DetailsTab;
+  onTabChange: (tab: DetailsTab) => void;
+  extensionId: string | undefined;
 }) {
   const seekHint =
     p.kind === "carousel"
@@ -43,34 +53,52 @@ export function PostDetails({
         </Dialog.Close>
       </div>
 
-      <div className="flex flex-wrap gap-2 px-5">
-        <a href={p.permalink} target="_blank" rel="noopener noreferrer" className={buttonClass("primary")}>
-          <Icon icon={SquareArrowUpRightIcon} />
-          Open on Instagram
-        </a>
-        <Button onClick={() => onShowAuthor(p.author.id)}>More from @{p.author.username}</Button>
-      </div>
+      <Tabs.Root value={tab} onValueChange={(v) => onTabChange(v as DetailsTab)} className="flex flex-1 flex-col">
+        <Tabs.List className="mx-5 flex gap-5 border-b border-line text-[14px]">
+          {(["details", "report"] as const).map((t) => (
+            <Tabs.Tab
+              key={t}
+              value={t}
+              className="-mb-px border-b-2 border-transparent py-2 text-muted transition-colors duration-200 hover:text-text focus-visible:outline-2 focus-visible:outline-accent data-[active]:border-accent data-[active]:text-text"
+            >
+              {t === "details" ? "Details" : "Report"}
+            </Tabs.Tab>
+          ))}
+        </Tabs.List>
+        <Tabs.Panel value="details" className="flex flex-1 flex-col pt-4">
+          <div className="flex flex-wrap gap-2 px-5">
+            <a href={p.permalink} target="_blank" rel="noopener noreferrer" className={buttonClass("primary")}>
+              <Icon icon={SquareArrowUpRightIcon} />
+              Open on Instagram
+            </a>
+            <Button onClick={() => onShowAuthor(p.author.id)}>More from @{p.author.username}</Button>
+          </div>
 
-      {p.caption && <p className="whitespace-pre-wrap px-5 pt-5 text-[15px] leading-relaxed">{p.caption}</p>}
+          {p.caption && <p className="whitespace-pre-wrap px-5 pt-5 text-[15px] leading-relaxed">{p.caption}</p>}
 
-      <dl className="mx-5 mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-4 text-[13px]">
-        <Detail label="Posted" value={formatDate(p.takenAt)} />
-        {p.durationSec !== null && <Detail label="Length" value={formatDuration(p.durationSec)} mono />}
-        {p.viewCount !== null && <Detail label="Views" value={formatCount(p.viewCount)} mono />}
-        {p.likeCount !== null && <Detail label="Likes" value={formatCount(p.likeCount)} mono />}
-      </dl>
+          <dl className="mx-5 mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-4 text-[13px]">
+            <Detail label="Posted" value={formatDate(p.takenAt)} />
+            {p.durationSec !== null && <Detail label="Length" value={formatDuration(p.durationSec)} mono />}
+            {p.viewCount !== null && <Detail label="Views" value={formatCount(p.viewCount)} mono />}
+            {p.likeCount !== null && <Detail label="Likes" value={formatCount(p.likeCount)} mono />}
+          </dl>
 
-      <div className="grid gap-2 px-5 py-5 text-[13px] text-muted">
-        {p.musicTitle && (
-          <p className="flex items-center gap-2"><Icon icon={MusicNote01Icon} size={14} />{p.musicTitle}{p.musicArtist ? `, ${p.musicArtist}` : ""}</p>
-        )}
-        {p.locationName && <p className="flex items-center gap-2"><Icon icon={Location01Icon} size={14} />{p.locationName}</p>}
-        {p.accessibilityCaption && <p>Image description: {p.accessibilityCaption}</p>}
-      </div>
+          <div className="grid gap-2 px-5 py-5 text-[13px] text-muted">
+            {p.musicTitle && (
+              <p className="flex items-center gap-2"><Icon icon={MusicNote01Icon} size={14} />{p.musicTitle}{p.musicArtist ? `, ${p.musicArtist}` : ""}</p>
+            )}
+            {p.locationName && <p className="flex items-center gap-2"><Icon icon={Location01Icon} size={14} />{p.locationName}</p>}
+            {p.accessibilityCaption && <p>Image description: {p.accessibilityCaption}</p>}
+          </div>
 
-      <p className="mt-auto hidden border-t border-line px-5 py-3 text-[12px] text-muted md:block">
-        <Kbd>Up</Kbd> and <Kbd>Down</Kbd> move between posts. {seekHint} <Kbd>Esc</Kbd> closes.
-      </p>
+          <p className="mt-auto hidden border-t border-line px-5 py-3 text-[12px] text-muted md:block">
+            <Kbd>Up</Kbd> and <Kbd>Down</Kbd> move between posts. {seekHint} <Kbd>Esc</Kbd> closes.
+          </p>
+        </Tabs.Panel>
+        <Tabs.Panel value="report">
+          <ReportPanel key={p.id} post={p} extensionId={extensionId} />
+        </Tabs.Panel>
+      </Tabs.Root>
     </div>
   );
 }
