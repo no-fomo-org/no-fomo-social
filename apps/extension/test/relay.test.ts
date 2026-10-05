@@ -12,14 +12,14 @@ describe("handleRelay", () => {
   });
 
   it("refuses non-local servers and non-sync paths", async () => {
-    expect(await handleRelay({ type: "relay", serverUrl: "https://evil.example", path: "/api/sync/runs", body: {} }, okFetch))
+    expect(await handleRelay({ type: "relay", serverUrl: "https://evil.example", path: "/api/sync/runs", body: { mode: "full" } }, okFetch))
       .toEqual({ ok: false, error: "bad_relay" });
     expect(await handleRelay({ type: "relay", serverUrl: "http://localhost:4747", path: "/api/posts", body: {} }, okFetch))
       .toEqual({ ok: false, error: "bad_relay" });
   });
 
   it("refuses other local ports", async () => {
-    expect(await handleRelay({ type: "relay", serverUrl: "http://localhost:9999", path: "/api/sync/runs", body: {} }, okFetch))
+    expect(await handleRelay({ type: "relay", serverUrl: "http://localhost:9999", path: "/api/sync/runs", body: { mode: "full" } }, okFetch))
       .toEqual({ ok: false, error: "bad_relay" });
   });
 
@@ -34,16 +34,16 @@ describe("createRelaySink", () => {
   it("maps sink calls to server paths", async () => {
     const sent: unknown[] = [];
     const sink = createRelaySink("http://localhost:4747", async (m) => { sent.push(m); return { ok: true, data: { runId: 3, stop: false, seen: 1, collections: [] } }; });
-    await sink.startRun();
+    await sink.startRun("full");
     await sink.collections(3, { x: 1 });
     expect(sent).toEqual([
-      { type: "relay", serverUrl: "http://localhost:4747", path: "/api/sync/runs", body: {} },
+      { type: "relay", serverUrl: "http://localhost:4747", path: "/api/sync/runs", body: { mode: "full" } },
       { type: "relay", serverUrl: "http://localhost:4747", path: "/api/sync/runs/3/collections", body: { payload: { x: 1 } } },
     ]);
   });
 
   it("throws on relay errors", async () => {
     const sink = createRelaySink("http://localhost:4747", async () => ({ ok: false, error: "down" }));
-    await expect(sink.startRun()).rejects.toThrow("down");
+    await expect(sink.startRun("incremental")).rejects.toThrow("down");
   });
 });
