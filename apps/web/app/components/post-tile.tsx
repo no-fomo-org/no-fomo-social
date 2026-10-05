@@ -36,6 +36,7 @@ export function PostTile({ post, onOpen }: { post: PostListItem; onOpen: (id: st
           {post.kind === "carousel" && <Icon icon={Album02Icon} size={14} />}
         </span>
       </div>
+      <p className="mt-0.5 truncate text-[13px] text-muted">{captionLine(post.caption)}</p>
     </button>
   );
 }
@@ -44,4 +45,11 @@ function tileLabel(post: PostListItem): string {
   const kind = post.kind === "video" ? "Video" : post.kind === "carousel" ? "Carousel" : "Photo";
   const length = post.kind === "video" && post.durationSec ? `, ${formatDuration(post.durationSec)}` : "";
   return `${kind} by @${post.author.username}${length}`;
+}
+
+/** First line of the caption without trailing hashtag walls; a space keeps rows aligned when empty. */
+function captionLine(caption: string | null): string {
+  const first = (caption ?? "").split("\n").find((l) => l.trim()) ?? "";
+  const text = first.replace(/(\s*#[\p{L}\p{N}_]+)+\s*$/u, "").trim() || first.trim();
+  return text || "\u00a0";
 }

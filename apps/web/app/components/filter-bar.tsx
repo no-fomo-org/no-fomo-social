@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import { hasFilters, type Filters } from "../lib/filters";
+import { NO_FILTERS, type Filters } from "../lib/filters";
 import { FacetPicker } from "./facet-picker";
 import { KindSwitch } from "./kind-switch";
 import { Button } from "./ui/button";
@@ -10,7 +10,7 @@ export function FilterBar({ filters, total, onChange }: { filters: Filters; tota
   const collections = useQuery({ queryKey: ["collections"], queryFn: api.collections });
 
   return (
-    <div className="flex flex-wrap items-center gap-2 py-4">
+    <div className="flex flex-wrap items-center gap-2 py-3 md:py-4">
       <FacetPicker
         label="Author"
         allLabel="All authors"
@@ -41,13 +41,15 @@ export function FilterBar({ filters, total, onChange }: { filters: Filters; tota
       )}
       <KindSwitch value={filters.kind} onChange={(kind) => onChange({ kind })} />
       <div className="ms-auto flex items-center gap-2">
-        {hasFilters(filters) && (
-          <Button variant="ghost" onClick={() => onChange({ author: null, collection: null, kind: null })}>Clear filters</Button>
+        {activeCount(filters) > 1 && (
+          <Button variant="ghost" className="hidden md:inline-flex" onClick={() => onChange(NO_FILTERS)}>Clear all</Button>
         )}
-        {total !== undefined && (
-          <span className="font-mono text-[13px] tabular-nums text-muted">{total.toLocaleString("en")} posts</span>
-        )}
+        <span className="font-mono text-[13px] tabular-nums text-muted" role="status" aria-live="polite">
+          {total !== undefined ? `${total.toLocaleString("en")} ${total === 1 ? "post" : "posts"}` : ""}
+        </span>
       </div>
     </div>
   );
 }
+
+const activeCount = (f: Filters) => [f.q, f.author, f.collection, f.kind].filter(Boolean).length;

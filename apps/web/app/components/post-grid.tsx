@@ -1,16 +1,17 @@
 import { useEffect, useRef } from "react";
 import type { UseInfiniteQueryResult, InfiniteData } from "@tanstack/react-query";
 import type { PostListItem, PostsPage } from "@no-fomo/core";
+import { hasFilters, type Filters } from "../lib/filters";
 import { PostTile } from "./post-tile";
 import { SetupSteps } from "./setup-steps";
 import { Button } from "./ui/button";
 
-const GRID = "grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7";
+const GRID = "grid grid-cols-2 gap-x-2 gap-y-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8";
 
 export function PostGrid(props: {
   query: UseInfiniteQueryResult<InfiniteData<PostsPage>>;
   items: PostListItem[];
-  filtered: boolean;
+  filters: Filters;
   onOpen: (id: string) => void;
   onClearFilters: () => void;
 }) {
@@ -40,11 +41,26 @@ export function PostGrid(props: {
       </section>
     );
   }
+  const otherFilters = Boolean(props.filters.author || props.filters.collection || props.filters.kind);
   if (props.items.length === 0) {
-    return props.filtered ? (
+    return hasFilters(props.filters) ? (
       <section className="py-16">
-        <h2 className="text-[17px] font-semibold">No posts match these filters</h2>
-        <Button className="mt-4" onClick={props.onClearFilters}>Clear filters</Button>
+        <h2 className="text-[17px] font-semibold">
+          {props.filters.q ? (
+            <>
+              Nothing matches <span className="break-words">“{props.filters.q}”</span>
+              {otherFilters ? " with these filters" : ""}
+            </>
+          ) : (
+            "No posts match these filters"
+          )}
+        </h2>
+        <p className="mt-1 max-w-[60ch] text-muted">
+          {props.filters.q && !otherFilters
+            ? "Search looks at captions, authors, music, places and image descriptions. Try a shorter word."
+            : "Try removing a filter."}
+        </p>
+        <Button className="mt-4" onClick={props.onClearFilters}>Clear search and filters</Button>
       </section>
     ) : (
       <section className="py-16">
@@ -74,6 +90,7 @@ function Skeleton({ count }: { count: number }) {
         <li key={i}>
           <div className="aspect-[3/4] animate-pulse rounded-tile bg-surface-2" />
           <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-surface-2" />
+          <div className="mt-1.5 h-3 w-5/6 animate-pulse rounded bg-surface-2" />
         </li>
       ))}
     </ul>

@@ -8,6 +8,7 @@
 - Neutrals: cool gray (hue 250), never pure black or pure white.
 - One accent: burnt orange. Light `oklch(0.56 0.17 38)` with near-white text. Dark `oklch(0.74 0.15 52)` with near-black text. Both pass WCAG AA for button text.
 - Accent is only for the primary action on a screen and the active filter state. Never for decoration.
+- Active filters (picker, type switch) use the soft tint: `accent-soft` fill with an `accent-line` edge, and each active filter has its own remove control. Text on the tint stays `text`.
 - Danger red only for errors.
 - Theme follows the system (`prefers-color-scheme`). Both themes are first-class.
 
@@ -16,13 +17,14 @@
 - Sizes: 13px meta, 14px controls, 15px body, 20px sheet titles. No display sizes, this is a tool.
 
 ## Shape
-- Controls (buttons, inputs, popovers): 8px radius (`rounded-control`).
+- Controls (buttons, inputs, popovers): 8px radius (`rounded-control`). Icon buttons are 36px squares (`buttonClass(variant, extra, "icon")`).
 - Media tiles and thumbnails: 6px radius (`rounded-tile`).
 - Avatars: full circle. Nothing else is a pill.
 
 ## Layout
 - Content max width 1600px, 16px gutter on phone, 24px on desktop.
-- Grid tiles are 3:4. Meta text sits under the tile, never on top of the image.
+- Grid tiles are 3:4: 2 columns on phone, up to 7 at 1280px and 8 at 1536px. Under each tile: author and length on one line, the caption's first line below it. Never text on top of the image.
+- The search box leads the top bar. Press `/` to focus it.
 - Group with spacing and single hairlines (`border-line`), not cards.
 
 ## Motion

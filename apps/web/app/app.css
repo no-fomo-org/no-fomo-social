@@ -9,6 +9,8 @@
   --muted: oklch(0.47 0.01 250);
   --accent: oklch(0.56 0.17 38);
   --accent-ink: oklch(0.985 0.008 60);
+  --accent-soft: oklch(0.94 0.035 45);
+  --accent-line: oklch(0.74 0.1 42);
   --danger: oklch(0.53 0.19 25);
   --scrim: oklch(0.2 0.01 250 / 0.4);
   --shadow: 0 1px 2px oklch(0.3 0.02 250 / 0.08), 0 12px 32px oklch(0.3 0.02 250 / 0.1);
@@ -24,6 +26,8 @@
     --muted: oklch(0.7 0.01 250);
     --accent: oklch(0.74 0.15 52);
     --accent-ink: oklch(0.2 0.03 45);
+    --accent-soft: oklch(0.29 0.05 48);
+    --accent-line: oklch(0.56 0.1 50);
     --danger: oklch(0.7 0.16 25);
     --scrim: oklch(0.1 0.005 250 / 0.6);
     --shadow: 0 1px 2px oklch(0.05 0 0 / 0.4), 0 16px 40px oklch(0.05 0 0 / 0.45);
@@ -39,6 +43,8 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
   --color-danger: var(--danger);
   --color-scrim: var(--scrim);
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
@@ -50,6 +56,8 @@
 }
 
 html { color-scheme: light dark; }
+::selection { background: var(--accent-soft); color: var(--text); }
+:focus-visible { outline-color: var(--accent); }
 body { font-family: var(--font-sans); }
 
 @media (prefers-reduced-motion: reduce) {

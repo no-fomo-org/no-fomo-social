@@ -16,7 +16,11 @@ export function KindSwitch({ value, onChange }: { value: MediaKind | null; onCha
           type="button"
           aria-pressed={value === o.value}
           onClick={() => onChange(o.value)}
-          className="rounded-[6px] px-3 text-[14px] text-muted transition-colors duration-200 hover:text-text aria-pressed:bg-bg aria-pressed:text-text aria-pressed:shadow-[0_1px_2px_oklch(0.2_0.01_250/0.12)] focus-visible:outline-2 focus-visible:outline-accent"
+          className={`rounded-[6px] px-3 text-[14px] text-muted transition-colors duration-200 hover:text-text aria-pressed:text-text focus-visible:outline-2 focus-visible:outline-accent ${
+            o.value === null
+              ? "aria-pressed:bg-bg aria-pressed:shadow-[0_1px_2px_oklch(0.2_0.01_250/0.12)]"
+              : "aria-pressed:bg-accent-soft aria-pressed:shadow-[inset_0_0_0_1px_var(--accent-line)]"
+          }`}
         >
           {o.label}
         </button>

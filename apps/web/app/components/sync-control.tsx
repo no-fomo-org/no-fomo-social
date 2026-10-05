@@ -71,7 +71,7 @@ export function SyncControl() {
   const lastError = !running && run?.status === "error" ? run.errorMessage : null;
   const note = running
     ? `Syncing, ${run.postsSeen} posts so far`
-    : startError ?? lastError ?? (status.data?.lastSuccessAt ? `Synced ${formatAgo(status.data.lastSuccessAt)}` : "Not synced yet");
+    : startError ?? lastError ?? (status.data?.lastSuccessAt ? `Synced ${formatAgo(status.data.lastSuccessAt)}${newPostsNote(run)}` : "Not synced yet");
 
   return (
     <div className="flex min-w-0 items-center gap-3">
@@ -89,4 +89,9 @@ export function SyncControl() {
       </Button>
     </div>
   );
+}
+
+function newPostsNote(run: { status: string; postsNew: number } | null): string {
+  if (!run || run.status !== "done" || run.postsNew === 0) return "";
+  return run.postsNew === 1 ? ", 1 new post" : `, ${run.postsNew.toLocaleString("en")} new posts`;
 }

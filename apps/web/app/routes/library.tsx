@@ -1,7 +1,8 @@
+import { useEffect } from "react";
 import { useSearchParams } from "react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import { hasFilters, postsQueryString, readFilters, writeFilters, type Filters } from "../lib/filters";
+import { hasFilters, NO_FILTERS, postsQueryString, readFilters, writeFilters, type Filters } from "../lib/filters";
 import { FilterBar } from "../components/filter-bar";
 import { PostGrid } from "../components/post-grid";
 import { PostSheet } from "../components/post-sheet";
@@ -20,36 +21,53 @@ export default function Library() {
   });
   const items = posts.data?.pages.flatMap((p) => p.items) ?? [];
   const openId = params.get("post");
-  const open = openId ? items.find((p) => p.id === openId) ?? null : null;
+  const openIndex = openId ? items.findIndex((p) => p.id === openId) : -1;
+  const open = openIndex >= 0 ? items[openIndex]! : null;
 
-  const setPost = (id: string | null) =>
-    setParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (id) next.set("post", id);
-      else next.delete("post");
-      return next;
-    });
+  // Keep a few posts ahead loaded so "next" never stalls at the end of a page.
+  const nearEnd = openIndex >= 0 && openIndex >= items.length - 3;
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = posts;
+  useEffect(() => {
+    if (nearEnd && hasNextPage && !isFetchingNextPage) void fetchNextPage();
+  }, [nearEnd, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  /** Opening a post adds a history entry; moving between posts replaces it. */
+  const setPost = (id: string | null, replace = false) =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (id) next.set("post", id);
+        else next.delete("post");
+        return next;
+      },
+      { replace },
+    );
+
+  const prev = openIndex > 0 ? items[openIndex - 1]! : null;
+  const next = openIndex >= 0 ? items[openIndex + 1] ?? null : null;
 
   return (
     <div className="min-h-[100dvh]">
-      <TopBar />
+      <TopBar query={filters.q} onQueryChange={(q) => update({ q })} />
       <main className="mx-auto max-w-[1600px] px-4 pb-16 md:px-6">
         <FilterBar filters={filters} total={posts.data?.pages[0]?.total} onChange={update} />
         <PostGrid
           query={posts}
           items={items}
-          filtered={hasFilters(filters)}
-          onOpen={setPost}
-          onClearFilters={() => update({ author: null, collection: null, kind: null })}
+          filters={filters}
+          onOpen={(id) => setPost(id)}
+          onClearFilters={() => update(NO_FILTERS)}
         />
       </main>
       <PostSheet
         post={open}
         onClose={() => setPost(null)}
+        onPrev={prev ? () => setPost(prev.id, true) : null}
+        onNext={next ? () => setPost(next.id, true) : null}
         onShowAuthor={(author) => {
-          const next = writeFilters(params, { author });
-          next.delete("post");
-          setParams(next, { replace: true });
+          const nextParams = writeFilters(params, { author });
+          nextParams.delete("post");
+          setParams(nextParams, { replace: true });
         }}
       />
     </div>

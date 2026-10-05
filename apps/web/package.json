@@ -16,10 +16,11 @@
     "@no-fomo/core": "workspace:*",
     "@react-router/node": "^8.4.0",
     "@tanstack/react-query": "^5.104.1",
+    "isbot": "^5",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router": "^8.4.0",
-    "isbot": "^5"
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@react-router/dev": "^8.4.0",
