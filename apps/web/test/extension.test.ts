@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { refreshExtensionMedia, syncErrorText } from "../app/lib/extension";
+import { loadErrorText } from "../app/lib/extension";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -21,5 +22,17 @@ describe("extension messages", () => {
 
   it("explains a sync timeout", () => {
     expect(syncErrorText("timeout")).toBe("The extension did not answer. Reload this page and try again.");
+  });
+});
+
+describe("loadErrorText", () => {
+  it("tells the owner to update an old extension", () => {
+    expect(loadErrorText("unknown_type")).toMatch(/extension is out of date/);
+  });
+  it("explains profile problems in plain words", () => {
+    expect(loadErrorText("private_profile")).toMatch(/private/);
+    expect(loadErrorText("profile_not_found")).toBe(loadErrorText("not_found"));
+    expect(loadErrorText("busy")).toMatch(/already/);
+    expect(loadErrorText("something_new")).toMatch(/something_new/);
   });
 });

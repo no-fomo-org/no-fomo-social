@@ -1,11 +1,13 @@
-import type { PostMedia, SyncMode } from "@no-fomo/core";
+import type { PostMedia, ProfileLoadRequest, SyncMode, UserSuggestion } from "@no-fomo/core";
 
 type ChromeRuntime = {
   sendMessage(extensionId: string, msg: unknown, cb: (reply: unknown) => void): void;
   lastError?: { message?: string };
 };
 
-export type ExtResponse = { ok: true; version?: string; media?: PostMedia } | { ok: false; error: string };
+export type ExtResponse =
+  | { ok: true; version?: string; media?: PostMedia; users?: UserSuggestion[]; authorId?: string }
+  | { ok: false; error: string };
 
 function runtime(): ChromeRuntime | null {
   const c = (globalThis as { chrome?: { runtime?: ChromeRuntime } }).chrome;
@@ -34,6 +36,28 @@ export const pingExtension = (id: string) => send(id, { type: "ping" }, 1500);
 export const startExtensionSync = (id: string, mode: SyncMode = "incremental") => send(id, { type: "sync:start", mode }, 45_000);
 /** Opening a hidden Instagram tab can take a while, hence the long timeout. */
 export const refreshExtensionMedia = (extId: string, postId: string) => send(extId, { type: "media:refresh", id: postId }, 45_000);
+
+export const searchInstagram = (id: string, query: string) => send(id, { type: "profile:search", query }, 20_000);
+export const loadProfile = (id: string, r: ProfileLoadRequest) => send(id, { type: "profile:load", ...r }, 45_000);
+export const updateFollowing = (id: string) => send(id, { type: "following:update" }, 45_000);
+
+export function loadErrorText(code: string): string {
+  switch (code) {
+    case "unknown_type":
+      return "Your no-fomo extension is out of date. Run pnpm ext:build, then press Reload on the chrome://extensions page.";
+    case "not_found":
+    case "profile_not_found": return "No Instagram account has this name.";
+    case "private_profile": return "This account is private and you do not follow it, so its posts cannot be loaded.";
+    case "no_more_posts": return "All posts of this profile are already loaded.";
+    case "busy": return "A load is already running. Wait for it to finish.";
+    case "login_required": return "Log in to Instagram in this browser, then try again.";
+    case "rate_limited": return "Instagram asked to slow down. Try again in a few minutes.";
+    case "timeout": return "The extension did not answer. Reload this page and try again.";
+    case "instagram_tab_failed": return "Could not open Instagram. Open instagram.com in this browser and try again.";
+    case "no_extension": return "The no-fomo extension is not installed.";
+    default: return `Could not load from Instagram (${code}).`;
+  }
+}
 
 export function syncErrorText(code: string): string {
   switch (code) {
