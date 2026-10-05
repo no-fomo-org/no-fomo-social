@@ -10,6 +10,10 @@ describe("keyBelongsToWidget", () => {
     }
   });
 
+  it("leaves arrow keys to focused tabs", () => {
+    expect(keyBelongsToWidget(target("[role=tab]"))).toBe(true);
+  });
+
   it("lets the viewer use keys everywhere else", () => {
     expect(keyBelongsToWidget(target(null))).toBe(false);
     expect(keyBelongsToWidget(null)).toBe(false);
