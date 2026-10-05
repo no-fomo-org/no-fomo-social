@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",
+    "build:dev": "wxt build --mode development",
     "postinstall": "wxt prepare",
     "typecheck": "tsc -p tsconfig.json"
   },

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx watch src/main.ts --dev",
     "start": "tsx src/main.ts",
     "seed": "tsx scripts/seed.ts",
     "db:generate": "drizzle-kit generate",

@@ -1,11 +1,18 @@
 import { DEFAULT_PORT } from "@no-fomo/core";
 
-/** Only the no-fomo web app may start a sync or receive Instagram data. Port 5173 is the dev server. */
-export const APP_ORIGINS = [`http://localhost:${DEFAULT_PORT}`, `http://127.0.0.1:${DEFAULT_PORT}`, "http://localhost:5173"];
+const DEV_SERVER = "http://localhost:5173";
+/** True only in `wxt` dev and `wxt build --mode development`. Normal builds never trust the dev server. */
+const DEV_BUILD = import.meta.env.MODE === "development";
 
-export function isAppOrigin(url: string): boolean {
+/** Only the no-fomo web app may start a sync or receive Instagram data. */
+export function appOrigins(dev: boolean = DEV_BUILD): string[] {
+  const app = [`http://localhost:${DEFAULT_PORT}`, `http://127.0.0.1:${DEFAULT_PORT}`];
+  return dev ? [...app, DEV_SERVER] : app;
+}
+
+export function isAppOrigin(url: string, dev: boolean = DEV_BUILD): boolean {
   try {
-    return APP_ORIGINS.includes(new URL(url).origin);
+    return appOrigins(dev).includes(new URL(url).origin);
   } catch {
     return false;
   }
