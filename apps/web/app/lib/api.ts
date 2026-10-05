@@ -1,5 +1,5 @@
 import type {
-  AppConfig, AppSettings, AuthorFacet, CollectionFacet, PostMedia, PostReport, PostsPage, SettingsUpdate, SyncStatus,
+  AnalyzeChoice, AppConfig, AppSettings, AuthorFacet, CollectionFacet, ModelsInfo, PostMedia, PostReport, PostsPage, SettingsUpdate, SyncStatus,
 } from "@no-fomo/core";
 
 /** `message` is the server's error code when it sent one. */
@@ -28,7 +28,8 @@ export const api = {
   syncStatus: () => get<SyncStatus>("/api/sync/status"),
   settings: () => get<AppSettings>("/api/settings"),
   saveSettings: (u: SettingsUpdate) => send<AppSettings>("/api/settings", u),
-  analyze: (id: string) => send<PostReport>(`/api/posts/${id}/analyze`, {}),
+  models: () => get<ModelsInfo>("/api/models"),
+  analyze: (id: string, choice: AnalyzeChoice) => send<PostReport>(`/api/posts/${id}/analyze`, choice),
   report: (id: string) =>
     get<PostReport>(`/api/posts/${id}/report`).catch((e: unknown) => {
       if (e instanceof ApiError && e.status === 404) return null;

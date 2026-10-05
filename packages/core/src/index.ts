@@ -11,3 +11,4 @@ export * from "./api";
 export * from "./media";
 export * from "./analyze/frames";
 export * from "./analyze/report";
+export * from "./analyze/catalog";

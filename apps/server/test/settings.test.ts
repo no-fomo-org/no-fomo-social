@@ -8,6 +8,7 @@ import { createApp } from "../src/http/app";
 import { createMediaStore } from "../src/media/store";
 import { createKeyStore, type KeyStore } from "../src/secrets/key-store";
 import { createAnalyzer } from "../src/analyze/analyzer";
+import { createModelCatalog } from "../src/analyze/models";
 import type { ServerConfig } from "../src/config";
 
 /** Routes under test never reach a real job; any tool call would be a bug in the test. */
@@ -31,7 +32,7 @@ beforeEach(() => {
   const config: ServerConfig = { port: 4747, dataDir, webDist: null, extensionId: EXT, devOrigins: [], dumpPayloads: false, extraMediaHosts: [] };
   const media = createMediaStore({ dir: join(dataDir, "media"), onSaved: () => {} });
   const keys = createKeyStore(dataDir);
-  app = createApp({ db, config, media, keys, analyzer: analyzerFor(db, keys) });
+  app = createApp({ db, config, media, keys, analyzer: analyzerFor(db, keys), models: createModelCatalog({ keys }) });
 });
 
 const save = (body: unknown, origin = APP) =>
@@ -42,16 +43,15 @@ const read = async (origin?: string) =>
 describe("settings routes", () => {
   it("starts with defaults and no key", async () => {
     expect(await (await read()).json()).toEqual({
-      openai: { set: false, last4: null }, reportLanguage: "English", reportModel: "gpt-5.4-mini", transcribeModel: "gpt-transcribe",
+      openai: { set: false, last4: null }, reportLanguage: "English", reportModel: "gpt-6-luna", transcribeModel: "gpt-transcribe",
     });
   });
 
   it("saves a key but only ever returns its last 4 characters", async () => {
-    const res = await save({ openaiKey: "  sk-test-1234567890abcd  ", reportLanguage: "Russian" });
+    const res = await save({ openaiKey: "  sk-test-1234567890abcd  " });
     expect(res.status).toBe(200);
     const body = (await res.json()) as AppSettings;
     expect(body.openai).toEqual({ set: true, last4: "abcd" });
-    expect(body.reportLanguage).toBe("Russian");
     expect(JSON.stringify(await (await read()).json())).not.toContain("sk-test");
   });
 
@@ -63,13 +63,14 @@ describe("settings routes", () => {
   it("rejects bad values", async () => {
     expect((await save({ openaiKey: "short" })).status).toBe(400);
     expect((await save({ openaiKey: "sk-has space in it 1234567890" })).status).toBe(400);
-    expect((await save({ reportLanguage: "<script>" })).status).toBe(400);
-    expect((await save({ reportModel: "GPT 5" })).status).toBe(400);
     expect((await save({ other: 1 })).status).toBe(400);
+    // Models and language are chosen on each run now, not in Settings.
+    expect((await save({ reportLanguage: "Russian" })).status).toBe(400);
+    expect((await save({ reportModel: "gpt-6-luna" })).status).toBe(400);
   });
 
   it("rejects the extension origin for reads and writes", async () => {
-    expect((await save({ reportLanguage: "German" }, `chrome-extension://${EXT}`)).status).toBe(403);
+    expect((await save({ openaiKey: null }, `chrome-extension://${EXT}`)).status).toBe(403);
     expect((await read(`chrome-extension://${EXT}`)).status).toBe(403);
   });
 });

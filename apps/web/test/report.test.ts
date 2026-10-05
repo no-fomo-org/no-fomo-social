@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { PostReport } from "@no-fomo/core";
-import { analyzeErrorText, isWorking, reportFileName, reportView, safeMarkdownUrl, stepText } from "../app/lib/report";
+import type { ModelsInfo, PostReport } from "@no-fomo/core";
+import { analyzeErrorText, isWorking, reportFileName, reportView, safeMarkdownUrl, startingChoice, stepText, usableModels } from "../app/lib/report";
 
 const r = (over: Partial<PostReport>): PostReport => ({
   postId: "1", status: "done", step: null, markdown: "# x", language: "English", reportModel: "m", transcribeModel: null,
@@ -59,5 +59,26 @@ describe("safeMarkdownUrl", () => {
     expect(safeMarkdownUrl("https://docs.example/x", "href")).toBe("https://docs.example/x");
     expect(safeMarkdownUrl("javascript:alert(1)", "href")).toBe("");
     expect(safeMarkdownUrl("https://tracker.example/p.gif", "src")).toBe("");
+  });
+});
+
+describe("choices before a run", () => {
+  const info = (available: string[]): ModelsInfo => ({
+    report: ["gpt-6-luna", "gpt-5.4-mini", "gpt-6-astra"].map((id) => ({ id, note: "n", available: available.includes(id) })),
+    transcribe: ["gpt-transcribe", "whisper-1"].map((id) => ({ id, note: "n", available: available.includes(id) })),
+    checked: true,
+  });
+  const last = { reportModel: "gpt-5.4-mini", transcribeModel: "whisper-1", language: "Russian" };
+
+  it("starts from the last choice when the key can still use it", () => {
+    expect(startingChoice(last, info(["gpt-5.4-mini", "whisper-1", "gpt-6-luna", "gpt-transcribe"]))).toEqual(last);
+  });
+  it("falls back to the first usable model and to English", () => {
+    expect(startingChoice({ ...last, language: "Klingon" }, info(["gpt-6-astra", "gpt-transcribe"])))
+      .toEqual({ reportModel: "gpt-6-astra", transcribeModel: "gpt-transcribe", language: "English" });
+  });
+  it("shows only usable models, or all of them when none are usable", () => {
+    expect(usableModels(info(["gpt-6-astra"]).report).map((m) => m.id)).toEqual(["gpt-6-astra"]);
+    expect(usableModels(info([]).report).map((m) => m.id)).toEqual(["gpt-6-luna", "gpt-5.4-mini", "gpt-6-astra"]);
   });
 });

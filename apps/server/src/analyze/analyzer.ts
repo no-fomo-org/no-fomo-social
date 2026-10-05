@@ -1,20 +1,22 @@
 import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
-import { assembleReport, cleanModelSections, hasSummary, needsRefresh, postContext, systemPrompt, type PostReport } from "@no-fomo/core";
+import {
+  assembleReport, cleanModelSections, hasSummary, needsRefresh, postContext, systemPrompt, type AnalyzeChoice, type PostReport,
+} from "@no-fomo/core";
 import type { Db } from "../db/open";
 import { getPostItem, getPostMedia } from "../queries";
 import type { KeyStore } from "../secrets/key-store";
-import { analyzeOptions } from "../settings";
+import { rememberChoice } from "../settings";
 import { NotFoundError } from "../sync/ingest";
 import type { Downloader } from "./download";
 import { AnalyzeError } from "./errors";
 import { ToolMissingError, type MediaTools } from "./ffmpeg";
 import { buildInputs } from "./inputs";
 import type { Provider } from "./provider";
-import { failReport, finishReport, queueReport, setReportStep } from "./report-store";
+import { failReport, finishReport, getReport, queueReport, setReportStep } from "./report-store";
 
-export interface Analyzer { start(postId: string): PostReport; idle(): Promise<void> }
+export interface Analyzer { start(postId: string, choice: AnalyzeChoice): PostReport; idle(): Promise<void> }
 
 const TEMP_PREFIX = "no-fomo-";
 
@@ -32,13 +34,14 @@ export function createAnalyzer(d: {
   let running: string | null = null;
   let waiters: Array<() => void> = [];
 
-  function start(postId: string): PostReport {
+  function start(postId: string, choice: AnalyzeChoice): PostReport {
     const media = getPostMedia(d.db, postId);
     if (!media) throw new NotFoundError(`Post ${postId} is not in your library`);
     if (!d.keys.get().openai) throw new AnalyzeError("no_key");
     if (running === postId || queue.includes(postId)) throw new AnalyzeError("already_running");
     if (needsRefresh(media, now() / 1000)) throw new AnalyzeError("links_expired");
-    const report = queueReport(d.db, postId, analyzeOptions(d.db), now());
+    rememberChoice(d.db, choice);
+    const report = queueReport(d.db, postId, choice, now());
     queue.push(postId);
     // Start after the request returns, so a job never runs inside the caller's synchronous code.
     queueMicrotask(() => void pump());
@@ -69,7 +72,10 @@ export function createAnalyzer(d: {
     let dir: string | null = null;
     try {
       dir = mkdtempSync(join(d.tmpRoot, TEMP_PREFIX));
-      const opts = analyzeOptions(d.db);
+      // The report row holds the choice made for this run, even if a newer choice was saved since.
+      const row = getReport(d.db, postId);
+      if (!row) throw new AnalyzeError("failed", "Report row is gone");
+      const opts = { language: row.language, reportModel: row.reportModel, transcribeModel: row.transcribeModel ?? "" };
       const key = d.keys.get().openai;
       if (!key) throw new AnalyzeError("no_key");
       const post = getPostItem(d.db, postId);

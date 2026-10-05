@@ -54,7 +54,7 @@ Open a post and pick the **Report** tab. Press **Analyze** to get a short report
 - Add your OpenAI key first: gear icon, top right. Each analysis usually costs a few cents.
 - Videos are downloaded to a temp folder, analyzed, and deleted right after.
 - The key is stored encrypted in `~/.no-fomo/keys.enc`. The encryption secret is in `~/.no-fomo/secret`. This protects the key in a copied or backed-up `keys.enc`, not from other programs on your computer. The key is only sent to OpenAI.
-- Report language and model names can be changed in Settings.
+- Before each run, pick the report model, the speech to text model and the report language (about 45 languages). The app only lists models your key can use and remembers your last choice.
 - Search also finds words from reports. Use the "Has report" filter to see analyzed posts.
 
 ## Development

@@ -1,4 +1,4 @@
-import type { PostReport, ReportStep } from "@no-fomo/core";
+import { DEFAULT_REPORT_LANGUAGE, isReportLanguage, type AnalyzeChoice, type ModelOption, type ModelsInfo, type PostReport, type ReportStep } from "@no-fomo/core";
 import { mediaErrorText, type MediaErrorCode } from "./media";
 
 const MEDIA_CODES = new Set(["no_extension", "old_extension", "login_required", "rate_limited", "not_found", "load_failed"]);
@@ -50,3 +50,22 @@ export function reportView(o: { hasKey: boolean; report: PostReport | null; star
 
 /** Report links may open web pages. Images never load: a caption could make the model add a tracking pixel. */
 export const safeMarkdownUrl = (url: string, key: string) => (key !== "src" && /^https?:\/\//i.test(url) ? url : "");
+
+/** Models the key can use. If OpenAI says none, show all, so the owner still sees a choice and a clear error. */
+export function usableModels(list: ModelOption[]): ModelOption[] {
+  const ok = list.filter((m) => m.available);
+  return ok.length ? ok : list;
+}
+
+/** The dropdowns start from the last run's choice, swapping out anything the key can no longer use. */
+export function startingChoice(last: AnalyzeChoice, models: ModelsInfo): AnalyzeChoice {
+  const pick = (id: string, list: ModelOption[]) => {
+    const usable = usableModels(list);
+    return usable.some((m) => m.id === id) ? id : (usable[0]?.id ?? id);
+  };
+  return {
+    reportModel: pick(last.reportModel, models.report),
+    transcribeModel: pick(last.transcribeModel, models.transcribe),
+    language: isReportLanguage(last.language) ? last.language : DEFAULT_REPORT_LANGUAGE,
+  };
+}

@@ -7,6 +7,7 @@ import { openDb } from "./db/open";
 import { cleanTempDirs, createAnalyzer } from "./analyze/analyzer";
 import { createDownloader } from "./analyze/download";
 import { ffmpegTools } from "./analyze/ffmpeg";
+import { createModelCatalog } from "./analyze/models";
 import { createOpenAIProvider } from "./analyze/provider";
 import { failStaleReports } from "./analyze/report-store";
 import { createApp } from "./http/app";
@@ -34,7 +35,7 @@ const analyzer = createAnalyzer({
   makeProvider: createOpenAIProvider,
   download: createDownloader({ allowed: (url) => isMediaUrl(url, config.extraMediaHosts) }),
 });
-const app = createApp({ db, config, media, keys, analyzer });
+const app = createApp({ db, config, media, keys, analyzer, models: createModelCatalog({ keys }) });
 
 const server = serve({ fetch: app.fetch, port: config.port, hostname: "127.0.0.1" }, () => {
   console.log(`no-fomo is running at http://localhost:${config.port}`);

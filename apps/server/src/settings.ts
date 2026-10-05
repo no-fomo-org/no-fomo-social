@@ -1,13 +1,14 @@
-import { DEFAULT_REPORT_LANGUAGE, DEFAULT_REPORT_MODEL, DEFAULT_TRANSCRIBE_MODEL, type AppSettings, type SettingsUpdate } from "@no-fomo/core";
+import {
+  DEFAULT_REPORT_LANGUAGE, DEFAULT_REPORT_MODEL, DEFAULT_TRANSCRIBE_MODEL, type AnalyzeChoice, type AppSettings, type SettingsUpdate,
+} from "@no-fomo/core";
 import type { Db } from "./db/open";
 import { getSetting, setSetting } from "./db/settings";
 import type { KeyStore } from "./secrets/key-store";
 
 const K = { language: "report_language", reportModel: "report_model", transcribeModel: "transcribe_model" } as const;
 
-export interface AnalyzeOptions { language: string; reportModel: string; transcribeModel: string }
-
-export function analyzeOptions(db: Db): AnalyzeOptions {
+/** The last choice used, or the defaults before the first run. */
+export function analyzeOptions(db: Db): AnalyzeChoice {
   return {
     language: getSetting(db, K.language) ?? DEFAULT_REPORT_LANGUAGE,
     reportModel: getSetting(db, K.reportModel) ?? DEFAULT_REPORT_MODEL,
@@ -26,10 +27,13 @@ export function readSettings(db: Db, keys: KeyStore): AppSettings {
   };
 }
 
+export function rememberChoice(db: Db, c: AnalyzeChoice) {
+  setSetting(db, K.language, c.language);
+  setSetting(db, K.reportModel, c.reportModel);
+  setSetting(db, K.transcribeModel, c.transcribeModel);
+}
+
 export function updateSettings(db: Db, keys: KeyStore, u: SettingsUpdate): AppSettings {
   if (u.openaiKey !== undefined) keys.set({ openai: u.openaiKey });
-  if (u.reportLanguage !== undefined) setSetting(db, K.language, u.reportLanguage);
-  if (u.reportModel !== undefined) setSetting(db, K.reportModel, u.reportModel);
-  if (u.transcribeModel !== undefined) setSetting(db, K.transcribeModel, u.transcribeModel);
   return readSettings(db, keys);
 }

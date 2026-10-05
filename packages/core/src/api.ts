@@ -83,4 +83,9 @@ export interface PostReport {
   finishedAt: number | null;
 }
 export interface AppSettings { openai: { set: boolean; last4: string | null }; reportLanguage: string; reportModel: string; transcribeModel: string }
-export interface SettingsUpdate { openaiKey?: string | null; reportLanguage?: string; reportModel?: string; transcribeModel?: string }
+/** reportLanguage and the models are the last ones used, so the next run starts from them. */
+export interface SettingsUpdate { openaiKey?: string | null }
+export interface ModelOption { id: string; note: string; available: boolean }
+/** `checked` is false when OpenAI could not be asked; then every model shows as available. */
+export interface ModelsInfo { report: ModelOption[]; transcribe: ModelOption[]; checked: boolean }
+export interface AnalyzeChoice { reportModel: string; transcribeModel: string; language: string }

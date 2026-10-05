@@ -2,7 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
-import { DEFAULT_REPORT_MODEL, DEFAULT_TRANSCRIBE_MODEL, type AppSettings, type SettingsUpdate } from "@no-fomo/core";
+import type { AppSettings, SettingsUpdate } from "@no-fomo/core";
 import { api } from "../lib/api";
 import { Button, buttonClass } from "./ui/button";
 import { Icon } from "./ui/icon";
@@ -10,7 +10,6 @@ import { Icon } from "./ui/icon";
 const OpenSettings = createContext<() => void>(() => {});
 export const useOpenSettings = () => useContext(OpenSettings);
 
-const LANGUAGES = ["English", "Russian", "Spanish", "German", "French", "Portuguese", "Ukrainian"];
 const field =
   "h-9 w-full min-w-0 rounded-control border border-line bg-surface px-3 text-[14px] focus-visible:outline-2 focus-visible:outline-accent";
 
@@ -36,20 +35,18 @@ function SettingsForm({ onDone }: { onDone: () => void }) {
   const settings = useQuery({ queryKey: ["settings"], queryFn: api.settings });
   const save = useMutation({
     mutationFn: (u: SettingsUpdate) => api.saveSettings(u),
-    onSuccess: (s) => qc.setQueryData<AppSettings>(["settings"], s),
+    onSuccess: (s) => {
+      qc.setQueryData<AppSettings>(["settings"], s);
+      // A new key may unlock other models.
+      void qc.invalidateQueries({ queryKey: ["models"] });
+    },
   });
   const s = settings.data;
   const [key, setKey] = useState("");
-  const [language, setLanguage] = useState<string | null>(null);
-  const [reportModel, setReportModel] = useState<string | null>(null);
-  const [transcribeModel, setTranscribeModel] = useState<string | null>(null);
 
   const submit = () => {
     const u: SettingsUpdate = {};
     if (key.trim()) u.openaiKey = key.trim();
-    if (language !== null) u.reportLanguage = language.trim();
-    if (reportModel !== null) u.reportModel = reportModel.trim();
-    if (transcribeModel !== null) u.transcribeModel = transcribeModel.trim();
     save.mutate(u, {
       onSuccess: () => {
         setKey("");
@@ -93,41 +90,7 @@ function SettingsForm({ onDone }: { onDone: () => void }) {
           placeholder={s?.openai.set ? "Paste a new key to replace it" : "sk-..."}
           className={field}
         />
-        <p className="text-[13px] text-muted">Your key stays on this computer. It is only sent to OpenAI when you analyze a post.</p>
-      </section>
-
-      <section className="grid gap-2">
-        <label htmlFor="report-language" className="text-[14px] font-medium">Report language</label>
-        <input
-          id="report-language"
-          list="report-languages"
-          value={language ?? s?.reportLanguage ?? ""}
-          onChange={(e) => setLanguage(e.target.value)}
-          className={field}
-        />
-        <datalist id="report-languages">
-          {LANGUAGES.map((l) => <option key={l} value={l} />)}
-        </datalist>
-      </section>
-
-      <section className="grid gap-2 border-t border-line pt-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[14px] font-medium">Models</h3>
-          <button
-            type="button"
-            className="text-[13px] text-muted underline-offset-2 hover:text-text hover:underline"
-            onClick={() => {
-              setReportModel(DEFAULT_REPORT_MODEL);
-              setTranscribeModel(DEFAULT_TRANSCRIBE_MODEL);
-            }}
-          >
-            Reset to defaults
-          </button>
-        </div>
-        <label htmlFor="report-model" className="text-[13px] text-muted">Report</label>
-        <input id="report-model" spellCheck={false} value={reportModel ?? s?.reportModel ?? ""} onChange={(e) => setReportModel(e.target.value)} className={`${field} font-mono`} />
-        <label htmlFor="transcribe-model" className="text-[13px] text-muted">Speech to text</label>
-        <input id="transcribe-model" spellCheck={false} value={transcribeModel ?? s?.transcribeModel ?? ""} onChange={(e) => setTranscribeModel(e.target.value)} className={`${field} font-mono`} />
+        <p className="text-[13px] text-muted">Your key stays on this computer. It is only sent to OpenAI when you analyze a post. You pick the models and the report language in the Report tab of each post.</p>
       </section>
 
       {save.isError && <p role="alert" className="text-[13px] text-danger">Could not save. Check the values and try again.</p>}

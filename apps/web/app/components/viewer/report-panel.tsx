@@ -2,13 +2,24 @@ import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert02Icon, Copy01Icon, Download04Icon, Loading03Icon } from "@hugeicons/core-free-icons";
-import type { PostListItem, PostMedia } from "@no-fomo/core";
+import { REPORT_LANGUAGES, REPORT_MODELS, TRANSCRIBE_MODELS, type AnalyzeChoice, type ModelsInfo, type PostListItem, type PostMedia } from "@no-fomo/core";
 import { api } from "../../lib/api";
 import { startAnalysis } from "../../lib/analyze";
-import { analyzeErrorText, isWorking, reportFileName, reportView, safeMarkdownUrl, stepText } from "../../lib/report";
+import {
+  analyzeErrorText, isWorking, reportFileName, reportView, safeMarkdownUrl, startingChoice, stepText, usableModels,
+} from "../../lib/report";
 import { useOpenSettings } from "../settings-dialog";
 import { Button } from "../ui/button";
 import { Icon } from "../ui/icon";
+import { OptionPicker } from "../ui/option-picker";
+
+/** Shown until OpenAI answers which models the key can use. */
+const ALL_MODELS: ModelsInfo = {
+  report: REPORT_MODELS.map((m) => ({ ...m, available: true })),
+  transcribe: TRANSCRIBE_MODELS.map((m) => ({ ...m, available: true })),
+  checked: false,
+};
+const LANGUAGE_OPTIONS = REPORT_LANGUAGES.map((l) => ({ id: l.name, label: l.name, sublabel: l.native === l.name ? undefined : l.native }));
 
 /** Mount with key={post.id}: start state and errors belong to one post. */
 export function ReportPanel({ post, extensionId }: { post: PostListItem; extensionId: string | undefined }) {
@@ -23,8 +34,18 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [picked, setPicked] = useState<AnalyzeChoice | null>(null);
+  const [choosing, setChoosing] = useState(false);
 
   const hasKey = !!settings.data?.openai.set;
+  const models = useQuery({ queryKey: ["models"], queryFn: api.models, enabled: hasKey, staleTime: 10 * 60_000 });
+  const s = settings.data;
+  const choice =
+    picked ??
+    startingChoice(
+      { reportModel: s?.reportModel ?? "", transcribeModel: s?.transcribeModel ?? "", language: s?.reportLanguage ?? "" },
+      models.data ?? ALL_MODELS,
+    );
   const r = report.data ?? null;
   const view = reportView({ hasKey, report: r, starting, startError });
   const markdown = r?.markdown ?? "";
@@ -32,12 +53,21 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
   const analyze = async () => {
     setStarting(true);
     setStartError(null);
-    const res = await startAnalysis(post.id, extensionId);
+    const res = await startAnalysis(post.id, extensionId, choice);
     if (res.ok && res.media) qc.setQueryData<PostMedia>(["media", post.id], res.media);
-    if (!res.ok) setStartError(res.error);
+    if (res.ok) {
+      setChoosing(false);
+      // The server remembers this choice; the next post starts from it.
+      void qc.invalidateQueries({ queryKey: ["settings"] });
+    } else {
+      setStartError(res.error);
+    }
     await report.refetch();
     setStarting(false);
   };
+  const choices = (
+    <ChoiceForm value={choice} onChange={setPicked} models={models.data ?? ALL_MODELS} />
+  );
 
   // A finished job changes the grid's "Has report" filter and search results.
   const working = isWorking(r);
@@ -85,13 +115,18 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
             Get a short report on this post: what it says, what it shows, and what it mentions. You can copy it or download it as Markdown.
           </p>
           <p className="text-[13px] text-muted">Uses your OpenAI key. Usually a few cents per post.</p>
-          <div>
-            {hasKey ? (
-              <Button variant="primary" onClick={analyze}>{view.error ? "Try again" : "Analyze"}</Button>
-            ) : (
+          {hasKey ? (
+            <>
+              {choices}
+              <div>
+                <Button variant="primary" onClick={analyze}>{view.error ? "Try again" : "Analyze"}</Button>
+              </div>
+            </>
+          ) : (
+            <div>
               <Button variant="primary" onClick={openSettings}>Open Settings</Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -100,6 +135,16 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
           <Icon icon={Loading03Icon} size={16} className="motion-safe:animate-spin" />
           {starting && !isWorking(r) ? "Starting" : stepText(r?.step ?? null)}
         </p>
+      )}
+
+      {view.kind === "report" && choosing && (
+        <div className="grid gap-3 border-b border-line pb-5">
+          {choices}
+          <div className="flex gap-2">
+            <Button variant="primary" onClick={analyze}>Analyze</Button>
+            <Button variant="ghost" onClick={() => setChoosing(false)}>Cancel</Button>
+          </div>
+        </div>
       )}
 
       {view.kind === "report" && (
@@ -113,7 +158,9 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
               <Icon icon={Download04Icon} />
               Download .md
             </Button>
-            <Button variant="ghost" onClick={hasKey ? analyze : openSettings}>Analyze again</Button>
+            {!choosing && (
+              <Button variant="ghost" onClick={hasKey ? () => setChoosing(true) : openSettings}>Analyze again</Button>
+            )}
           </div>
           <article className="report-md">
             <Markdown
@@ -133,6 +180,22 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
           </article>
         </>
       )}
+    </div>
+  );
+}
+
+function ChoiceForm({ value, onChange, models }: { value: AnalyzeChoice; onChange: (c: AnalyzeChoice) => void; models: ModelsInfo }) {
+  const asOptions = (list: ModelsInfo["report"]) => usableModels(list).map((m) => ({ id: m.id, label: m.id, sublabel: m.note }));
+  return (
+    <div className="grid gap-3">
+      <OptionPicker label="Report model" options={asOptions(models.report)} value={value.reportModel} onChange={(reportModel) => onChange({ ...value, reportModel })} />
+      <OptionPicker
+        label="Speech to text"
+        options={asOptions(models.transcribe)}
+        value={value.transcribeModel}
+        onChange={(transcribeModel) => onChange({ ...value, transcribeModel })}
+      />
+      <OptionPicker label="Report language" options={LANGUAGE_OPTIONS} value={value.language} onChange={(language) => onChange({ ...value, language })} />
     </div>
   );
 }

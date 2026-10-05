@@ -5,12 +5,13 @@ import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
-import { APP_VERSION } from "@no-fomo/core";
+import { APP_VERSION, isReportLanguage, isReportModel, isTranscribeModel } from "@no-fomo/core";
 import type { ServerConfig } from "../config";
 import type { Db } from "../db/open";
 import { authors, posts } from "../db/schema";
 import type { Analyzer } from "../analyze/analyzer";
 import { AnalyzeError } from "../analyze/errors";
+import type { ModelCatalog } from "../analyze/models";
 import { getReport } from "../analyze/report-store";
 import { imageType, type MediaStore } from "../media/store";
 import type { KeyStore } from "../secrets/key-store";
@@ -39,13 +40,12 @@ const PostsQuerySchema = z.object({
   report: z.literal("1").optional().transform((v) => v === "1"),
 });
 
-const Model = z.string().regex(/^[a-z0-9.:_-]{1,80}$/);
-const SettingsBody = z
+const SettingsBody = z.object({ openaiKey: z.string().trim().regex(/^[\x21-\x7e]{20,300}$/).nullable().optional() }).strict();
+const AnalyzeBody = z
   .object({
-    openaiKey: z.string().trim().regex(/^[\x21-\x7e]{20,300}$/).nullable().optional(),
-    reportLanguage: z.string().trim().regex(/^[\p{L} ]{2,40}$/u).optional(),
-    reportModel: Model.optional(),
-    transcribeModel: Model.optional(),
+    reportModel: z.string().refine(isReportModel),
+    transcribeModel: z.string().refine(isTranscribeModel),
+    language: z.string().refine(isReportLanguage),
   })
   .strict();
 
@@ -57,8 +57,8 @@ const MIME: Record<string, string> = {
   ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".webmanifest": "application/manifest+json",
 };
 
-export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStore; keys: KeyStore; analyzer: Analyzer }) {
-  const { db, config, media, keys, analyzer } = deps;
+export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStore; keys: KeyStore; analyzer: Analyzer; models: ModelCatalog }) {
+  const { db, config, media, keys, analyzer, models } = deps;
   const app = new Hono();
   let dumpCount = 0;
 
@@ -131,10 +131,12 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     const found = getPostMedia(db, Id.parse(c.req.param("id")));
     return found ? c.json(found) : c.json({ error: "not_found" }, 404);
   });
-  app.post("/api/posts/:id/analyze", (c) => {
+  app.post("/api/posts/:id/analyze", async (c) => {
     if (fromExtension(c)) return c.json({ error: "forbidden" }, 403);
-    return c.json(analyzer.start(Id.parse(c.req.param("id"))), 202);
+    const id = Id.parse(c.req.param("id"));
+    return c.json(analyzer.start(id, AnalyzeBody.parse(await c.req.json().catch(() => null))), 202);
   });
+  app.get("/api/models", async (c) => (fromExtension(c) ? c.json({ error: "forbidden" }, 403) : c.json(await models.list())));
   app.get("/api/posts/:id/report", (c) => {
     const found = getReport(db, Id.parse(c.req.param("id")));
     return found ? c.json(found) : c.json({ error: "not_found" }, 404);
