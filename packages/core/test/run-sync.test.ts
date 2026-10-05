@@ -26,7 +26,7 @@ function setup(opts: { saved: Array<unknown | Error>; collections?: Array<unknow
   let savedCount = 0;
   const results: SyncResult[] = [];
   const sink: SyncSink = {
-    async startRun() { log.push("sink:start"); return { runId: 7 }; },
+    async startRun(mode) { log.push(`sink:start:${mode}`); return { runId: 7 }; },
     async savedPage(runId) {
       savedCount++;
       log.push(`sink:saved:${runId}`);
@@ -40,6 +40,12 @@ function setup(opts: { saved: Array<unknown | Error>; collections?: Array<unknow
 }
 
 describe("runSync", () => {
+  it("asks the server for the requested mode", async () => {
+    const s = setup({ saved: [page(1, null)] });
+    await runSync({ ig: s.ig, sink: s.sink, sleep: s.sleep, mode: "full" });
+    expect(s.log[0]).toBe("sink:start:full");
+  });
+
   it("walks saved pages, then reads collection names, pausing before every request after the first", async () => {
     const s = setup({ saved: [page(1, "A"), page(2, null)], collections: [page(1, "X"), page(2, null)] });
     const r = await runSync({ ig: s.ig, sink: s.sink, sleep: s.sleep, delayMs: () => 2500 });

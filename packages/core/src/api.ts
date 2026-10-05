@@ -1,5 +1,7 @@
 import type { MediaKind } from "./ig/types";
 
+export type SyncMode = "incremental" | "full";
+
 export interface PostListItem {
   id: string;
   code: string;
@@ -29,7 +31,7 @@ export interface CollectionFacet { id: string; name: string | null; count: numbe
 
 export interface SyncRunInfo {
   id: number;
-  mode: "incremental" | "full";
+  mode: SyncMode;
   status: "running" | "done" | "error";
   startedAt: number;
   finishedAt: number | null;
