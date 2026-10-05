@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Menu } from "@base-ui/react/menu";
 import { Popover } from "@base-ui/react/popover";
-import { RefreshIcon } from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon, RefreshIcon } from "@hugeicons/core-free-icons";
+import type { SyncMode } from "@no-fomo/core";
 import { api } from "../lib/api";
 import { pingExtension, startExtensionSync, syncErrorText } from "../lib/extension";
-import { formatAgo } from "../lib/format";
+import { formatAgo, fullCheckDue, runResultNote } from "../lib/format";
 import { SetupSteps } from "./setup-steps";
 import { Button, buttonClass } from "./ui/button";
 import { Icon } from "./ui/icon";
@@ -40,11 +42,11 @@ export function SyncControl() {
     wasRunning.current = running;
   }, [running, qc]);
 
-  async function start() {
+  async function start(mode: SyncMode = "incremental") {
     if (!extensionId) return;
     setStartError(null);
     setStarting(true);
-    const reply = await startExtensionSync(extensionId);
+    const reply = await startExtensionSync(extensionId, mode);
     setStarting(false);
     if (!reply) return setStartError("The extension did not answer. Reload this page and try again.");
     if (!reply.ok) return setStartError(syncErrorText(reply.error));
@@ -68,30 +70,51 @@ export function SyncControl() {
     );
   }
 
+  const warning = !running && run?.status === "done" ? run.warning : null;
   const lastError = !running && run?.status === "error" ? run.errorMessage : null;
+  const due = !running && fullCheckDue(status.data?.lastFullAt ?? null, status.data?.lastSuccessAt ?? null);
   const note = running
-    ? `Syncing, ${run.postsSeen} posts so far`
-    : startError ?? lastError ?? (status.data?.lastSuccessAt ? `Synced ${formatAgo(status.data.lastSuccessAt)}${newPostsNote(run)}` : "Not synced yet");
+    ? `${run.mode === "full" ? "Checking all saved posts" : "Syncing"}, ${run.postsSeen} posts so far`
+    : startError ?? lastError ?? warning ??
+      (status.data?.lastSuccessAt ? `Synced ${formatAgo(status.data.lastSuccessAt)}${runResultNote(run)}` : "Not synced yet");
+  const errorTone = !!(startError || lastError || warning);
+  const disabled = running || starting || !ext.data?.ok;
 
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <p
-        className={`truncate text-[13px] ${startError || lastError ? "text-danger" : "text-muted"}`}
-        role="status"
-        aria-live="polite"
-        title={note}
-      >
+      <p className={`truncate text-[13px] ${errorTone ? "text-danger" : "text-muted"}`} role="status" aria-live="polite" title={note}>
         {note}
       </p>
-      <Button variant="primary" onClick={start} disabled={running || starting || !ext.data?.ok}>
-        <Icon icon={RefreshIcon} className={running || starting ? "motion-safe:animate-spin" : ""} />
-        Sync
-      </Button>
+      {due && !errorTone && !disabled && (
+        <button type="button" onClick={() => start("full")} className="shrink-0 text-[13px] text-text underline underline-offset-2 transition-colors duration-200 hover:text-accent">
+          Full check suggested
+        </button>
+      )}
+      <div className="flex shrink-0">
+        <Button variant="primary" className="rounded-r-none" onClick={() => start()} disabled={disabled}>
+          <Icon icon={RefreshIcon} className={running || starting ? "motion-safe:animate-spin" : ""} />
+          Sync
+        </Button>
+        <Menu.Root>
+          <Menu.Trigger
+            className={buttonClass("primary", "rounded-l-none border-l border-accent-ink/20 px-2")}
+            disabled={disabled}
+            aria-label="More sync options"
+          >
+            <Icon icon={ArrowDown01Icon} />
+          </Menu.Trigger>
+          <Menu.Portal>
+            <Menu.Positioner sideOffset={6} align="end" className="z-30">
+              <Menu.Popup className="w-[min(300px,calc(100vw-32px))] origin-[var(--transform-origin)] rounded-control border border-line bg-bg p-1 shadow-pop transition-[transform,opacity] duration-200 ease-out-soft data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+                <Menu.Item onClick={() => start("full")} className="flex cursor-default flex-col gap-0.5 rounded-[6px] px-3 py-2 outline-none data-[highlighted]:bg-surface">
+                  <span className="text-[14px] font-medium">Full resync</span>
+                  <span className="text-[12px] text-muted">Checks every saved post and hides the ones you unsaved on Instagram. Takes about 2 minutes per 1,000 posts.</span>
+                </Menu.Item>
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
+      </div>
     </div>
   );
-}
-
-function newPostsNote(run: { status: string; postsNew: number } | null): string {
-  if (!run || run.status !== "done" || run.postsNew === 0) return "";
-  return run.postsNew === 1 ? ", 1 new post" : `, ${run.postsNew.toLocaleString("en")} new posts`;
 }

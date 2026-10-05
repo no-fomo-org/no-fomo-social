@@ -54,4 +54,19 @@ describe("createIgClient", () => {
     expect((err as Error).message).toBe("Instagram returned error 404 (collections list). Sync stopped.");
     expect(await codeOf(make(() => new Response("<html>login</html>", { status: 200 })))).toBe("login_required");
   });
+
+  it("reads one post's media info", async () => {
+    const f = fakeFetch(json({ items: [], status: "ok" }));
+    const ig = createIgClient({ fetch: f.fn, csrfToken: () => null });
+    await ig.mediaInfo("3500000000000000002");
+    expect(f.calls[0]!.url).toBe("https://www.instagram.com/api/v1/media/3500000000000000002/info/");
+  });
+
+  it("reports a deleted post as not_found", async () => {
+    const ig = (r: () => Response) => createIgClient({ fetch: fakeFetch(r).fn, csrfToken: () => null });
+    expect(await codeOf(ig(json({}, 404)).mediaInfo("1"))).toBe("not_found");
+    expect(await codeOf(ig(json({ message: "Media not found or unavailable", status: "fail" }, 400)).mediaInfo("1"))).toBe("not_found");
+    expect(await codeOf(ig(json({ message: "Media not found or unavailable", status: "fail" })).mediaInfo("1"))).toBe("not_found");
+    expect(await codeOf(ig(json({ message: "checkpoint", status: "fail" }, 400)).mediaInfo("1"))).toBe("http_error");
+  });
 });

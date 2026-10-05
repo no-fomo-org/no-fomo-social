@@ -1,8 +1,9 @@
 import { and, asc, count, desc, eq, inArray, isNull, lt, sql, type SQL } from "drizzle-orm";
-import type { AuthorFacet, CollectionFacet, PostListItem, PostsPage, PostsQuery, SyncStatus } from "@no-fomo/core";
+import { expiresAtFromUrl } from "@no-fomo/core";
+import type { AuthorFacet, CollectionFacet, MediaPart, PostListItem, PostMedia, PostsPage, PostsQuery, SyncStatus } from "@no-fomo/core";
 import type { Db } from "./db/open";
-import { authors, collections, postCollections, posts } from "./db/schema";
-import { lastSuccessAt, latestRun } from "./sync/ingest";
+import { authors, collections, postCollections, postParts, posts } from "./db/schema";
+import { lastFullAt, lastSuccessAt, latestRun } from "./sync/ingest";
 
 const visible = and(isNull(posts.removedAt), isNull(posts.removedRemotelyAt));
 
@@ -55,6 +56,27 @@ function toItem(r: { post: typeof posts.$inferSelect; username: string; fullName
   };
 }
 
+export function getPostMedia(db: Db, id: string): PostMedia | null {
+  const p = db
+    .select({ id: posts.id, kind: posts.kind, videoUrl: posts.videoUrl, thumbnailUrl: posts.thumbnailUrl, width: posts.width, height: posts.height })
+    .from(posts)
+    .where(eq(posts.id, id))
+    .get();
+  if (!p) return null;
+  const parts: MediaPart[] = db
+    .select().from(postParts).where(eq(postParts.postId, id)).orderBy(asc(postParts.idx)).all()
+    .map((r) => ({ index: r.idx, kind: r.kind, imageUrl: r.imageUrl, videoUrl: r.videoUrl, width: r.width, height: r.height }));
+  // Posts stored before single posts had parts: a video still has its own link.
+  if (parts.length === 0 && p.kind === "video" && p.videoUrl) {
+    parts.push({ index: 0, kind: "video", imageUrl: p.thumbnailUrl, videoUrl: p.videoUrl, width: p.width, height: p.height });
+  }
+  const expiries = parts
+    .flatMap((x) => [x.imageUrl, x.videoUrl])
+    .map(expiresAtFromUrl)
+    .filter((x): x is number => x !== null);
+  return { id: p.id, kind: p.kind, parts, expiresAt: expiries.length ? Math.min(...expiries) : null };
+}
+
 export function listAuthors(db: Db): AuthorFacet[] {
   const n = count(posts.id);
   return db
@@ -84,9 +106,10 @@ export function syncStatus(db: Db): SyncStatus {
   return {
     run: run && {
       id: run.id, mode: run.mode, status: run.status, startedAt: run.startedAt, finishedAt: run.finishedAt,
-      pages: run.pages, postsSeen: run.postsSeen, postsNew: run.postsNew,
+      pages: run.pages, postsSeen: run.postsSeen, postsNew: run.postsNew, postsRemoved: run.postsRemoved, warning: run.warning,
       errorCode: run.errorCode, errorMessage: run.errorMessage,
     },
     lastSuccessAt: lastSuccessAt(db),
+    lastFullAt: lastFullAt(db),
   };
 }

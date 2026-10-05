@@ -1,5 +1,7 @@
 import type { MediaKind } from "./ig/types";
 
+export type SyncMode = "incremental" | "full";
+
 export interface PostListItem {
   id: string;
   code: string;
@@ -22,6 +24,22 @@ export interface PostListItem {
   permalink: string;
 }
 
+export interface MediaPart {
+  index: number;
+  kind: "image" | "video";
+  imageUrl: string | null;
+  videoUrl: string | null;
+  width: number | null;
+  height: number | null;
+}
+export interface PostMedia {
+  id: string;
+  kind: MediaKind;
+  parts: MediaPart[];
+  /** Unix seconds when the first of these links stops working. Null when unknown. */
+  expiresAt: number | null;
+}
+
 export interface PostsPage { items: PostListItem[]; nextCursor: number | null; total: number }
 export interface PostsQuery { q?: string; author?: string; collection?: string; kind?: MediaKind; cursor?: number; limit: number }
 export interface AuthorFacet { id: string; username: string; fullName: string | null; avatarUrl: string; count: number }
@@ -29,15 +47,17 @@ export interface CollectionFacet { id: string; name: string | null; count: numbe
 
 export interface SyncRunInfo {
   id: number;
-  mode: "incremental" | "full";
+  mode: SyncMode;
   status: "running" | "done" | "error";
   startedAt: number;
   finishedAt: number | null;
   pages: number;
   postsSeen: number;
   postsNew: number;
+  postsRemoved: number;
+  warning: string | null;
   errorCode: string | null;
   errorMessage: string | null;
 }
-export interface SyncStatus { run: SyncRunInfo | null; lastSuccessAt: number | null }
+export interface SyncStatus { run: SyncRunInfo | null; lastSuccessAt: number | null; lastFullAt: number | null }
 export interface AppConfig { extensionId: string; version: string }

@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import page1 from "@no-fomo/core/fixtures/saved-page-1.json";
 import page2 from "@no-fomo/core/fixtures/saved-page-2.json";
 import collectionsList from "@no-fomo/core/fixtures/collections-list.json";
-import type { AuthorFacet, PostsPage, SyncStatus } from "@no-fomo/core";
+import mediaInfo from "@no-fomo/core/fixtures/media-info.json";
+import type { AuthorFacet, PostMedia, PostsPage, SyncStatus } from "@no-fomo/core";
 import { openDb } from "../src/db/open";
 import { createApp } from "../src/http/app";
 import { createMediaStore } from "../src/media/store";
@@ -71,6 +72,16 @@ describe("security", () => {
 });
 
 describe("sync + read API", () => {
+  it("starts a full run on request and reports removals in the status", async () => {
+    await syncFixtures();
+    const r = await post("/api/sync/runs", { mode: "full" });
+    expect(await r.json()).toMatchObject({ mode: "full" });
+    const s = (await (await get("/api/sync/status")).json()) as SyncStatus;
+    expect(s.run).toMatchObject({ mode: "full", status: "running", postsRemoved: 0, warning: null });
+    expect(typeof s.lastFullAt).toBe("number");
+    expect((await post("/api/sync/runs", { mode: "everything" })).status).toBe(400);
+  });
+
   it("syncs fixtures and lists posts newest-saved first", async () => {
     await syncFixtures();
     const page = (await (await get("/api/posts?limit=60")).json()) as PostsPage;
@@ -120,5 +131,58 @@ describe("sync + read API", () => {
     const { runId } = (await (await post("/api/sync/runs", {})).json()) as { runId: number };
     await post(`/api/sync/runs/${runId}/finish`, { ok: true });
     expect((await post(`/api/sync/runs/${runId}/saved`, { payload: page1 })).status).toBe(409);
+  });
+});
+
+describe("media links", () => {
+  it("returns a post's parts and the earliest expiry", async () => {
+    await syncFixtures();
+    const res = await get("/api/posts/3500000000000000001/media");
+    expect(res.status).toBe(200);
+    const m = (await res.json()) as PostMedia;
+    expect(m).toMatchObject({ id: "3500000000000000001", kind: "video" });
+    expect(m.parts).toHaveLength(1);
+    expect(m.parts[0]).toMatchObject({ index: 0, kind: "video", videoUrl: "https://scontent.cdninstagram.com/o1/v/reel1_720.mp4?oe=68C0A1B2" });
+    expect(m.expiresAt).toBe(parseInt("68C0A1B2", 16));
+  });
+
+  it("answers 404 for unknown posts and 400 for bad ids", async () => {
+    expect((await get("/api/posts/42/media")).status).toBe(404);
+    expect((await get("/api/posts/..%2F..%2Fetc/media")).status).toBe(400);
+  });
+
+  it("stores fresh links and keeps the post's place, likes and collections", async () => {
+    await syncFixtures();
+    const before = (await (await get("/api/posts?limit=10")).json()) as PostsPage;
+    const collectionsBefore = await (await get("/api/collections")).json();
+    const res = await post("/api/sync/media/3500000000000000002", { payload: mediaInfo });
+    expect(res.status).toBe(200);
+    const m = (await res.json()) as PostMedia;
+    expect(m.parts).toEqual([{
+      index: 0, kind: "image", imageUrl: "https://scontent.cdninstagram.com/v/img2_1080.jpg?oe=6A000000", videoUrl: null, width: 1080, height: 1350,
+    }]);
+    expect(m.expiresAt).toBe(0x6a000000);
+    const after = (await (await get("/api/posts?limit=10")).json()) as PostsPage;
+    expect(after.items.map((p) => p.id)).toEqual(before.items.map((p) => p.id));
+    expect(after.items.find((p) => p.id === "3500000000000000002")!.likeCount).toBe(215);
+    // Media info carries no collection data, so collection counts must not change.
+    expect(await (await get("/api/collections")).json()).toEqual(collectionsBefore);
+  });
+
+  it("rejects an answer about another post and writes nothing", async () => {
+    await syncFixtures();
+    const res = await post("/api/sync/media/3500000000000000001", { payload: mediaInfo });
+    expect(res.status).toBe(422);
+    const m = (await (await get("/api/posts/3500000000000000001/media")).json()) as PostMedia;
+    expect(m.parts[0]!.videoUrl).toContain("reel1_720.mp4");
+  });
+
+  it("rejects fresh links for a post that is not in the library", async () => {
+    expect((await post("/api/sync/media/3500000000000000002", { payload: mediaInfo })).status).toBe(404);
+  });
+
+  it("refuses fresh links from web pages", async () => {
+    await syncFixtures();
+    expect((await post("/api/sync/media/3500000000000000002", { payload: mediaInfo }, "https://evil.example")).status).toBe(403);
   });
 });

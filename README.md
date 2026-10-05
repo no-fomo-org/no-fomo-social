@@ -32,6 +32,20 @@ Open http://localhost:4747.
 
 The first sync reads all your saved posts and collections. Later syncs only read what is new.
 
+## Watching posts
+
+Click a post to open it. Videos play straight from Instagram. Nothing is downloaded.
+
+- Up and Down: previous or next post. Esc: close.
+- Video: Space play or pause, Left and Right seek 5 seconds, `,` and `.` step one frame, M mute, F fullscreen.
+- Carousel: Left and Right move between items, Shift with Left or Right seeks a video item.
+
+Instagram links expire after a few days. When that happens, the extension asks Instagram for a fresh link (one request, same speed limits as sync).
+
+## Full resync
+
+Sync only adds new saves. To find posts you unsaved directly on Instagram, open the menu next to Sync and pick "Full resync". It checks every saved post (about 2 minutes per 1,000 posts) and hides the ones that are gone. If more than 30% of your posts seem gone, nothing is hidden, because that usually means an Instagram glitch.
+
 ## Development
 
 ```bash

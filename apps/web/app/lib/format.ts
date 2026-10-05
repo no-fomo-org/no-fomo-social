@@ -22,3 +22,19 @@ export function formatAgo(ms: number, now = Date.now()): string {
 
 const dateFmt = new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" });
 export const formatDate = (unixSec: number) => dateFmt.format(new Date(unixSec * 1000));
+
+const FULL_CHECK_EVERY_MS = 30 * 86_400_000;
+
+/** A full resync is due when the library was synced but not fully checked in 30 days. */
+export function fullCheckDue(lastFullAt: number | null, lastSuccessAt: number | null, now = Date.now()): boolean {
+  if (lastSuccessAt === null) return false;
+  return lastFullAt === null || now - lastFullAt > FULL_CHECK_EVERY_MS;
+}
+
+export function runResultNote(run: { status: string; postsNew: number; postsRemoved: number } | null): string {
+  if (!run || run.status !== "done") return "";
+  const parts: string[] = [];
+  if (run.postsNew > 0) parts.push(run.postsNew === 1 ? "1 new post" : `${run.postsNew.toLocaleString("en")} new posts`);
+  if (run.postsRemoved > 0) parts.push(`${run.postsRemoved.toLocaleString("en")} removed on Instagram`);
+  return parts.length ? `, ${parts.join(", ")}` : "";
+}

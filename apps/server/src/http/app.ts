@@ -10,15 +10,16 @@ import type { ServerConfig } from "../config";
 import type { Db } from "../db/open";
 import { authors, posts } from "../db/schema";
 import { imageType, type MediaStore } from "../media/store";
-import { listAuthors, listCollections, listPosts, syncStatus } from "../queries";
+import { getPostMedia, listAuthors, listCollections, listPosts, syncStatus } from "../queries";
 import {
-  finishRun, ingestCollections, ingestSavedPage, NotFoundError, RunNotActiveError, startRun,
+  finishRun, ingestCollections, ingestMediaInfo, ingestSavedPage, MismatchError, NotFoundError, RunNotActiveError, startRun,
 } from "../sync/ingest";
 import { security } from "./security";
 
 const Id = z.string().regex(/^\d{1,30}$/);
 const RunId = z.coerce.number().int().positive();
 const PageBody = z.object({ payload: z.unknown() });
+const StartBody = z.object({ mode: z.enum(["incremental", "full"]).optional() });
 const FinishBody = z.union([
   z.object({ ok: z.literal(true) }),
   z.object({ ok: z.literal(false), code: z.string().max(64), message: z.string().max(500) }),
@@ -64,13 +65,17 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     if (err instanceof ZodError) return c.json({ error: "bad_request", issues: err.issues }, 400);
     if (err instanceof NotFoundError) return c.json({ error: err.message }, 404);
     if (err instanceof RunNotActiveError) return c.json({ error: err.message }, 409);
+    if (err instanceof MismatchError) return c.json({ error: err.message }, 422);
     console.error(err);
     return c.json({ error: "internal_error" }, 500);
   });
 
   app.get("/api/config", (c) => c.json({ extensionId: config.extensionId, version: APP_VERSION }));
 
-  app.post("/api/sync/runs", (c) => c.json(startRun(db), 201));
+  app.post("/api/sync/runs", async (c) => {
+    const { mode } = StartBody.parse(await c.req.json().catch(() => ({})));
+    return c.json(startRun(db, mode), 201);
+  });
 
   app.post("/api/sync/runs/:id/saved", async (c) => {
     const runId = RunId.parse(c.req.param("id"));
@@ -93,8 +98,19 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     return c.json({ ok: true });
   });
 
+  app.post("/api/sync/media/:id", async (c) => {
+    const id = Id.parse(c.req.param("id"));
+    const { payload } = PageBody.parse(await c.req.json());
+    media.enqueue(ingestMediaInfo(db, id, payload));
+    return c.json(getPostMedia(db, id));
+  });
+
   app.get("/api/sync/status", (c) => c.json(syncStatus(db)));
   app.get("/api/posts", (c) => c.json(listPosts(db, PostsQuerySchema.parse(c.req.query()))));
+  app.get("/api/posts/:id/media", (c) => {
+    const found = getPostMedia(db, Id.parse(c.req.param("id")));
+    return found ? c.json(found) : c.json({ error: "not_found" }, 404);
+  });
   app.get("/api/authors", (c) => c.json(listAuthors(db)));
   app.get("/api/collections", (c) => c.json(listCollections(db)));
   app.all("/api/*", (c) => c.json({ error: "not_found" }, 404));

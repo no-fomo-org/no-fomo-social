@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import page1 from "../fixtures/saved-page-1.json";
 import page2 from "../fixtures/saved-page-2.json";
 import collectionsList from "../fixtures/collections-list.json";
+import mediaInfo from "../fixtures/media-info.json";
 import { parseCollectionsPage, parseMediaPage, readPageInfo } from "../src/ig/parse";
 
 describe("parseMediaPage", () => {
@@ -28,7 +29,7 @@ describe("parseMediaPage", () => {
       musicArtist: "M83",
       width: 1080,
       height: 1920,
-      parts: [],
+      parts: [{ index: 0, kind: "video", videoUrl: "https://scontent.cdninstagram.com/o1/v/reel1_720.mp4?oe=68C0A1B2", width: 720, height: 1280 }],
       collectionIds: ["17900000000000002"],
     });
   });
@@ -57,8 +58,8 @@ describe("parseMediaPage", () => {
   });
 
   it("reads paging info", () => {
-    expect(readPageInfo(page1)).toEqual({ nextCursor: "QVFCursorPage2", moreAvailable: true });
-    expect(readPageInfo(page2)).toEqual({ nextCursor: null, moreAvailable: false });
+    expect(readPageInfo(page1)).toEqual({ nextCursor: "QVFCursorPage2", moreAvailable: true, endOfFeed: false });
+    expect(readPageInfo(page2)).toEqual({ nextCursor: null, moreAvailable: false, endOfFeed: true });
   });
 
   it("degrades on odd items instead of throwing", () => {
@@ -81,6 +82,21 @@ describe("parseMediaPage", () => {
       expect(() => parseMediaPage(junk)).not.toThrow();
     }
   });
+
+  it("gives single image posts one full-size part", () => {
+    const img = parseMediaPage(page1).items[1]!;
+    expect(img.parts).toEqual([{
+      index: 0, kind: "image", imageUrl: "https://scontent.cdninstagram.com/v/img2_1080.jpg", videoUrl: null,
+      width: 1080, height: 1350, accessibilityCaption: "May be an image of text that says 'Grid systems'.",
+    }]);
+  });
+
+  it("parses a media info response", () => {
+    const page = parseMediaPage(mediaInfo);
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]).toMatchObject({ id: "3500000000000000002", likeCount: 215 });
+    expect(page.items[0]!.parts[0]!.imageUrl).toBe("https://scontent.cdninstagram.com/v/img2_1080.jpg?oe=6A000000");
+  });
 });
 
 describe("parseCollectionsPage", () => {
@@ -89,5 +105,13 @@ describe("parseCollectionsPage", () => {
       { id: "17900000000000002", name: "AI tools", mediaCount: 2 },
       { id: "17900000000000003", name: "Design", mediaCount: 1 },
     ]);
+  });
+});
+
+describe("end of feed", () => {
+  it("counts as the end only when Instagram says so", () => {
+    expect(readPageInfo({ more_available: false }).endOfFeed).toBe(true);
+    expect(readPageInfo({}).endOfFeed).toBe(false);
+    expect(readPageInfo({ more_available: true, next_max_id: "x" }).endOfFeed).toBe(false);
   });
 });

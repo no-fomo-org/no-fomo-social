@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, isNull } from "drizzle-orm";
 import page1 from "@no-fomo/core/fixtures/saved-page-1.json";
 import page2 from "@no-fomo/core/fixtures/saved-page-2.json";
 import collectionsList from "@no-fomo/core/fixtures/collections-list.json";
 import { openDb, type Db } from "../src/db/open";
 import { posts, postCollections, settings, syncRuns } from "../src/db/schema";
 import {
-  finishRun, ingestCollections, ingestSavedPage, RunNotActiveError, startRun,
+  finishRun, ingestCollections, ingestSavedPage, lastFullAt, RunNotActiveError, startRun,
 } from "../src/sync/ingest";
 import { listCollections } from "../src/queries";
 
@@ -132,5 +132,94 @@ describe("collections ingest", () => {
     const r2 = startRun(db);
     ingestSavedPage(db, r2.runId, { items: [{ media: moved }], more_available: true, next_max_id: "N" });
     expect(links().filter((l) => l.startsWith("3500000000000000001"))).toEqual(["3500000000000000001>17900000000000003"]);
+  });
+});
+
+describe("full resync", () => {
+  const ids = (n: number, from = 100) => Array.from({ length: n }, (_, i) => String(from + i));
+  function syncAll(pks: string[], mode?: "full") {
+    const r = startRun(db, mode);
+    ingestSavedPage(db, r.runId, pageOf(pks, false));
+    finishRun(db, r.runId, { ok: true });
+    return r;
+  }
+  const visible = () => db.select({ id: posts.id }).from(posts).where(isNull(posts.removedRemotelyAt)).all().map((r) => r.id).sort();
+  const runRow = (id: number) => db.select().from(syncRuns).where(eq(syncRuns.id, id)).get()!;
+
+  it("runs in full mode when asked", () => {
+    syncAll(ids(3));
+    expect(startRun(db).mode).toBe("incremental");
+    expect(startRun(db, "full").mode).toBe("full");
+  });
+
+  it("hides posts a complete full run did not see and counts them", () => {
+    syncAll(ids(10));
+    expect(lastFullAt(db)).not.toBeNull(); // the first backfill was a full walk too
+    const r = syncAll(ids(9), "full"); // "109" was unsaved on Instagram
+    expect(visible()).toEqual(ids(9));
+    expect(runRow(r.runId)).toMatchObject({ status: "done", postsRemoved: 1, warning: null });
+  });
+
+  it("never hides after an incremental run", () => {
+    syncAll(ids(10));
+    syncAll(["100"]);
+    expect(visible()).toHaveLength(10);
+  });
+
+  it("never hides after a full run that stopped early or failed", () => {
+    syncAll(ids(10));
+    const cut = startRun(db, "full");
+    ingestSavedPage(db, cut.runId, pageOf(ids(5), true));
+    finishRun(db, cut.runId, { ok: true });
+    expect(visible()).toHaveLength(10);
+    const failed = startRun(db, "full");
+    ingestSavedPage(db, failed.runId, pageOf(ids(5), false));
+    finishRun(db, failed.runId, { ok: false, code: "rate_limited", message: "slow down" });
+    expect(visible()).toHaveLength(10);
+  });
+
+  it("hides nothing and warns when more than 30% and more than 20 posts would go", () => {
+    syncAll(ids(100));
+    const r = syncAll(ids(69), "full");
+    expect(visible()).toHaveLength(100);
+    expect(runRow(r.runId)).toMatchObject({ postsRemoved: 0, warning: "Full resync found too many missing posts. Nothing was hidden. Try again later." });
+  });
+
+  it("allows exactly 30%", () => {
+    syncAll(ids(100));
+    syncAll(ids(70), "full");
+    expect(visible()).toHaveLength(70);
+  });
+
+  it("lets a small library lose up to 20 posts at once", () => {
+    syncAll(ids(25));
+    syncAll(ids(5), "full");
+    expect(visible()).toHaveLength(5);
+  });
+
+  it("hides nothing when some posts in the run could not be read", () => {
+    syncAll(ids(10));
+    const r = startRun(db, "full");
+    const page = pageOf(ids(9), false);
+    page.items.push({ media: { pk: "109" } as never }); // unreadable: no code, no user
+    ingestSavedPage(db, r.runId, page);
+    finishRun(db, r.runId, { ok: true });
+    expect(visible()).toHaveLength(10);
+    expect(runRow(r.runId).warning).toBe("Some posts could not be read. Nothing was hidden.");
+  });
+
+  it("hides nothing when the last page did not clearly say it was the end", () => {
+    syncAll(ids(10));
+    const r = startRun(db, "full");
+    ingestSavedPage(db, r.runId, { items: ids(9).map((pk) => ({ media: media(pk) })) });
+    finishRun(db, r.runId, { ok: true });
+    expect(visible()).toHaveLength(10);
+  });
+
+  it("shows a hidden post again when it comes back", () => {
+    syncAll(ids(10));
+    syncAll(ids(9), "full");
+    syncAll(ids(10), "full");
+    expect(visible()).toHaveLength(10);
   });
 });

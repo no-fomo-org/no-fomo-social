@@ -20,7 +20,7 @@ describe("handleExternalMessage", () => {
     const d = deps();
     const r = await handleExternalMessage({ type: "sync:start" }, "http://localhost:4747/?author=1", d);
     expect(r).toEqual({ ok: true });
-    expect(d.sendToTab).toHaveBeenCalledWith(5, { type: "sync:run", serverUrl: "http://localhost:4747" });
+    expect(d.sendToTab).toHaveBeenCalledWith(5, { type: "sync:run", serverUrl: "http://localhost:4747", mode: "incremental" });
     expect(d.openInstagramTab).not.toHaveBeenCalled();
   });
 
@@ -40,5 +40,28 @@ describe("handleExternalMessage", () => {
     expect(await handleExternalMessage("x", undefined, deps())).toEqual({ ok: false, error: "bad_message" });
     expect(await handleExternalMessage({ type: "rm -rf" }, undefined, deps())).toEqual({ ok: false, error: "unknown_type" });
     expect(await handleExternalMessage({ type: "sync:start" }, undefined, deps())).toEqual({ ok: false, error: "no_sender" });
+  });
+
+  it("passes a full resync request through", async () => {
+    const d = deps();
+    await handleExternalMessage({ type: "sync:start", mode: "full" }, "http://localhost:4747/", d);
+    expect(d.sendToTab).toHaveBeenCalledWith(5, { type: "sync:run", serverUrl: "http://localhost:4747", mode: "full" });
+    expect(await handleExternalMessage({ type: "sync:start", mode: "all" }, "http://localhost:4747/", d)).toEqual({ ok: false, error: "bad_message" });
+  });
+
+  it("asks the Instagram tab for fresh media links", async () => {
+    const media = { id: "123", kind: "video", parts: [], expiresAt: null };
+    const d = deps({ sendToTab: vi.fn(async () => ({ ok: true, media })) });
+    const r = await handleExternalMessage({ type: "media:refresh", id: "123" }, "http://localhost:4747/", d);
+    expect(r).toEqual({ ok: true, media });
+    expect(d.sendToTab).toHaveBeenCalledWith(5, { type: "media:fetch", serverUrl: "http://localhost:4747", id: "123" });
+  });
+
+  it("refuses media refresh with a bad id or from other pages", async () => {
+    const d = deps();
+    expect(await handleExternalMessage({ type: "media:refresh", id: "../x" }, "http://localhost:4747/", d)).toEqual({ ok: false, error: "bad_message" });
+    expect(await handleExternalMessage({ type: "media:refresh", id: 5 }, "http://localhost:4747/", d)).toEqual({ ok: false, error: "bad_message" });
+    expect(await handleExternalMessage({ type: "media:refresh", id: "123" }, "https://evil.example/", d)).toEqual({ ok: false, error: "untrusted_sender" });
+    expect(d.sendToTab).not.toHaveBeenCalled();
   });
 });

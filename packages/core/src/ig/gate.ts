@@ -1,0 +1,55 @@
+import { IgError, type IgClient } from "./client";
+
+export interface RequestGate {
+  run<T>(call: () => Promise<T>): Promise<T>;
+}
+
+/**
+ * Every Instagram request in the tab goes through one gate: one at a time,
+ * a pause between them, and a 10 minute stop after Instagram asks to slow down.
+ */
+export function createRequestGate(opts: {
+  sleep: (ms: number) => Promise<void>;
+  now?: () => number;
+  /** Pause between two requests. Default 2000-3000 ms. */
+  gapMs?: () => number;
+  cooldownMs?: number;
+}): RequestGate {
+  const now = opts.now ?? Date.now;
+  const gap = opts.gapMs ?? (() => 2000 + Math.floor(Math.random() * 1000));
+  const cooldown = opts.cooldownMs ?? 10 * 60_000;
+  let lastAt: number | null = null;
+  let blockedUntil = 0;
+  let tail: Promise<unknown> = Promise.resolve();
+
+  async function runOne<T>(call: () => Promise<T>): Promise<T> {
+    if (now() < blockedUntil) throw new IgError("rate_limited", "Instagram asked to slow down. Try again in a few minutes.");
+    if (lastAt !== null) {
+      const wait = lastAt + gap() - now();
+      if (wait > 0) await opts.sleep(wait);
+    }
+    lastAt = now();
+    try {
+      return await call();
+    } catch (e) {
+      if (e instanceof IgError && (e.code === "rate_limited" || e.code === "refused")) blockedUntil = now() + cooldown;
+      throw e;
+    }
+  }
+
+  return {
+    run(call) {
+      const result = tail.then(() => runOne(call));
+      tail = result.catch(() => {});
+      return result;
+    },
+  };
+}
+
+export function gateClient(ig: IgClient, gate: RequestGate): IgClient {
+  return {
+    savedPage: (cursor) => gate.run(() => ig.savedPage(cursor)),
+    collectionsPage: (cursor) => gate.run(() => ig.collectionsPage(cursor)),
+    mediaInfo: (id) => gate.run(() => ig.mediaInfo(id)),
+  };
+}

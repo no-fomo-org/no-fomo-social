@@ -1,10 +1,11 @@
 import { IgError, type IgClient } from "../ig/client";
 import { readPageInfo } from "../ig/parse";
+import type { SyncMode } from "../api";
 
 export type SyncResult = { ok: true } | { ok: false; code: string; message: string };
 
 export interface SyncSink {
-  startRun(): Promise<{ runId: number }>;
+  startRun(mode: SyncMode): Promise<{ runId: number }>;
   savedPage(runId: number, payload: unknown): Promise<{ stop: boolean; seen: number }>;
   collections(runId: number, payload: unknown): Promise<{ collections: { id: string; name: string }[] }>;
   finishRun(runId: number, result: SyncResult): Promise<void>;
@@ -18,6 +19,8 @@ export interface RunSyncDeps {
   delayMs?: () => number;
   /** Safety cap on Instagram requests per sync (default 3000, about 60k posts). */
   maxRequests?: number;
+  /** Default "incremental". The server may still choose "full". */
+  mode?: SyncMode;
 }
 
 class CapReached extends Error {}
@@ -36,7 +39,7 @@ export async function runSync(deps: RunSyncDeps): Promise<{ ok: boolean; request
 
   let runId: number;
   try {
-    ({ runId } = await deps.sink.startRun());
+    ({ runId } = await deps.sink.startRun(deps.mode ?? "incremental"));
   } catch (e) {
     return { ok: false, requests, error: { code: "server_unreachable", message: (e as Error).message } };
   }

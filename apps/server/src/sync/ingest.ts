@@ -1,5 +1,5 @@
-import { and, desc, eq, sql } from "drizzle-orm";
-import { parseCollectionsPage, parseMediaPage, type ParsedPost, type SyncResult } from "@no-fomo/core";
+import { and, count, desc, eq, isNull, lt, sql } from "drizzle-orm";
+import { parseCollectionsPage, parseMediaPage, type ParsedPost, type SyncMode, type SyncResult } from "@no-fomo/core";
 import type { Db } from "../db/open";
 import { authors, collections, postCollections, postParts, posts, settings, syncRuns } from "../db/schema";
 
@@ -12,6 +12,13 @@ const SAVED_BACKFILL = "saved_backfill_complete";
  */
 const FEED_VERSION = "2";
 const FEED_VERSION_KEY = "feed_version";
+const LAST_FULL_AT = "last_full_at";
+/** A full resync never hides more than this share of the library at once... */
+const MAX_HIDDEN_SHARE = 0.3;
+/** ...unless it is only a handful of posts. */
+const SMALL_CHANGE = 20;
+const TOO_MANY_MISSING = "Full resync found too many missing posts. Nothing was hidden. Try again later.";
+const UNREADABLE = "Some posts could not be read. Nothing was hidden.";
 
 export class RunNotActiveError extends Error {}
 export class NotFoundError extends Error {}
@@ -31,14 +38,14 @@ function activeRun(q: Q, runId: number) {
   return run;
 }
 
-export function startRun(db: Db, now = Date.now()): { runId: number; mode: "incremental" | "full" } {
+export function startRun(db: Db, requested: SyncMode = "incremental", now = Date.now()): { runId: number; mode: SyncMode } {
   return db.transaction((tx) => {
     tx.update(syncRuns)
       .set({ status: "error", finishedAt: now, errorCode: "interrupted", errorMessage: "A new sync started before this one finished." })
       .where(eq(syncRuns.status, "running"))
       .run();
     const upToDate = getSetting(tx, SAVED_BACKFILL) === "1" && getSetting(tx, FEED_VERSION_KEY) === FEED_VERSION;
-    const mode = upToDate ? "incremental" : "full";
+    const mode: SyncMode = requested === "full" || !upToDate ? "full" : "incremental";
     const max = tx.select({ max: sql<number | null>`max(${posts.sortKey})` }).from(posts).get()?.max ?? 0;
     const run = tx
       .insert(syncRuns)
@@ -85,22 +92,51 @@ function upsertPost(q: Q, p: ParsedPost, runId: number, keyIfNew: number, keyUpd
       .where(eq(posts.id, p.id))
       .run();
   }
-  q.delete(postParts).where(eq(postParts.postId, p.id)).run();
-  if (p.parts.length > 0) {
-    q.insert(postParts)
-      .values(p.parts.map((part) => ({
-        postId: p.id, idx: part.index, kind: part.kind, imageUrl: part.imageUrl, videoUrl: part.videoUrl,
-        width: part.width, height: part.height, accessibilityCaption: part.accessibilityCaption,
-      })))
-      .run();
-  }
+  replaceParts(q, p);
   syncCollectionLinks(q, p, runId);
-  q.run(sql`DELETE FROM post_search WHERE post_id = ${p.id}`);
-  q.run(sql`INSERT INTO post_search (post_id, body) VALUES (${p.id}, ${searchBody(p)})`);
+  replaceSearch(q, p);
   if (!existing?.thumbPath && p.thumbnailUrl) jobs.push({ kind: "thumb", id: p.id, url: p.thumbnailUrl });
   // "Known" means first seen by an earlier run that finished walking the saved feed.
   // Posts from a run that was cut off may sit above a gap of posts nobody fetched yet.
   return { isNew: !existing, knownBefore: !!existing && existing.firstSeenRunId < runId && existing.firstRunComplete === true };
+}
+
+function replaceParts(q: Q, p: ParsedPost) {
+  q.delete(postParts).where(eq(postParts.postId, p.id)).run();
+  if (p.parts.length === 0) return;
+  q.insert(postParts)
+    .values(p.parts.map((part) => ({
+      postId: p.id, idx: part.index, kind: part.kind, imageUrl: part.imageUrl, videoUrl: part.videoUrl,
+      width: part.width, height: part.height, accessibilityCaption: part.accessibilityCaption,
+    })))
+    .run();
+}
+
+function replaceSearch(q: Q, p: ParsedPost) {
+  q.run(sql`DELETE FROM post_search WHERE post_id = ${p.id}`);
+  q.run(sql`INSERT INTO post_search (post_id, body) VALUES (${p.id}, ${searchBody(p)})`);
+}
+
+export class MismatchError extends Error {}
+
+/**
+ * Fresh links for one post from Instagram's media info.
+ * Keeps the post's feed position, run ids and collections: this answer says nothing about them.
+ */
+export function ingestMediaInfo(db: Db, id: string, raw: unknown): MediaJob[] {
+  const p = parseMediaPage(raw).items[0];
+  if (!p || p.id !== id) throw new MismatchError(`Instagram answered about a different post than ${id}`);
+  const jobs: MediaJob[] = [];
+  db.transaction((tx) => {
+    const existing = tx.select({ thumbPath: posts.thumbPath }).from(posts).where(eq(posts.id, id)).get();
+    if (!existing) throw new NotFoundError(`Post ${id} is not in your library`);
+    upsertAuthor(tx, p.author, jobs);
+    tx.update(posts).set(postFields(p)).where(eq(posts.id, id)).run();
+    replaceParts(tx, p);
+    replaceSearch(tx, p);
+    if (!existing.thumbPath && p.thumbnailUrl) jobs.push({ kind: "thumb", id, url: p.thumbnailUrl });
+  });
+  return jobs;
 }
 
 /** What a user may remember about a post. Must match the backfill in drizzle/0003_post_search.sql. */
@@ -149,6 +185,8 @@ export function ingestSavedPage(db: Db, runId: number, raw: unknown) {
         pages: sql`${syncRuns.pages} + 1`,
         postsSeen: sql`${syncRuns.postsSeen} + ${page.items.length}`,
         postsNew: sql`${syncRuns.postsNew} + ${newCount}`,
+        postsSkipped: sql`${syncRuns.postsSkipped} + ${page.skipped}`,
+        endConfirmed: page.endOfFeed,
       })
       .where(eq(syncRuns.id, runId))
       .run();
@@ -177,15 +215,46 @@ export function ingestCollections(db: Db, runId: number, raw: unknown) {
 }
 
 export function finishRun(db: Db, runId: number, result: SyncResult, now = Date.now()) {
-  const run = db.select().from(syncRuns).where(eq(syncRuns.id, runId)).get();
-  if (!run) throw new NotFoundError(`Sync run ${runId} not found`);
-  if (run.status !== "running") return;
-  db.update(syncRuns)
-    .set(result.ok
-      ? { status: "done", finishedAt: now }
-      : { status: "error", finishedAt: now, errorCode: result.code, errorMessage: result.message })
-    .where(eq(syncRuns.id, runId))
-    .run();
+  db.transaction((tx) => {
+    const run = tx.select().from(syncRuns).where(eq(syncRuns.id, runId)).get();
+    if (!run) throw new NotFoundError(`Sync run ${runId} not found`);
+    if (run.status !== "running") return;
+    if (!result.ok) {
+      tx.update(syncRuns)
+        .set({ status: "error", finishedAt: now, errorCode: result.code, errorMessage: result.message })
+        .where(eq(syncRuns.id, runId))
+        .run();
+      return;
+    }
+    let hidden: { count: number; warning: string | null } = { count: 0, warning: null };
+    // A full run marks savedComplete only when it reached the end of the feed,
+    // so only then does "not seen" mean "no longer saved".
+    if (run.mode === "full" && run.savedComplete) {
+      // A post the parser skipped, or a last page that only looks like the end,
+      // would make saved posts look missing. Then hiding waits for a cleaner run.
+      hidden = run.postsSkipped > 0 || !run.endConfirmed ? { count: 0, warning: UNREADABLE } : hideMissingPosts(tx, runId, now);
+      setSetting(tx, LAST_FULL_AT, String(now));
+    }
+    tx.update(syncRuns)
+      .set({ status: "done", finishedAt: now, postsRemoved: hidden.count, warning: hidden.warning })
+      .where(eq(syncRuns.id, runId))
+      .run();
+  });
+}
+
+function hideMissingPosts(q: Q, runId: number, now: number): { count: number; warning: string | null } {
+  const visible = and(isNull(posts.removedAt), isNull(posts.removedRemotelyAt));
+  const missing = and(visible, lt(posts.lastSeenRunId, runId));
+  const total = q.select({ n: count() }).from(posts).where(visible).get()?.n ?? 0;
+  const n = q.select({ n: count() }).from(posts).where(missing).get()?.n ?? 0;
+  if (n > SMALL_CHANGE && n > total * MAX_HIDDEN_SHARE) return { count: 0, warning: TOO_MANY_MISSING };
+  if (n > 0) q.update(posts).set({ removedRemotelyAt: now }).where(missing).run();
+  return { count: n, warning: null };
+}
+
+export function lastFullAt(db: Db): number | null {
+  const v = getSetting(db, LAST_FULL_AT);
+  return v ? Number(v) : null;
 }
 
 export function failStaleRuns(db: Db, now = Date.now()) {
