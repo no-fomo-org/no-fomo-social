@@ -1,15 +1,21 @@
 import { existsSync, mkdirSync, statSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { extname, join, resolve, sep } from "node:path";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
-import { APP_VERSION } from "@no-fomo/core";
+import { APP_VERSION, isReportLanguage, isReportModel, isTranscribeModel } from "@no-fomo/core";
 import type { ServerConfig } from "../config";
 import type { Db } from "../db/open";
 import { authors, posts } from "../db/schema";
+import type { Analyzer } from "../analyze/analyzer";
+import { AnalyzeError } from "../analyze/errors";
+import type { ModelCatalog } from "../analyze/models";
+import { getReport } from "../analyze/report-store";
 import { imageType, type MediaStore } from "../media/store";
+import type { KeyStore } from "../secrets/key-store";
+import { readSettings, updateSettings } from "../settings";
 import { getPostMedia, listAuthors, listCollections, listPosts, syncStatus } from "../queries";
 import {
   finishRun, ingestCollections, ingestMediaInfo, ingestSavedPage, MismatchError, NotFoundError, RunNotActiveError, startRun,
@@ -31,15 +37,28 @@ const PostsQuerySchema = z.object({
   kind: z.enum(["image", "video", "carousel"]).optional(),
   cursor: z.coerce.number().int().optional(),
   limit: z.coerce.number().int().min(1).max(200).default(60),
+  report: z.literal("1").optional().transform((v) => v === "1"),
 });
+
+const SettingsBody = z.object({ openaiKey: z.string().trim().regex(/^[\x21-\x7e]{20,300}$/).nullable().optional() }).strict();
+const AnalyzeBody = z
+  .object({
+    reportModel: z.string().refine(isReportModel),
+    transcribeModel: z.string().refine(isTranscribeModel),
+    language: z.string().refine(isReportLanguage),
+  })
+  .strict();
+
+/** Keys and analysis belong to the app page only. The extension never needs them. */
+const fromExtension = (c: Context) => (c.req.header("origin") ?? "").startsWith("chrome-extension://");
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json",
   ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".webmanifest": "application/manifest+json",
 };
 
-export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStore }) {
-  const { db, config, media } = deps;
+export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStore; keys: KeyStore; analyzer: Analyzer; models: ModelCatalog }) {
+  const { db, config, media, keys, analyzer, models } = deps;
   const app = new Hono();
   let dumpCount = 0;
 
@@ -66,6 +85,7 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     if (err instanceof NotFoundError) return c.json({ error: err.message }, 404);
     if (err instanceof RunNotActiveError) return c.json({ error: err.message }, 409);
     if (err instanceof MismatchError) return c.json({ error: err.message }, 422);
+    if (err instanceof AnalyzeError) return c.json({ error: err.code }, 409);
     console.error(err);
     return c.json({ error: "internal_error" }, 500);
   });
@@ -111,8 +131,23 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     const found = getPostMedia(db, Id.parse(c.req.param("id")));
     return found ? c.json(found) : c.json({ error: "not_found" }, 404);
   });
+  app.post("/api/posts/:id/analyze", async (c) => {
+    if (fromExtension(c)) return c.json({ error: "forbidden" }, 403);
+    const id = Id.parse(c.req.param("id"));
+    return c.json(analyzer.start(id, AnalyzeBody.parse(await c.req.json().catch(() => null))), 202);
+  });
+  app.get("/api/models", async (c) => (fromExtension(c) ? c.json({ error: "forbidden" }, 403) : c.json(await models.list())));
+  app.get("/api/posts/:id/report", (c) => {
+    const found = getReport(db, Id.parse(c.req.param("id")));
+    return found ? c.json(found) : c.json({ error: "not_found" }, 404);
+  });
   app.get("/api/authors", (c) => c.json(listAuthors(db)));
   app.get("/api/collections", (c) => c.json(listCollections(db)));
+  app.get("/api/settings", (c) => (fromExtension(c) ? c.json({ error: "forbidden" }, 403) : c.json(readSettings(db, keys))));
+  app.post("/api/settings", async (c) => {
+    if (fromExtension(c)) return c.json({ error: "forbidden" }, 403);
+    return c.json(updateSettings(db, keys, SettingsBody.parse(await c.req.json())));
+  });
   app.all("/api/*", (c) => c.json({ error: "not_found" }, 404));
 
   app.get("/media/:folder{thumbs|avatars}/:id{[0-9]+}", async (c) => {

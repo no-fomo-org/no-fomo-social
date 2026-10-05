@@ -6,15 +6,29 @@ import page1 from "@no-fomo/core/fixtures/saved-page-1.json";
 import page2 from "@no-fomo/core/fixtures/saved-page-2.json";
 import collectionsList from "@no-fomo/core/fixtures/collections-list.json";
 import mediaInfo from "@no-fomo/core/fixtures/media-info.json";
-import type { AuthorFacet, PostMedia, PostsPage, SyncStatus } from "@no-fomo/core";
-import { openDb } from "../src/db/open";
+import type { AuthorFacet, ModelsInfo, PostMedia, PostsPage, SyncStatus } from "@no-fomo/core";
+import { openDb, type Db } from "../src/db/open";
 import { createApp } from "../src/http/app";
 import { createMediaStore } from "../src/media/store";
+import { createKeyStore, type KeyStore } from "../src/secrets/key-store";
+import { createAnalyzer } from "../src/analyze/analyzer";
+import { createModelCatalog } from "../src/analyze/models";
 import type { ServerConfig } from "../src/config";
 import { markMediaSaved } from "../src/sync/ingest";
 
+/** Routes under test never reach a real job; any tool call would be a bug in the test. */
+const never = () => {
+  throw new Error("not used in this test");
+};
+const analyzerFor = (db: Db, keys: KeyStore) =>
+  createAnalyzer({
+    db, keys, tmpRoot: tmpdir(), makeProvider: never, download: never,
+    tools: { probe: never, sceneTimes: never, tinyRgb: never, frameJpeg: never, extractAudio: never, scaleImage: never },
+  });
+
 const EXT = "abcdefghijklmnopabcdefghijklmnop";
 const HOST = "localhost:4747";
+const CHOICE = { reportModel: "gpt-6-luna", transcribeModel: "gpt-transcribe", language: "English" };
 let app: ReturnType<typeof createApp>;
 
 beforeEach(() => {
@@ -28,7 +42,8 @@ beforeEach(() => {
     fetch: (async () => new Response(Buffer.from([0xff, 0xd8, 0xff, 0]))) as typeof fetch,
     onSaved: (job) => markMediaSaved(db, job),
   });
-  app = createApp({ db, config, media });
+  const keys = createKeyStore(dataDir);
+  app = createApp({ db, config, media, keys, analyzer: analyzerFor(db, keys), models: createModelCatalog({ keys }) });
 });
 
 const post = (path: string, body: unknown, origin = `chrome-extension://${EXT}`) =>
@@ -184,5 +199,36 @@ describe("media links", () => {
   it("refuses fresh links from web pages", async () => {
     await syncFixtures();
     expect((await post("/api/sync/media/3500000000000000002", { payload: mediaInfo }, "https://evil.example")).status).toBe(403);
+  });
+});
+
+describe("analyze routes", () => {
+  it("rejects bad ids, unknown posts and the extension origin", async () => {
+    expect((await post("/api/posts/abc/analyze", CHOICE, "http://localhost:4747")).status).toBe(400);
+    expect((await post("/api/posts/999/analyze", CHOICE, "http://localhost:4747")).status).toBe(404);
+    expect((await post("/api/posts/999/analyze", CHOICE)).status).toBe(403);
+    expect((await get("/api/posts/999/report")).status).toBe(404);
+  });
+  it("answers 409 no_key before any key is saved", async () => {
+    await syncFixtures();
+    const id = ((await (await get("/api/posts?limit=1")).json()) as PostsPage).items[0]!.id;
+    const res = await post(`/api/posts/${id}/analyze`, CHOICE, "http://localhost:4747");
+    expect([res.status, ((await res.json()) as { error: string }).error]).toEqual([409, "no_key"]);
+  });
+  it("accepts only listed models and languages", async () => {
+    await syncFixtures();
+    const id = ((await (await get("/api/posts?limit=1")).json()) as PostsPage).items[0]!.id;
+    const app_ = (body: unknown) => post(`/api/posts/${id}/analyze`, body, "http://localhost:4747");
+    expect((await app_({})).status).toBe(400);
+    expect((await app_({ ...CHOICE, reportModel: "gpt-transcribe" })).status).toBe(400);
+    expect((await app_({ ...CHOICE, transcribeModel: "gpt-6-luna" })).status).toBe(400);
+    expect((await app_({ ...CHOICE, language: "Klingon" })).status).toBe(400);
+  });
+  it("lists models for the app page only", async () => {
+    const res = await get("/api/models");
+    const body = (await res.json()) as ModelsInfo;
+    expect([res.status, body.checked, body.report[0]!.id]).toEqual([200, false, "gpt-6-luna"]);
+    const fromExt = await app.request("/api/models", { headers: { host: HOST, origin: `chrome-extension://${EXT}` } });
+    expect(fromExt.status).toBe(403);
   });
 });

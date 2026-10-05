@@ -21,6 +21,15 @@ export function imageType(buf: Buffer): string | null {
   return null;
 }
 
+export function isMediaUrl(url: string, extraHosts: string[] = []): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && [...DEFAULT_HOSTS, ...extraHosts].some((h) => u.hostname === h || u.hostname.endsWith(`.${h}`));
+  } catch {
+    return false;
+  }
+}
+
 export function createMediaStore(opts: {
   dir: string;
   onSaved: (job: MediaJob) => void;
@@ -30,7 +39,6 @@ export function createMediaStore(opts: {
 }): MediaStore {
   const fetchFn = opts.fetch ?? fetch;
   const concurrency = opts.concurrency ?? 4;
-  const hosts = [...DEFAULT_HOSTS, ...(opts.extraHosts ?? [])];
   mkdirSync(join(opts.dir, "thumbs"), { recursive: true });
   mkdirSync(join(opts.dir, "avatars"), { recursive: true });
 
@@ -42,17 +50,8 @@ export function createMediaStore(opts: {
   const key = (j: MediaJob) => `${j.kind}:${j.id}`;
   const pathFor = (kind: MediaJob["kind"], id: string) => join(opts.dir, kind === "thumb" ? "thumbs" : "avatars", id);
 
-  function allowed(url: string) {
-    try {
-      const u = new URL(url);
-      return u.protocol === "https:" && hosts.some((h) => u.hostname === h || u.hostname.endsWith(`.${h}`));
-    } catch {
-      return false;
-    }
-  }
-
   async function download(job: MediaJob): Promise<boolean> {
-    if (!/^\d+$/.test(job.id) || !allowed(job.url)) return false;
+    if (!/^\d+$/.test(job.id) || !isMediaUrl(job.url, opts.extraHosts)) return false;
     try {
       const res = await fetchFn(job.url, { signal: AbortSignal.timeout(15_000) });
       if (!res.ok) return false;

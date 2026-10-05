@@ -6,6 +6,7 @@ import { authors, collections, postCollections, postParts, posts } from "./db/sc
 import { lastFullAt, lastSuccessAt, latestRun } from "./sync/ingest";
 
 const visible = and(isNull(posts.removedAt), isNull(posts.removedRemotelyAt));
+const hasReport = sql<number>`EXISTS (SELECT 1 FROM reports r WHERE r.post_id = ${posts.id} AND r.markdown IS NOT NULL)`;
 
 /**
  * Turns free text into a safe FTS5 query: every word must match, each as a word start.
@@ -19,7 +20,10 @@ export function ftsQuery(text: string | undefined): string | null {
 export function listPosts(db: Db, q: PostsQuery): PostsPage {
   const match = ftsQuery(q.q);
   const filters: (SQL | undefined)[] = [
-    match ? sql`${posts.id} IN (SELECT post_id FROM post_search WHERE post_search MATCH ${match})` : undefined,
+    match
+      ? sql`(${posts.id} IN (SELECT post_id FROM post_search WHERE post_search MATCH ${match}) OR ${posts.id} IN (SELECT post_id FROM report_search WHERE report_search MATCH ${match}))`
+      : undefined,
+    q.report ? sql`${posts.id} IN (SELECT post_id FROM reports WHERE markdown IS NOT NULL)` : undefined,
     visible,
     q.author ? eq(posts.authorId, q.author) : undefined,
     q.kind ? eq(posts.kind, q.kind) : undefined,
@@ -30,7 +34,7 @@ export function listPosts(db: Db, q: PostsQuery): PostsPage {
   const where = and(...filters);
   const total = db.select({ n: count() }).from(posts).where(where).get()?.n ?? 0;
   const rows = db
-    .select({ post: posts, username: authors.username, fullName: authors.fullName })
+    .select({ post: posts, username: authors.username, fullName: authors.fullName, hasReport })
     .from(posts)
     .innerJoin(authors, eq(authors.id, posts.authorId))
     .where(and(where, q.cursor !== undefined ? lt(posts.sortKey, q.cursor) : undefined))
@@ -42,7 +46,7 @@ export function listPosts(db: Db, q: PostsQuery): PostsPage {
   return { items: page.map(toItem), nextCursor: more ? page.at(-1)!.post.sortKey : null, total };
 }
 
-function toItem(r: { post: typeof posts.$inferSelect; username: string; fullName: string | null }): PostListItem {
+function toItem(r: { post: typeof posts.$inferSelect; username: string; fullName: string | null; hasReport: number }): PostListItem {
   const p = r.post;
   return {
     id: p.id, code: p.code, kind: p.kind,
@@ -53,7 +57,18 @@ function toItem(r: { post: typeof posts.$inferSelect; username: string; fullName
     musicTitle: p.musicTitle, musicArtist: p.musicArtist, width: p.width, height: p.height,
     thumbUrl: `/media/thumbs/${p.id}`,
     permalink: `https://www.instagram.com/${p.productType === "clips" ? "reel" : "p"}/${p.code}/`,
+    hasReport: Boolean(r.hasReport),
   };
+}
+
+export function getPostItem(db: Db, id: string): PostListItem | null {
+  const r = db
+    .select({ post: posts, username: authors.username, fullName: authors.fullName, hasReport })
+    .from(posts)
+    .innerJoin(authors, eq(authors.id, posts.authorId))
+    .where(eq(posts.id, id))
+    .get();
+  return r ? toItem(r) : null;
 }
 
 export function getPostMedia(db: Db, id: string): PostMedia | null {

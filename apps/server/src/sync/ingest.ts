@@ -1,7 +1,8 @@
 import { and, count, desc, eq, isNull, lt, sql } from "drizzle-orm";
 import { parseCollectionsPage, parseMediaPage, type ParsedPost, type SyncMode, type SyncResult } from "@no-fomo/core";
 import type { Db } from "../db/open";
-import { authors, collections, postCollections, postParts, posts, settings, syncRuns } from "../db/schema";
+import { authors, collections, postCollections, postParts, posts, syncRuns } from "../db/schema";
+import { getSetting, setSetting, type Q } from "../db/settings";
 
 export const RUN_SPAN = 1_000_000_000;
 const SAVED_BACKFILL = "saved_backfill_complete";
@@ -23,13 +24,6 @@ const UNREADABLE = "Some posts could not be read. Nothing was hidden.";
 export class RunNotActiveError extends Error {}
 export class NotFoundError extends Error {}
 export type MediaJob = { kind: "thumb" | "avatar"; id: string; url: string };
-
-type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
-type Q = Db | Tx;
-
-const getSetting = (q: Q, key: string) => q.select().from(settings).where(eq(settings.key, key)).get()?.value ?? null;
-const setSetting = (q: Q, key: string, value: string) =>
-  q.insert(settings).values({ key, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
 
 function activeRun(q: Q, runId: number) {
   const run = q.select().from(syncRuns).where(eq(syncRuns.id, runId)).get();

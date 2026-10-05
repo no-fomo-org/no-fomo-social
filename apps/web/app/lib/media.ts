@@ -1,8 +1,6 @@
-import type { PostMedia } from "@no-fomo/core";
+export { needsRefresh } from "@no-fomo/core";
 import type { ExtResponse } from "./extension";
 
-/** Links that expire within 10 minutes are renewed before playing. */
-const REFRESH_MARGIN_SEC = 10 * 60;
 /** Wait this long on a post before asking Instagram, so flipping fast through posts sends no requests. */
 export const REFRESH_DELAY_MS = 400;
 
@@ -17,10 +15,6 @@ export function canRefresh(lastRefreshAt: number | null, now: number): boolean {
 export function staleAction(o: { configReady: boolean; refreshing: boolean; lastRefreshAt: number | null; now: number }): "wait" | "refresh" | "give_up" {
   if (!o.configReady || o.refreshing) return "wait";
   return canRefresh(o.lastRefreshAt, o.now) ? "refresh" : "give_up";
-}
-
-export function needsRefresh(m: PostMedia, nowSec: number): boolean {
-  return m.parts.length === 0 || (m.expiresAt !== null && m.expiresAt - nowSec < REFRESH_MARGIN_SEC);
 }
 
 export type MediaErrorCode = "no_extension" | "old_extension" | "login_required" | "rate_limited" | "not_found" | "load_failed";

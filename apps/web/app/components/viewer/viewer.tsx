@@ -1,11 +1,11 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { useQuery } from "@tanstack/react-query";
 import type { PostListItem } from "@no-fomo/core";
 import { api } from "../../lib/api";
 import { keyBelongsToWidget } from "../../lib/keys";
 import { MediaStage } from "./media-stage";
-import { PostDetails } from "./post-details";
+import { PostDetails, type DetailsTab } from "./post-details";
 
 export function Viewer({
   post,
@@ -22,6 +22,8 @@ export function Viewer({
 }) {
   const config = useQuery({ queryKey: ["config"], queryFn: api.config, staleTime: Infinity });
   const stage = useRef<HTMLDivElement>(null);
+  // Lives here, so the chosen tab stays while moving between posts.
+  const [tab, setTab] = useState<DetailsTab>("details");
   // Keep showing the last post while the close animation runs.
   const last = useRef<PostListItem | null>(null);
   if (post) last.current = post;
@@ -34,7 +36,7 @@ export function Viewer({
         <Dialog.Popup
           initialFocus={stage}
           onKeyDown={(e) => {
-            if (keyBelongsToWidget(e.target)) return;
+            if (keyBelongsToWidget(e.target, e.key)) return;
             if (e.key === "ArrowUp" && onPrev) { e.preventDefault(); onPrev(); }
             if (e.key === "ArrowDown" && onNext) { e.preventDefault(); onNext(); }
           }}
@@ -46,7 +48,15 @@ export function Viewer({
                 <MediaStage key={p.id} post={p} extensionId={config.data?.extensionId} configReady={!config.isPending} />
               </div>
               <div className="border-line md:h-dvh md:overflow-y-auto md:border-l">
-                <PostDetails post={p} onPrev={onPrev} onNext={onNext} onShowAuthor={onShowAuthor} />
+                <PostDetails
+                  post={p}
+                  onPrev={onPrev}
+                  onNext={onNext}
+                  onShowAuthor={onShowAuthor}
+                  tab={tab}
+                  onTabChange={setTab}
+                  extensionId={config.data?.extensionId}
+                />
               </div>
             </>
           )}

@@ -50,7 +50,7 @@ export function PlayerControls({
   useEffect(() => {
     if (!el) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey || keyBelongsToWidget(e.target)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || keyBelongsToWidget(e.target, e.key)) return;
       if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && e.shiftKey === (arrowSeek === "shift")) {
         e.preventDefault();
         seekBy(el, e.key === "ArrowRight" ? SEEK_SEC : -SEEK_SEC);
