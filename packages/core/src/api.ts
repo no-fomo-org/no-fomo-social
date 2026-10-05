@@ -22,6 +22,7 @@ export interface PostListItem {
   height: number | null;
   thumbUrl: string;
   permalink: string;
+  hasReport: boolean;
 }
 
 export interface MediaPart {
@@ -41,7 +42,7 @@ export interface PostMedia {
 }
 
 export interface PostsPage { items: PostListItem[]; nextCursor: number | null; total: number }
-export interface PostsQuery { q?: string; author?: string; collection?: string; kind?: MediaKind; cursor?: number; limit: number }
+export interface PostsQuery { q?: string; author?: string; collection?: string; kind?: MediaKind; cursor?: number; limit: number; report?: boolean }
 export interface AuthorFacet { id: string; username: string; fullName: string | null; avatarUrl: string; count: number }
 export interface CollectionFacet { id: string; name: string | null; count: number }
 
@@ -61,3 +62,25 @@ export interface SyncRunInfo {
 }
 export interface SyncStatus { run: SyncRunInfo | null; lastSuccessAt: number | null; lastFullAt: number | null }
 export interface AppConfig { extensionId: string; version: string }
+
+export type ReportStatus = "queued" | "running" | "done" | "error";
+export type ReportStep = "downloading" | "frames" | "transcribing" | "writing";
+export type AnalyzeErrorCode =
+  | "no_key" | "bad_key" | "quota" | "model_not_found" | "no_ffmpeg" | "too_long" | "too_large"
+  | "links_expired" | "download_failed" | "bad_output" | "interrupted" | "failed" | "already_running";
+export interface PostReport {
+  postId: string;
+  status: ReportStatus;
+  step: ReportStep | null;
+  markdown: string | null;
+  language: string;
+  reportModel: string;
+  transcribeModel: string | null;
+  frameCount: number | null;
+  errorCode: AnalyzeErrorCode | null;
+  errorMessage: string | null;
+  createdAt: number;
+  finishedAt: number | null;
+}
+export interface AppSettings { openai: { set: boolean; last4: string | null }; reportLanguage: string; reportModel: string; transcribeModel: string }
+export interface SettingsUpdate { openaiKey?: string | null; reportLanguage?: string; reportModel?: string; transcribeModel?: string }

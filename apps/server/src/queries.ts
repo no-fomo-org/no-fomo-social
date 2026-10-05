@@ -53,6 +53,7 @@ function toItem(r: { post: typeof posts.$inferSelect; username: string; fullName
     musicTitle: p.musicTitle, musicArtist: p.musicArtist, width: p.width, height: p.height,
     thumbUrl: `/media/thumbs/${p.id}`,
     permalink: `https://www.instagram.com/${p.productType === "clips" ? "reel" : "p"}/${p.code}/`,
+    hasReport: false,
   };
 }
 

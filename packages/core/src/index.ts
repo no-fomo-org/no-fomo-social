@@ -8,3 +8,5 @@ export * from "./ig/gate";
 export * from "./sync/run-sync";
 export * from "./extension-id";
 export * from "./api";
+export * from "./media";
+export * from "./analyze/frames";
