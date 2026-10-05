@@ -11,6 +11,7 @@
     "typecheck": "pnpm -r typecheck",
     "dev": "concurrently -k -n server,web -c blue,magenta \"pnpm --filter @no-fomo/server dev\" \"pnpm --filter @no-fomo/web dev\"",
     "ext:build": "pnpm --filter @no-fomo/extension build",
+    "ext:build:dev": "pnpm --filter @no-fomo/extension build:dev",
     "start": "pnpm --filter @no-fomo/web build && pnpm --filter @no-fomo/server start"
   },
   "devDependencies": {

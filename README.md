@@ -50,9 +50,12 @@ Sync only adds new saves. To find posts you unsaved directly on Instagram, open 
 
 ```bash
 pnpm dev                     # server on :4747, web on :5173
+pnpm ext:build:dev           # extension that also trusts :5173; load apps/extension/.output/chrome-mv3-dev
 NO_FOMO_HOME=$PWD/.dev-data pnpm --filter @no-fomo/server seed   # fake posts for UI work
 pnpm test
 pnpm typecheck
 ```
+
+Only `pnpm dev` and `ext:build:dev` trust the web dev server on port 5173. `pnpm start` and the normal extension build never do, so another project running on that port cannot use your Instagram session or write to your library.
 
 Set `NO_FOMO_DUMP=1` to save raw Instagram responses to `~/.no-fomo/dumps` (useful for test fixtures; remove personal data before sharing).
