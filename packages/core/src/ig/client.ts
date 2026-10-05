@@ -24,7 +24,7 @@ export function createIgClient(opts: {
 }): IgClient {
   const origin = opts.origin ?? "https://www.instagram.com";
 
-  async function get(path: string, params: Record<string, string | null>): Promise<unknown> {
+  async function get(label: string, path: string, params: Record<string, string | null>): Promise<unknown> {
     const url = new URL(path, origin);
     for (const [k, v] of Object.entries(params)) if (v !== null) url.searchParams.set(k, v);
     const headers: Record<string, string> = {
@@ -43,7 +43,7 @@ export function createIgClient(opts: {
     }
     if (res.status === 429) throw new IgError("rate_limited", "Instagram asked to slow down. Sync stopped. Try again later.", 429);
     if (res.status === 401 || res.status === 403) throw new IgError("login_required", LOGIN_MESSAGE, res.status);
-    if (!res.ok) throw new IgError("http_error", `Instagram returned error ${res.status}. Sync stopped.`, res.status);
+    if (!res.ok) throw new IgError("http_error", `Instagram returned error ${res.status} (${label}). Sync stopped.`, res.status);
 
     let body: unknown;
     try {
@@ -59,8 +59,16 @@ export function createIgClient(opts: {
   }
 
   return {
-    savedPage: (cursor) => get("/api/v1/feed/saved/posts/", { max_id: cursor }),
-    collectionsPage: (cursor) => get("/api/v1/collections/list/", { collection_types: '["MEDIA"]', max_id: cursor }),
-    collectionPage: (id, cursor) => get(`/api/v1/feed/collection/${encodeURIComponent(id)}/posts/`, { max_id: cursor }),
+    savedPage: (cursor) => get("saved posts", "/api/v1/feed/saved/posts/", { max_id: cursor }),
+    // Same query the instagram.com Saved page sends. The parser keeps only user collections ("MEDIA").
+    collectionsPage: (cursor) =>
+      get("collections list", "/api/v1/collections/list/", {
+        collection_types: '["ALL_MEDIA_AUTO_COLLECTION","MEDIA","AUDIO_AUTO_COLLECTION"]',
+        get_cover_media_lists: "true",
+        include_public_only: "0",
+        max_id: cursor ?? "",
+      }),
+    collectionPage: (id, cursor) =>
+      get("collection posts", `/api/v1/feed/collection/${encodeURIComponent(id)}/posts/`, { max_id: cursor }),
   };
 }

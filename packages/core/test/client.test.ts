@@ -36,7 +36,10 @@ describe("createIgClient", () => {
     const ig = createIgClient({ fetch: f.fn, csrfToken: () => null });
     await ig.collectionsPage(null);
     await ig.collectionPage("179", "C2");
-    expect(f.calls[0]!.url).toBe("https://www.instagram.com/api/v1/collections/list/?collection_types=%5B%22MEDIA%22%5D");
+    // Same query the instagram.com Saved page sends. A shorter query returned 404 in a real sync.
+    expect(f.calls[0]!.url).toBe(
+      "https://www.instagram.com/api/v1/collections/list/?collection_types=%5B%22ALL_MEDIA_AUTO_COLLECTION%22%2C%22MEDIA%22%2C%22AUDIO_AUTO_COLLECTION%22%5D&get_cover_media_lists=true&include_public_only=0&max_id=",
+    );
     expect(f.calls[1]!.url).toBe("https://www.instagram.com/api/v1/feed/collection/179/posts/?max_id=C2");
   });
 
@@ -49,6 +52,8 @@ describe("createIgClient", () => {
     expect(await codeOf(make(json({ spam: true, status: "fail" }, 200)))).toBe("rate_limited");
     expect(await codeOf(make(json({ status: "fail", message: "feedback_required" }, 200)))).toBe("refused");
     expect(await codeOf(make(json({}, 500)))).toBe("http_error");
+    const err = await createIgClient({ fetch: fakeFetch(json({}, 404)).fn, csrfToken: () => null }).collectionsPage(null).catch((e) => e);
+    expect((err as Error).message).toBe("Instagram returned error 404 (collections list). Sync stopped.");
     expect(await codeOf(make(() => new Response("<html>login</html>", { status: 200 })))).toBe("login_required");
   });
 });
