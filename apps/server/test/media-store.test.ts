@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -7,6 +7,15 @@ import { createMediaStore, imageType } from "../src/media/store";
 const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
 
 describe("media store", () => {
+  it("removes thumbnails of deleted posts and ignores missing files", async () => {
+    const store = createMediaStore({ dir: mkdtempSync(join(tmpdir(), "nf-media-")), onSaved: () => {} });
+    writeFileSync(store.pathFor("thumb", "1"), JPEG);
+    writeFileSync(store.pathFor("avatar", "1"), JPEG);
+    await store.removeThumbs(["1", "2"]);
+    expect(existsSync(store.pathFor("thumb", "1"))).toBe(false);
+    expect(existsSync(store.pathFor("avatar", "1"))).toBe(true);
+  });
+
   it("downloads allowed images once and reports saved jobs", async () => {
     const dir = mkdtempSync(join(tmpdir(), "nf-media-"));
     let calls = 0;

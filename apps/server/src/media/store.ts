@@ -1,5 +1,5 @@
 import { mkdirSync } from "node:fs";
-import { rename, writeFile } from "node:fs/promises";
+import { rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { MediaJob } from "../sync/ingest";
 
@@ -10,6 +10,8 @@ export interface MediaStore {
   enqueue(jobs: MediaJob[]): void;
   fetchNow(job: MediaJob): Promise<boolean>;
   pathFor(kind: MediaJob["kind"], id: string): string;
+  /** Deletes stored thumbnails; missing files are fine. */
+  removeThumbs(ids: string[]): Promise<void>;
   idle(): Promise<void>;
 }
 
@@ -96,6 +98,9 @@ export function createMediaStore(opts: {
 
   return {
     pathFor,
+    removeThumbs: async (ids) => {
+      await Promise.all(ids.map((id) => rm(pathFor("thumb", id), { force: true })));
+    },
     fetchNow,
     enqueue(jobs) {
       for (const j of jobs) {
