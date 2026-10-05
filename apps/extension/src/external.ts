@@ -1,14 +1,15 @@
-import type { PostMedia, ProfileLoadRequest, SyncMode, UserSuggestion } from "@no-fomo/core";
+import type { LivePage, LiveProfile, PostMedia, SyncMode, UserSuggestion } from "@no-fomo/core";
 import { isAppOrigin } from "./origins";
 
 export type ExtResponse =
-  | { ok: true; version?: string; media?: PostMedia; users?: UserSuggestion[]; authorId?: string }
+  | { ok: true; version?: string; media?: PostMedia; users?: UserSuggestion[]; profile?: LiveProfile; page?: LivePage | null }
   | { ok: false; error: string };
 export type TabMessage =
   | { type: "sync:run"; serverUrl: string; mode: SyncMode }
-  | { type: "media:fetch"; serverUrl: string; id: string }
+  | { type: "media:fetch"; serverUrl: string; id: string; store: boolean }
   | { type: "profile:search"; query: string }
-  | { type: "profile:load"; serverUrl: string; request: ProfileLoadRequest }
+  | { type: "profile:open"; username: string }
+  | { type: "profile:page"; cursor: string }
   | { type: "following:update"; serverUrl: string };
 
 export interface ExternalDeps {
@@ -20,7 +21,9 @@ export interface ExternalDeps {
 
 const ID = /^\d{1,30}$/;
 const USERNAME = /^[A-Za-z0-9._]{1,30}$/;
-const TYPES = new Set(["sync:start", "media:refresh", "profile:search", "profile:load", "following:update"]);
+/** "<userId>:<Instagram max_id>" */
+const CURSOR = /^\d{1,30}:[A-Za-z0-9_=.-]{1,200}$/;
+const TYPES = new Set(["sync:start", "media:refresh", "profile:search", "profile:open", "profile:page", "following:update"]);
 
 /** Checks a message from the app page and turns it into a message for the Instagram tab. Null means malformed. */
 function toTabMessage(m: Record<string, unknown>, serverUrl: string): TabMessage | null {
@@ -29,19 +32,16 @@ function toTabMessage(m: Record<string, unknown>, serverUrl: string): TabMessage
       if (m.mode !== undefined && m.mode !== "incremental" && m.mode !== "full") return null;
       return { type: "sync:run", serverUrl, mode: (m.mode as SyncMode | undefined) ?? "incremental" };
     case "media:refresh":
-      return typeof m.id === "string" && ID.test(m.id) ? { type: "media:fetch", serverUrl, id: m.id } : null;
+      if (typeof m.id !== "string" || !ID.test(m.id) || (m.store !== undefined && typeof m.store !== "boolean")) return null;
+      return { type: "media:fetch", serverUrl, id: m.id, store: m.store === true };
     case "profile:search": {
       const query = typeof m.query === "string" ? m.query.trim() : "";
       return query.length >= 2 && query.length <= 60 ? { type: "profile:search", query } : null;
     }
-    case "profile:load":
-      if (m.mode === "add" && typeof m.username === "string" && USERNAME.test(m.username)) {
-        return { type: "profile:load", serverUrl, request: { mode: "add", username: m.username } };
-      }
-      if ((m.mode === "older" || m.mode === "refresh") && typeof m.authorId === "string" && ID.test(m.authorId)) {
-        return { type: "profile:load", serverUrl, request: { mode: m.mode, authorId: m.authorId } };
-      }
-      return null;
+    case "profile:open":
+      return typeof m.username === "string" && USERNAME.test(m.username) ? { type: "profile:open", username: m.username } : null;
+    case "profile:page":
+      return typeof m.cursor === "string" && CURSOR.test(m.cursor) ? { type: "profile:page", cursor: m.cursor } : null;
     case "following:update":
       return { type: "following:update", serverUrl };
     default:

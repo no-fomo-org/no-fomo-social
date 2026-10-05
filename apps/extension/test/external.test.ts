@@ -12,16 +12,16 @@ function deps(over: Partial<ExternalDeps> = {}): ExternalDeps {
 }
 
 describe("handleExternalMessage", () => {
-  it("passes profile search, load and following update to the Instagram tab", async () => {
-    const d = deps({ sendToTab: vi.fn(async () => ({ ok: true, users: [] })) });
+  it("passes profile search, open, next page and following update to the Instagram tab", async () => {
+    const d = deps({ sendToTab: vi.fn(async () => ({ ok: true })) });
     await handleExternalMessage({ type: "profile:search", query: " nasa " }, "http://localhost:4747/profiles", d);
-    await handleExternalMessage({ type: "profile:load", mode: "add", username: "nasa" }, "http://localhost:4747/", d);
-    await handleExternalMessage({ type: "profile:load", mode: "older", authorId: "77" }, "http://localhost:4747/", d);
+    await handleExternalMessage({ type: "profile:open", username: "nasa" }, "http://localhost:4747/", d);
+    await handleExternalMessage({ type: "profile:page", cursor: "528817151:QVFB_x-1=" }, "http://localhost:4747/", d);
     await handleExternalMessage({ type: "following:update" }, "http://localhost:4747/", d);
     expect((d.sendToTab as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[1])).toEqual([
       { type: "profile:search", query: "nasa" },
-      { type: "profile:load", serverUrl: "http://localhost:4747", request: { mode: "add", username: "nasa" } },
-      { type: "profile:load", serverUrl: "http://localhost:4747", request: { mode: "older", authorId: "77" } },
+      { type: "profile:open", username: "nasa" },
+      { type: "profile:page", cursor: "528817151:QVFB_x-1=" },
       { type: "following:update", serverUrl: "http://localhost:4747" },
     ]);
   });
@@ -31,11 +31,14 @@ describe("handleExternalMessage", () => {
     const bad = [
       { type: "profile:search", query: "x" },
       { type: "profile:search", query: "a".repeat(61) },
-      { type: "profile:load", mode: "add", username: "../etc" },
-      { type: "profile:load", mode: "older", authorId: "abc" },
-      { type: "profile:load", mode: "all", username: "nasa" },
+      { type: "profile:open", username: "../etc" },
+      { type: "profile:page", cursor: "abc:1" },
+      { type: "profile:page", cursor: "1:a/b" },
+      { type: "profile:page", cursor: "1" },
+      { type: "media:refresh", id: "1", store: "yes" },
     ];
     for (const m of bad) expect(await handleExternalMessage(m, "http://localhost:4747/", d)).toEqual({ ok: false, error: "bad_message" });
+    expect(await handleExternalMessage({ type: "profile:load", mode: "add", username: "nasa" }, "http://localhost:4747/", d)).toEqual({ ok: false, error: "unknown_type" });
     expect(d.sendToTab).not.toHaveBeenCalled();
   });
 
@@ -81,7 +84,9 @@ describe("handleExternalMessage", () => {
     const d = deps({ sendToTab: vi.fn(async () => ({ ok: true, media })) });
     const r = await handleExternalMessage({ type: "media:refresh", id: "123" }, "http://localhost:4747/", d);
     expect(r).toEqual({ ok: true, media });
-    expect(d.sendToTab).toHaveBeenCalledWith(5, { type: "media:fetch", serverUrl: "http://localhost:4747", id: "123" });
+    expect(d.sendToTab).toHaveBeenCalledWith(5, { type: "media:fetch", serverUrl: "http://localhost:4747", id: "123", store: false });
+    await handleExternalMessage({ type: "media:refresh", id: "123", store: true }, "http://localhost:4747/", d);
+    expect(d.sendToTab).toHaveBeenLastCalledWith(5, { type: "media:fetch", serverUrl: "http://localhost:4747", id: "123", store: true });
   });
 
   it("refuses media refresh with a bad id or from other pages", async () => {

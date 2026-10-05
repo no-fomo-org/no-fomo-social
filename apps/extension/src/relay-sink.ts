@@ -1,4 +1,4 @@
-import type { FollowingSink, ProfileSink, SyncSink } from "@no-fomo/core";
+import type { FollowingSink, SyncSink } from "@no-fomo/core";
 import type { RelayMessage, RelayResponse } from "./relay";
 
 export function createRelaySink(serverUrl: string, send: (m: RelayMessage) => Promise<RelayResponse>): SyncSink {
@@ -23,20 +23,11 @@ function poster(serverUrl: string, send: (m: RelayMessage) => Promise<RelayRespo
   };
 }
 
-export function createProfileSink(serverUrl: string, send: (m: RelayMessage) => Promise<RelayResponse>): ProfileSink {
-  const post = poster(serverUrl, send);
-  return {
-    startRun: (body) => post("/api/sync/profiles/runs", body),
-    page: (runId, payload) => post(`/api/sync/profiles/runs/${runId}/page`, { payload }),
-    finishRun: async (runId, result) => { await post(`/api/sync/loads/${runId}/finish`, result); },
-  };
-}
-
 export function createFollowingSink(serverUrl: string, send: (m: RelayMessage) => Promise<RelayResponse>): FollowingSink {
   const post = poster(serverUrl, send);
   return {
     startRun: () => post("/api/sync/following/runs", {}),
     page: (runId, payload) => post(`/api/sync/following/runs/${runId}/page`, { payload }),
-    finishRun: async (runId, result) => { await post(`/api/sync/loads/${runId}/finish`, result); },
+    finishRun: async (runId, result) => { await post(`/api/sync/following/runs/${runId}/finish`, result); },
   };
 }

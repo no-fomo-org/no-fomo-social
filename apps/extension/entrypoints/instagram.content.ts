@@ -4,7 +4,7 @@ import { fetchMedia } from "../src/media-fetch";
 import { createTabJobs } from "../src/tab-jobs";
 import type { RelayMessage, RelayResponse } from "../src/relay";
 
-type TabMsg = { type?: string; serverUrl?: string; mode?: SyncMode; id?: string; query?: string; request?: unknown };
+type TabMsg = { type?: string; serverUrl?: string; mode?: SyncMode; id?: string; store?: boolean };
 
 function readCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
@@ -30,7 +30,7 @@ export default defineContentScript({
       }
       if (typeof msg?.serverUrl !== "string") return;
       if (msg.type === "media:fetch" && typeof msg.id === "string") {
-        void fetchMedia({ ig, id: msg.id, serverUrl: msg.serverUrl, send }).then(sendResponse);
+        void fetchMedia({ ig, id: msg.id, serverUrl: msg.serverUrl, send, store: msg.store === true }).then(sendResponse);
         return true;
       }
       if (msg.type !== "sync:run") return;
