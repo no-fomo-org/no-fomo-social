@@ -5,8 +5,8 @@ import { Icon } from "./ui/icon";
 const isTyping = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName));
 
-/** One search box for the library. Press "/" anywhere to focus it, Escape to clear or leave it. */
-export function SearchBox({ value, onChange }: { value: string | null; onChange: (q: string | null) => void }) {
+/** The search box of the current tab. Press "/" anywhere to focus it, Escape to clear or leave it. */
+export function SearchBox({ value, onChange, placeholder, label }: { value: string | null; onChange: (q: string | null) => void; placeholder: string; label: string }) {
   const [text, setText] = useState(value ?? "");
   const input = useRef<HTMLInputElement>(null);
   const onChangeRef = useRef(onChange);
@@ -62,8 +62,8 @@ export function SearchBox({ value, onChange }: { value: string | null; onChange:
           if (text) clear();
           else input.current?.blur();
         }}
-        placeholder="Search captions, authors, music"
-        aria-label="Search saved posts"
+        placeholder={placeholder}
+        aria-label={label}
         autoComplete="off"
         spellCheck={false}
         className="h-9 w-full rounded-control border border-line bg-surface ps-9 pe-10 text-[14px] text-text transition-colors duration-200 placeholder:text-muted hover:border-accent-line/60 focus-visible:border-accent-line focus-visible:bg-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent [&::-webkit-search-cancel-button]:hidden"
