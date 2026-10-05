@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router";
-import type { ReportListItem } from "@no-fomo/core";
 import { api } from "../lib/api";
 import { hasFilters, NO_FILTERS, readFilters, reportsQueryString, writeFilters, type Filters } from "../lib/filters";
 import { usePostList } from "../lib/use-post-list";
@@ -14,7 +13,7 @@ export default function Reports() {
   const [params, setParams] = useSearchParams();
   const filters = readFilters(params);
   const update = (patch: Partial<Filters>) => setParams(writeFilters(params, patch), { replace: true });
-  const list = usePostList<ReportListItem>({
+  const list = usePostList({
     queryKey: ["reports", filters],
     fetchPage: (cursor) => api.reports(reportsQueryString(filters, cursor)),
   });

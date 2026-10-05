@@ -1,4 +1,4 @@
-import type { PostMedia, ProfileLoadRequest, SyncMode, UserSuggestion } from "@no-fomo/core";
+import type { LivePage, LiveProfile, PostMedia, SyncMode, UserSuggestion } from "@no-fomo/core";
 
 type ChromeRuntime = {
   sendMessage(extensionId: string, msg: unknown, cb: (reply: unknown) => void): void;
@@ -6,7 +6,7 @@ type ChromeRuntime = {
 };
 
 export type ExtResponse =
-  | { ok: true; version?: string; media?: PostMedia; users?: UserSuggestion[]; authorId?: string }
+  | { ok: true; version?: string; media?: PostMedia; users?: UserSuggestion[]; profile?: LiveProfile; page?: LivePage | null }
   | { ok: false; error: string };
 
 function runtime(): ChromeRuntime | null {
@@ -35,10 +35,14 @@ function send(extensionId: string, msg: unknown, timeoutMs: number): Promise<Ext
 export const pingExtension = (id: string) => send(id, { type: "ping" }, 1500);
 export const startExtensionSync = (id: string, mode: SyncMode = "incremental") => send(id, { type: "sync:start", mode }, 45_000);
 /** Opening a hidden Instagram tab can take a while, hence the long timeout. */
-export const refreshExtensionMedia = (extId: string, postId: string) => send(extId, { type: "media:refresh", id: postId }, 45_000);
+/** `store`: the app also keeps the post (Analyze). Without it, a post the app does not keep just gets fresh links. */
+export const refreshExtensionMedia = (extId: string, postId: string, store = false) =>
+  send(extId, { type: "media:refresh", id: postId, store }, 45_000);
 
 export const searchInstagram = (id: string, query: string) => send(id, { type: "profile:search", query }, 20_000);
-export const loadProfile = (id: string, r: ProfileLoadRequest) => send(id, { type: "profile:load", ...r }, 45_000);
+export const openProfile = (id: string, username: string) => send(id, { type: "profile:open", username }, 45_000);
+/** `cursor` comes from the previous page. */
+export const profilePage = (id: string, cursor: string) => send(id, { type: "profile:page", cursor }, 45_000);
 export const updateFollowing = (id: string) => send(id, { type: "following:update" }, 45_000);
 
 export function loadErrorText(code: string): string {
@@ -48,8 +52,7 @@ export function loadErrorText(code: string): string {
     case "not_found":
     case "profile_not_found": return "No Instagram account has this name.";
     case "private_profile": return "This account is private and you do not follow it, so its posts cannot be loaded.";
-    case "no_more_posts": return "All posts of this profile are already loaded.";
-    case "busy": return "A load is already running. Wait for it to finish.";
+    case "busy": return "An update is already running. Wait for it to finish.";
     case "login_required": return "Log in to Instagram in this browser, then try again.";
     case "rate_limited": return "Instagram asked to slow down. Try again in a few minutes.";
     case "timeout": return "The extension did not answer. Reload this page and try again.";

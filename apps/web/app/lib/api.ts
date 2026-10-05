@@ -1,6 +1,6 @@
 import type {
   AnalyzeChoice, AppConfig, AppSettings, AuthorFacet, AuthorScope, CollectionFacet, FollowingPage, ModelsInfo, PostMedia, PostReport, PostsPage,
-  ProfileItem, ReportsPage, SettingsUpdate, SyncStatus,
+  ReportsPage, SettingsUpdate, SyncStatus,
 } from "@no-fomo/core";
 
 /** `message` is the server's error code when it sent one. */
@@ -26,8 +26,8 @@ export const api = {
   media: (id: string) => get<PostMedia>(`/api/posts/${id}/media`),
   authors: (scope: AuthorScope = "saved") => get<AuthorFacet[]>(`/api/authors?scope=${scope}`),
   reports: (qs: string) => get<ReportsPage>(`/api/reports?${qs}`),
-  profiles: () => get<ProfileItem[]>("/api/profiles"),
-  removeProfile: (id: string) => send<{ ok: true; removed: number }>(`/api/profiles/${id}/remove`, {}),
+  /** Which of these posts the app stores, and whether they are saved or have a report. */
+  known: (ids: string[]) => get<Array<{ id: string; saved: boolean; hasReport: boolean }>>(`/api/posts/known?ids=${ids.join(",")}`),
   following: (q: string | null) => get<FollowingPage>(`/api/following?${new URLSearchParams(q ? { q, limit: "100" } : { limit: "100" })}`),
   collections: () => get<CollectionFacet[]>("/api/collections"),
   syncStatus: () => get<SyncStatus>("/api/sync/status"),

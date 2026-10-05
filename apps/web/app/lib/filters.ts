@@ -12,7 +12,7 @@ export interface Filters {
 export const NO_FILTERS: Filters = { q: null, author: null, collection: null, kind: null, source: null };
 
 const KINDS: readonly MediaKind[] = ["image", "video", "carousel"];
-const SOURCES: readonly ReportSource[] = ["saved", "profile"];
+const SOURCES: readonly ReportSource[] = ["saved", "other"];
 const ID = /^\d{1,30}$/;
 
 const cleanQuery = (v: string | null | undefined) => {
@@ -44,12 +44,11 @@ export function writeFilters(sp: URLSearchParams, patch: Partial<Filters>): URLS
   return next;
 }
 
-export function postsQueryString(f: Filters, cursor: string | null, o: { profile?: string; limit?: number } = {}): string {
+export function postsQueryString(f: Filters, cursor: string | null, o: { limit?: number } = {}): string {
   const q = new URLSearchParams({ limit: String(o.limit ?? 60) });
-  if (o.profile) q.set("profile", o.profile);
   if (f.q) q.set("q", f.q);
   if (f.author) q.set("author", f.author);
-  if (f.collection && !o.profile) q.set("collection", f.collection);
+  if (f.collection) q.set("collection", f.collection);
   if (f.kind) q.set("kind", f.kind);
   if (cursor !== null) q.set("cursor", cursor);
   return q.toString();

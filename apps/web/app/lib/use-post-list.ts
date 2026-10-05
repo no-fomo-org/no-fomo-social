@@ -4,17 +4,24 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 
 type Page<T> = { items: T[]; nextCursor: string | null; total: number };
 
-/** A paged list plus the post viewer state kept in `?post=`. */
-export function usePostList<T extends { id: string }>(o: { queryKey: unknown[]; fetchPage: (cursor: string | null) => Promise<Page<T>>; enabled?: boolean }) {
+/** A paged list plus the post viewer state kept in `?post=`. Pages may carry more than the list (for example the account). */
+export function usePostList<P extends Page<{ id: string }>>(o: {
+  queryKey: unknown[];
+  fetchPage: (cursor: string | null) => Promise<P>;
+  enabled?: boolean;
+  staleTime?: number;
+}) {
   const [params, setParams] = useSearchParams();
   const query = useInfiniteQuery({
     queryKey: o.queryKey,
     enabled: o.enabled ?? true,
     queryFn: ({ pageParam }) => o.fetchPage(pageParam),
     initialPageParam: null as string | null,
-    getNextPageParam: (last: Page<T>) => last.nextCursor,
+    getNextPageParam: (last: P) => last.nextCursor,
+    staleTime: o.staleTime,
   });
-  const items = query.data?.pages.flatMap((p) => p.items) ?? [];
+  type T = P["items"][number];
+  const items: T[] = query.data?.pages.flatMap((p) => p.items as T[]) ?? [];
   const openId = params.get("post");
   const openIndex = openId ? items.findIndex((p) => p.id === openId) : -1;
 
