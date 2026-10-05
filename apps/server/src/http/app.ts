@@ -31,6 +31,7 @@ const PostsQuerySchema = z.object({
   kind: z.enum(["image", "video", "carousel"]).optional(),
   cursor: z.coerce.number().int().optional(),
   limit: z.coerce.number().int().min(1).max(200).default(60),
+  report: z.literal("1").optional().transform((v) => v === "1"),
 });
 
 const MIME: Record<string, string> = {

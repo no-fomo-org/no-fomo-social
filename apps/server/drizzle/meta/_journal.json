@@ -43,6 +43,20 @@
       "when": 1791201445227,
       "tag": "0005_eminent_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791205137253,
+      "tag": "0006_spicy_giant_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1791205137667,
+      "tag": "0007_report_search",
+      "breakpoints": true
     }
   ]
 }

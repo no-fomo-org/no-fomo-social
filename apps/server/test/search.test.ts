@@ -37,6 +37,10 @@ describe("post search", () => {
     expect(codes("laptop")).toEqual(["DAbcCar003"]);
   });
 
+  it("ignores report search until a report exists", () => {
+    expect(codes("zanzibar")).toEqual([]);
+  });
+
   it("needs every word to match", () => {
     expect(codes("setup guide")).toEqual(["DAbcCar003"]);
     expect(codes("setup berlin")).toEqual([]);
