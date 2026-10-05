@@ -54,8 +54,10 @@ export interface SyncRunInfo {
   pages: number;
   postsSeen: number;
   postsNew: number;
+  postsRemoved: number;
+  warning: string | null;
   errorCode: string | null;
   errorMessage: string | null;
 }
-export interface SyncStatus { run: SyncRunInfo | null; lastSuccessAt: number | null }
+export interface SyncStatus { run: SyncRunInfo | null; lastSuccessAt: number | null; lastFullAt: number | null }
 export interface AppConfig { extensionId: string; version: string }

@@ -94,6 +94,10 @@ export const syncRuns = sqliteTable("sync_runs", {
   pages: integer("pages").notNull().default(0),
   postsSeen: integer("posts_seen").notNull().default(0),
   postsNew: integer("posts_new").notNull().default(0),
+  /** Posts a complete full run did not see, hidden as unsaved on Instagram. */
+  postsRemoved: integer("posts_removed").notNull().default(0),
+  /** Set when a full run skipped hiding posts because too many were missing. */
+  warning: text("warning"),
   errorCode: text("error_code"),
   errorMessage: text("error_message"),
 });

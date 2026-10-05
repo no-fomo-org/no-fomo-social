@@ -72,6 +72,16 @@ describe("security", () => {
 });
 
 describe("sync + read API", () => {
+  it("starts a full run on request and reports removals in the status", async () => {
+    await syncFixtures();
+    const r = await post("/api/sync/runs", { mode: "full" });
+    expect(await r.json()).toMatchObject({ mode: "full" });
+    const s = (await (await get("/api/sync/status")).json()) as SyncStatus;
+    expect(s.run).toMatchObject({ mode: "full", status: "running", postsRemoved: 0, warning: null });
+    expect(typeof s.lastFullAt).toBe("number");
+    expect((await post("/api/sync/runs", { mode: "everything" })).status).toBe(400);
+  });
+
   it("syncs fixtures and lists posts newest-saved first", async () => {
     await syncFixtures();
     const page = (await (await get("/api/posts?limit=60")).json()) as PostsPage;

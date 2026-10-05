@@ -3,7 +3,7 @@ import { expiresAtFromUrl } from "@no-fomo/core";
 import type { AuthorFacet, CollectionFacet, MediaPart, PostListItem, PostMedia, PostsPage, PostsQuery, SyncStatus } from "@no-fomo/core";
 import type { Db } from "./db/open";
 import { authors, collections, postCollections, postParts, posts } from "./db/schema";
-import { lastSuccessAt, latestRun } from "./sync/ingest";
+import { lastFullAt, lastSuccessAt, latestRun } from "./sync/ingest";
 
 const visible = and(isNull(posts.removedAt), isNull(posts.removedRemotelyAt));
 
@@ -106,9 +106,10 @@ export function syncStatus(db: Db): SyncStatus {
   return {
     run: run && {
       id: run.id, mode: run.mode, status: run.status, startedAt: run.startedAt, finishedAt: run.finishedAt,
-      pages: run.pages, postsSeen: run.postsSeen, postsNew: run.postsNew,
+      pages: run.pages, postsSeen: run.postsSeen, postsNew: run.postsNew, postsRemoved: run.postsRemoved, warning: run.warning,
       errorCode: run.errorCode, errorMessage: run.errorMessage,
     },
     lastSuccessAt: lastSuccessAt(db),
+    lastFullAt: lastFullAt(db),
   };
 }

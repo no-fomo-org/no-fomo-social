@@ -1,5 +1,5 @@
-import { and, desc, eq, sql } from "drizzle-orm";
-import { parseCollectionsPage, parseMediaPage, type ParsedPost, type SyncResult } from "@no-fomo/core";
+import { and, count, desc, eq, isNull, lt, sql } from "drizzle-orm";
+import { parseCollectionsPage, parseMediaPage, type ParsedPost, type SyncMode, type SyncResult } from "@no-fomo/core";
 import type { Db } from "../db/open";
 import { authors, collections, postCollections, postParts, posts, settings, syncRuns } from "../db/schema";
 
@@ -12,6 +12,12 @@ const SAVED_BACKFILL = "saved_backfill_complete";
  */
 const FEED_VERSION = "2";
 const FEED_VERSION_KEY = "feed_version";
+const LAST_FULL_AT = "last_full_at";
+/** A full resync never hides more than this share of the library at once... */
+const MAX_HIDDEN_SHARE = 0.3;
+/** ...unless it is only a handful of posts. */
+const SMALL_CHANGE = 20;
+const TOO_MANY_MISSING = "Full resync found too many missing posts. Nothing was hidden. Try again later.";
 
 export class RunNotActiveError extends Error {}
 export class NotFoundError extends Error {}
@@ -31,14 +37,14 @@ function activeRun(q: Q, runId: number) {
   return run;
 }
 
-export function startRun(db: Db, now = Date.now()): { runId: number; mode: "incremental" | "full" } {
+export function startRun(db: Db, requested: SyncMode = "incremental", now = Date.now()): { runId: number; mode: SyncMode } {
   return db.transaction((tx) => {
     tx.update(syncRuns)
       .set({ status: "error", finishedAt: now, errorCode: "interrupted", errorMessage: "A new sync started before this one finished." })
       .where(eq(syncRuns.status, "running"))
       .run();
     const upToDate = getSetting(tx, SAVED_BACKFILL) === "1" && getSetting(tx, FEED_VERSION_KEY) === FEED_VERSION;
-    const mode = upToDate ? "incremental" : "full";
+    const mode: SyncMode = requested === "full" || !upToDate ? "full" : "incremental";
     const max = tx.select({ max: sql<number | null>`max(${posts.sortKey})` }).from(posts).get()?.max ?? 0;
     const run = tx
       .insert(syncRuns)
@@ -206,15 +212,44 @@ export function ingestCollections(db: Db, runId: number, raw: unknown) {
 }
 
 export function finishRun(db: Db, runId: number, result: SyncResult, now = Date.now()) {
-  const run = db.select().from(syncRuns).where(eq(syncRuns.id, runId)).get();
-  if (!run) throw new NotFoundError(`Sync run ${runId} not found`);
-  if (run.status !== "running") return;
-  db.update(syncRuns)
-    .set(result.ok
-      ? { status: "done", finishedAt: now }
-      : { status: "error", finishedAt: now, errorCode: result.code, errorMessage: result.message })
-    .where(eq(syncRuns.id, runId))
-    .run();
+  db.transaction((tx) => {
+    const run = tx.select().from(syncRuns).where(eq(syncRuns.id, runId)).get();
+    if (!run) throw new NotFoundError(`Sync run ${runId} not found`);
+    if (run.status !== "running") return;
+    if (!result.ok) {
+      tx.update(syncRuns)
+        .set({ status: "error", finishedAt: now, errorCode: result.code, errorMessage: result.message })
+        .where(eq(syncRuns.id, runId))
+        .run();
+      return;
+    }
+    let hidden: { count: number; warning: string | null } = { count: 0, warning: null };
+    // A full run marks savedComplete only when it reached the end of the feed,
+    // so only then does "not seen" mean "no longer saved".
+    if (run.mode === "full" && run.savedComplete) {
+      hidden = hideMissingPosts(tx, runId, now);
+      setSetting(tx, LAST_FULL_AT, String(now));
+    }
+    tx.update(syncRuns)
+      .set({ status: "done", finishedAt: now, postsRemoved: hidden.count, warning: hidden.warning })
+      .where(eq(syncRuns.id, runId))
+      .run();
+  });
+}
+
+function hideMissingPosts(q: Q, runId: number, now: number): { count: number; warning: string | null } {
+  const visible = and(isNull(posts.removedAt), isNull(posts.removedRemotelyAt));
+  const missing = and(visible, lt(posts.lastSeenRunId, runId));
+  const total = q.select({ n: count() }).from(posts).where(visible).get()?.n ?? 0;
+  const n = q.select({ n: count() }).from(posts).where(missing).get()?.n ?? 0;
+  if (n > SMALL_CHANGE && n > total * MAX_HIDDEN_SHARE) return { count: 0, warning: TOO_MANY_MISSING };
+  if (n > 0) q.update(posts).set({ removedRemotelyAt: now }).where(missing).run();
+  return { count: n, warning: null };
+}
+
+export function lastFullAt(db: Db): number | null {
+  const v = getSetting(db, LAST_FULL_AT);
+  return v ? Number(v) : null;
 }
 
 export function failStaleRuns(db: Db, now = Date.now()) {

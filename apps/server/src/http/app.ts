@@ -19,6 +19,7 @@ import { security } from "./security";
 const Id = z.string().regex(/^\d{1,30}$/);
 const RunId = z.coerce.number().int().positive();
 const PageBody = z.object({ payload: z.unknown() });
+const StartBody = z.object({ mode: z.enum(["incremental", "full"]).optional() });
 const FinishBody = z.union([
   z.object({ ok: z.literal(true) }),
   z.object({ ok: z.literal(false), code: z.string().max(64), message: z.string().max(500) }),
@@ -71,7 +72,10 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
 
   app.get("/api/config", (c) => c.json({ extensionId: config.extensionId, version: APP_VERSION }));
 
-  app.post("/api/sync/runs", (c) => c.json(startRun(db), 201));
+  app.post("/api/sync/runs", async (c) => {
+    const { mode } = StartBody.parse(await c.req.json().catch(() => ({})));
+    return c.json(startRun(db, mode), 201);
+  });
 
   app.post("/api/sync/runs/:id/saved", async (c) => {
     const runId = RunId.parse(c.req.param("id"));
