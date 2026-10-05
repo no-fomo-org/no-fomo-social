@@ -1,9 +1,11 @@
+import type { PostMedia, SyncMode } from "@no-fomo/core";
+
 type ChromeRuntime = {
   sendMessage(extensionId: string, msg: unknown, cb: (reply: unknown) => void): void;
   lastError?: { message?: string };
 };
 
-export type ExtResponse = { ok: true; version?: string } | { ok: false; error: string };
+export type ExtResponse = { ok: true; version?: string; media?: PostMedia } | { ok: false; error: string };
 
 function runtime(): ChromeRuntime | null {
   const c = (globalThis as { chrome?: { runtime?: ChromeRuntime } }).chrome;
@@ -29,7 +31,9 @@ function send(extensionId: string, msg: unknown, timeoutMs: number): Promise<Ext
 }
 
 export const pingExtension = (id: string) => send(id, { type: "ping" }, 1500);
-export const startExtensionSync = (id: string) => send(id, { type: "sync:start" }, 45_000);
+export const startExtensionSync = (id: string, mode: SyncMode = "incremental") => send(id, { type: "sync:start", mode }, 45_000);
+/** Opening a hidden Instagram tab can take a while, hence the long timeout. */
+export const refreshExtensionMedia = (extId: string, postId: string) => send(extId, { type: "media:refresh", id: postId }, 45_000);
 
 export function syncErrorText(code: string): string {
   switch (code) {
