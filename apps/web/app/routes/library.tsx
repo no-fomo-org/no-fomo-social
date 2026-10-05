@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import { hasFilters, NO_FILTERS, postsQueryString, readFilters, writeFilters, type Filters } from "../lib/filters";
 import { FilterBar } from "../components/filter-bar";
 import { PostGrid } from "../components/post-grid";
-import { PostSheet } from "../components/post-sheet";
+import { Viewer } from "../components/viewer/viewer";
 import { TopBar } from "../components/top-bar";
 
 export default function Library() {
@@ -59,7 +59,7 @@ export default function Library() {
           onClearFilters={() => update(NO_FILTERS)}
         />
       </main>
-      <PostSheet
+      <Viewer
         post={open}
         onClose={() => setPost(null)}
         onPrev={prev ? () => setPost(prev.id, true) : null}

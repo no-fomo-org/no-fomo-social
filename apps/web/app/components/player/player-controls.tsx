@@ -6,17 +6,27 @@ import {
   ArrowShrink02Icon, FullScreenIcon, NextIcon, PauseIcon, PlayIcon, PreviousIcon, RepeatIcon, RepeatOffIcon, VolumeHighIcon, VolumeMute01Icon,
 } from "@hugeicons/core-free-icons";
 import { AB_OFF, abJump, abLabel, pressAb, type AbLoop } from "../../lib/ab-loop";
+import { keyBelongsToWidget } from "../../lib/keys";
 import { Icon } from "../ui/icon";
 
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 const FRAME_SEC = 1 / 30;
+const SEEK_SEC = 5;
 
 const ctl =
   "inline-flex h-9 min-w-9 items-center justify-center rounded-control px-2 text-white/90 transition-colors duration-200 ease-out-soft " +
   "hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
   "aria-pressed:text-accent data-[disabled]:opacity-40";
 
-export function PlayerControls({ loop, onLoopChange }: { loop: boolean; onLoopChange: (loop: boolean) => void }) {
+export function PlayerControls({
+  loop,
+  onLoopChange,
+  arrowSeek,
+}: {
+  loop: boolean;
+  onLoopChange: (loop: boolean) => void;
+  arrowSeek: "plain" | "shift";
+}) {
   const media = useMedia();
   const el = media instanceof HTMLVideoElement ? media : null;
   const portal = useRef<HTMLDivElement>(null);
@@ -35,18 +45,23 @@ export function PlayerControls({ loop, onLoopChange }: { loop: boolean; onLoopCh
     return () => el.cancelVideoFrameCallback(handle);
   }, [el, ab]);
 
-  // "," and "." step one frame while paused, like most desktop players.
+  // Arrows seek, "," and "." step one frame. The capture phase is needed because the
+  // viewer dialog stops arrow keys from bubbling up to the document.
   useEffect(() => {
     if (!el) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey || (e.key !== "," && e.key !== ".")) return;
-      if ((e.target as HTMLElement | null)?.closest("input, textarea, [contenteditable=true]")) return;
-      e.preventDefault();
-      stepFrame(el, e.key === "." ? 1 : -1);
+      if (e.metaKey || e.ctrlKey || e.altKey || keyBelongsToWidget(e.target)) return;
+      if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && e.shiftKey === (arrowSeek === "shift")) {
+        e.preventDefault();
+        seekBy(el, e.key === "ArrowRight" ? SEEK_SEC : -SEEK_SEC);
+      } else if (e.key === "," || e.key === ".") {
+        e.preventDefault();
+        stepFrame(el, e.key === "." ? 1 : -1);
+      }
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [el]);
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [el, arrowSeek]);
 
   return (
     <Controls.Root>
@@ -85,10 +100,11 @@ export function PlayerControls({ loop, onLoopChange }: { loop: boolean; onLoopCh
 
           <div className="flex-1" />
 
-          <button type="button" className={ctl} aria-label="Previous frame" title="Previous frame (,)" onClick={() => el && stepFrame(el, -1)}>
+          {/* Frame step is a desktop tool; on a phone the bar has no room for it. */}
+          <button type="button" className={`${ctl} max-md:hidden`} aria-label="Previous frame" title="Previous frame (,)" onClick={() => el && stepFrame(el, -1)}>
             <Icon icon={PreviousIcon} size={18} />
           </button>
-          <button type="button" className={ctl} aria-label="Next frame" title="Next frame (.)" onClick={() => el && stepFrame(el, 1)}>
+          <button type="button" className={`${ctl} max-md:hidden`} aria-label="Next frame" title="Next frame (.)" onClick={() => el && stepFrame(el, 1)}>
             <Icon icon={NextIcon} size={18} />
           </button>
           <button
@@ -151,6 +167,11 @@ function SpeedMenu({ container }: { container: RefObject<HTMLDivElement | null> 
       </Menu.Portal>
     </Menu.Root>
   );
+}
+
+function seekBy(el: HTMLVideoElement, sec: number) {
+  const end = Number.isFinite(el.duration) ? el.duration : el.currentTime + sec;
+  el.currentTime = Math.min(Math.max(el.currentTime + sec, 0), end);
 }
 
 function stepFrame(el: HTMLVideoElement, dir: 1 | -1) {

@@ -24,8 +24,6 @@ export function Player({
   onLoadError: () => void;
 }) {
   const [loop, setLoop] = useState(true);
-  const back = arrowSeek === "plain" ? "ArrowLeft" : "Shift+ArrowLeft";
-  const forward = arrowSeek === "plain" ? "ArrowRight" : "Shift+ArrowRight";
 
   return (
     <VideoPlayer>
@@ -38,8 +36,6 @@ export function Player({
         <Hotkey keys="k" action="togglePaused" target="document" />
         <Hotkey keys="m" action="toggleMuted" target="document" />
         <Hotkey keys="f" action="toggleFullscreen" target="document" />
-        <Hotkey keys={back} action="seekStep" value={-5} target="document" />
-        <Hotkey keys={forward} action="seekStep" value={5} target="document" />
         <Gesture type="tap" action="togglePaused" pointer="mouse" region="center" />
         <Gesture type="tap" action="toggleControls" pointer="touch" />
         <Gesture type="doubletap" action="seekStep" value={-5} region="left" />
@@ -51,7 +47,7 @@ export function Player({
             <div {...props}>{state.visible && <Icon icon={Loading03Icon} size={32} className="text-white/80 motion-safe:animate-spin" />}</div>
           )}
         />
-        <PlayerControls loop={loop} onLoopChange={setLoop} />
+        <PlayerControls loop={loop} onLoopChange={setLoop} arrowSeek={arrowSeek} />
       </Container>
     </VideoPlayer>
   );
