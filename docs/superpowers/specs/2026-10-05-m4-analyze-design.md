@@ -116,7 +116,7 @@ New table `reports`:
 | `finished_at` | integer, null | |
 
 - "Analyze again" overwrites the row. A failed re-run keeps the old Markdown and shows the error above it.
-- Search: when a report is done, its Markdown is added to the post's `post_search` body. The rebuild in sync ingest must keep it.
+- Search: when a report is done, its Markdown goes into a separate FTS table `report_search` (same tokenizer as `post_search`). Post search matches either table, so a sync that rewrites `post_search` never drops report text.
 - Posts list: `PostListItem` gets `hasReport: boolean`. The posts query gets a `report=1` filter. The filter bar gets a "Has report" toggle in the same style as the type switch.
 
 ## 4. Viewer UI
