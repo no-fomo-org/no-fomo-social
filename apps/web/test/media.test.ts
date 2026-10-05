@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PostMedia } from "@no-fomo/core";
-import { mediaErrorCode, mediaErrorText, needsRefresh, REFRESH_DELAY_MS } from "../app/lib/media";
+import { canRefresh, MIN_REFRESH_GAP_MS, mediaErrorCode, mediaErrorText, needsRefresh, REFRESH_DELAY_MS, staleAction } from "../app/lib/media";
 
 const media = (over: Partial<PostMedia> = {}): PostMedia => ({
   id: "1", kind: "video", parts: [{ index: 0, kind: "video", imageUrl: null, videoUrl: "https://x/v.mp4", width: 1, height: 1 }], expiresAt: 10_000, ...over,
@@ -36,5 +36,26 @@ describe("media errors", () => {
       expect(mediaErrorText(code)).toMatch(/^[A-Z]/);
       expect(mediaErrorText(code)).not.toMatch(/[–—]/);
     }
+  });
+});
+
+describe("refresh rules", () => {
+  const now = 1_000_000;
+  it("renews a post's links at most once a minute", () => {
+    expect(canRefresh(null, now)).toBe(true);
+    expect(canRefresh(now - 1000, now)).toBe(false);
+    expect(canRefresh(now - MIN_REFRESH_GAP_MS, now)).toBe(true);
+  });
+
+  it("waits for the app config, refreshes stale links, and gives up instead of spinning forever", () => {
+    expect(staleAction({ configReady: false, refreshing: false, lastRefreshAt: null, now })).toBe("wait");
+    expect(staleAction({ configReady: true, refreshing: true, lastRefreshAt: null, now })).toBe("wait");
+    expect(staleAction({ configReady: true, refreshing: false, lastRefreshAt: null, now })).toBe("refresh");
+    expect(staleAction({ configReady: true, refreshing: false, lastRefreshAt: now - 1000, now })).toBe("give_up");
+    expect(staleAction({ configReady: true, refreshing: false, lastRefreshAt: now - MIN_REFRESH_GAP_MS, now })).toBe("refresh");
+  });
+
+  it("treats a slow extension as a failed load that can be retried", () => {
+    expect(mediaErrorCode({ ok: false, error: "timeout" })).toBe("load_failed");
   });
 });

@@ -197,6 +197,25 @@ describe("full resync", () => {
     expect(visible()).toHaveLength(5);
   });
 
+  it("hides nothing when some posts in the run could not be read", () => {
+    syncAll(ids(10));
+    const r = startRun(db, "full");
+    const page = pageOf(ids(9), false);
+    page.items.push({ media: { pk: "109" } as never }); // unreadable: no code, no user
+    ingestSavedPage(db, r.runId, page);
+    finishRun(db, r.runId, { ok: true });
+    expect(visible()).toHaveLength(10);
+    expect(runRow(r.runId).warning).toBe("Some posts could not be read. Nothing was hidden.");
+  });
+
+  it("hides nothing when the last page did not clearly say it was the end", () => {
+    syncAll(ids(10));
+    const r = startRun(db, "full");
+    ingestSavedPage(db, r.runId, { items: ids(9).map((pk) => ({ media: media(pk) })) });
+    finishRun(db, r.runId, { ok: true });
+    expect(visible()).toHaveLength(10);
+  });
+
   it("shows a hidden post again when it comes back", () => {
     syncAll(ids(10));
     syncAll(ids(9), "full");

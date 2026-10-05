@@ -54,4 +54,6 @@ export interface ParsedCollection {
 export interface PageInfo {
   nextCursor: string | null;
   moreAvailable: boolean;
+  /** Instagram said plainly that this is the last page. A missing flag is not proof. */
+  endOfFeed: boolean;
 }

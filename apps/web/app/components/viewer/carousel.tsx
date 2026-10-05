@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { MediaPart } from "@no-fomo/core";
 import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { keyBelongsToWidget } from "../../lib/keys";
@@ -12,18 +12,22 @@ const arrow =
 
 export function Carousel({
   parts,
+  index: wanted,
+  onIndexChange,
   postId,
   alt,
   onLoadError,
 }: {
   parts: MediaPart[];
+  index: number;
+  onIndexChange: (index: number) => void;
   postId: string;
   alt: string;
   onLoadError: () => void;
 }) {
-  const [index, setIndex] = useState(0);
   const last = parts.length - 1;
-  const go = (i: number) => setIndex(Math.min(Math.max(i, 0), last));
+  const index = Math.min(Math.max(wanted, 0), last);
+  const go = (i: number) => onIndexChange(Math.min(Math.max(i, 0), last));
   const goRef = useRef(go);
   goRef.current = go;
   const indexRef = useRef(index);

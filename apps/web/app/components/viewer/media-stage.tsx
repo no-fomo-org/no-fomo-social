@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { PostListItem } from "@no-fomo/core";
 import { Alert02Icon, Loading03Icon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
 import { mediaErrorText } from "../../lib/media";
@@ -9,8 +10,10 @@ import { Icon } from "../ui/icon";
 import { Carousel } from "./carousel";
 
 /** Mount with key={post.id}: all state here belongs to one post. */
-export function MediaStage({ post, extensionId }: { post: PostListItem; extensionId: string | undefined }) {
-  const { media, loading, error, retry, onLoadError } = usePostMedia(post.id, extensionId);
+export function MediaStage({ post, extensionId, configReady }: { post: PostListItem; extensionId: string | undefined; configReady: boolean }) {
+  const { media, loading, error, retry, onLoadError } = usePostMedia(post.id, extensionId, configReady);
+  // Lives here, not in Carousel: the carousel unmounts while links refresh and must come back on the same item.
+  const [item, setItem] = useState(0);
   const alt = post.accessibilityCaption ?? `Post by @${post.author.username}`;
 
   if (error) {
@@ -44,7 +47,7 @@ export function MediaStage({ post, extensionId }: { post: PostListItem; extensio
   }
 
   if (post.kind === "carousel" && media.parts.length > 1) {
-    return <Carousel parts={media.parts} postId={post.id} alt={alt} onLoadError={onLoadError} />;
+    return <Carousel parts={media.parts} index={item} onIndexChange={setItem} postId={post.id} alt={alt} onLoadError={onLoadError} />;
   }
 
   const part = media.parts[0]!;

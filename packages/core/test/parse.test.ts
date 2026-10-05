@@ -58,8 +58,8 @@ describe("parseMediaPage", () => {
   });
 
   it("reads paging info", () => {
-    expect(readPageInfo(page1)).toEqual({ nextCursor: "QVFCursorPage2", moreAvailable: true });
-    expect(readPageInfo(page2)).toEqual({ nextCursor: null, moreAvailable: false });
+    expect(readPageInfo(page1)).toEqual({ nextCursor: "QVFCursorPage2", moreAvailable: true, endOfFeed: false });
+    expect(readPageInfo(page2)).toEqual({ nextCursor: null, moreAvailable: false, endOfFeed: true });
   });
 
   it("degrades on odd items instead of throwing", () => {
@@ -105,5 +105,13 @@ describe("parseCollectionsPage", () => {
       { id: "17900000000000002", name: "AI tools", mediaCount: 2 },
       { id: "17900000000000003", name: "Design", mediaCount: 1 },
     ]);
+  });
+});
+
+describe("end of feed", () => {
+  it("counts as the end only when Instagram says so", () => {
+    expect(readPageInfo({ more_available: false }).endOfFeed).toBe(true);
+    expect(readPageInfo({}).endOfFeed).toBe(false);
+    expect(readPageInfo({ more_available: true, next_max_id: "x" }).endOfFeed).toBe(false);
   });
 });

@@ -18,6 +18,7 @@ const MAX_HIDDEN_SHARE = 0.3;
 /** ...unless it is only a handful of posts. */
 const SMALL_CHANGE = 20;
 const TOO_MANY_MISSING = "Full resync found too many missing posts. Nothing was hidden. Try again later.";
+const UNREADABLE = "Some posts could not be read. Nothing was hidden.";
 
 export class RunNotActiveError extends Error {}
 export class NotFoundError extends Error {}
@@ -184,6 +185,8 @@ export function ingestSavedPage(db: Db, runId: number, raw: unknown) {
         pages: sql`${syncRuns.pages} + 1`,
         postsSeen: sql`${syncRuns.postsSeen} + ${page.items.length}`,
         postsNew: sql`${syncRuns.postsNew} + ${newCount}`,
+        postsSkipped: sql`${syncRuns.postsSkipped} + ${page.skipped}`,
+        endConfirmed: page.endOfFeed,
       })
       .where(eq(syncRuns.id, runId))
       .run();
@@ -227,7 +230,9 @@ export function finishRun(db: Db, runId: number, result: SyncResult, now = Date.
     // A full run marks savedComplete only when it reached the end of the feed,
     // so only then does "not seen" mean "no longer saved".
     if (run.mode === "full" && run.savedComplete) {
-      hidden = hideMissingPosts(tx, runId, now);
+      // A post the parser skipped, or a last page that only looks like the end,
+      // would make saved posts look missing. Then hiding waits for a cleaner run.
+      hidden = run.postsSkipped > 0 || !run.endConfirmed ? { count: 0, warning: UNREADABLE } : hideMissingPosts(tx, runId, now);
       setSetting(tx, LAST_FULL_AT, String(now));
     }
     tx.update(syncRuns)

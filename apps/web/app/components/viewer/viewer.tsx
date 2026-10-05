@@ -43,7 +43,7 @@ export function Viewer({
           {p && (
             <>
               <div ref={stage} tabIndex={-1} className="relative h-[70dvh] shrink-0 bg-black outline-none md:h-dvh">
-                <MediaStage key={p.id} post={p} extensionId={config.data?.extensionId} />
+                <MediaStage key={p.id} post={p} extensionId={config.data?.extensionId} configReady={!config.isPending} />
               </div>
               <div className="border-line md:h-dvh md:overflow-y-auto md:border-l">
                 <PostDetails post={p} onPrev={onPrev} onNext={onNext} onShowAuthor={onShowAuthor} />

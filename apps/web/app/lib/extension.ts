@@ -12,12 +12,12 @@ function runtime(): ChromeRuntime | null {
   return c?.runtime && typeof c.runtime.sendMessage === "function" ? c.runtime : null;
 }
 
-/** Returns null when the extension is missing or does not answer in time. */
+/** Null when the extension is missing; `{ ok: false, error: "timeout" }` when it is there but slow. */
 function send(extensionId: string, msg: unknown, timeoutMs: number): Promise<ExtResponse | null> {
   const rt = runtime();
   if (!rt) return Promise.resolve(null);
   return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(null), timeoutMs);
+    const timer = setTimeout(() => resolve({ ok: false, error: "timeout" }), timeoutMs);
     try {
       rt.sendMessage(extensionId, msg, (reply) => {
         clearTimeout(timer);
@@ -38,6 +38,7 @@ export const refreshExtensionMedia = (extId: string, postId: string) => send(ext
 export function syncErrorText(code: string): string {
   switch (code) {
     case "already_running": return "A sync is already running.";
+    case "timeout": return "The extension did not answer. Reload this page and try again.";
     case "instagram_tab_failed": return "Could not open Instagram. Open instagram.com in this browser and try again.";
     default: return `Sync could not start (${code}).`;
   }

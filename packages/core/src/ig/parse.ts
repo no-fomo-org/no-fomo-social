@@ -110,7 +110,7 @@ export function parseMedia(raw: unknown): ParsedPost | null {
 export function readPageInfo(raw: unknown): PageInfo {
   const r = obj(raw);
   const nextCursor = str(r.next_max_id);
-  return { nextCursor, moreAvailable: r.more_available === true && nextCursor !== null };
+  return { nextCursor, moreAvailable: r.more_available === true && nextCursor !== null, endOfFeed: r.more_available === false };
 }
 
 export function parseMediaPage(raw: unknown): PageInfo & { items: ParsedPost[]; skipped: number } {
