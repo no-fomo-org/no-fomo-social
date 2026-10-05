@@ -5,3 +5,5 @@ export * from "./ig/url";
 export * from "./ig/parse";
 export * from "./ig/client";
 export * from "./sync/run-sync";
+export * from "./extension-id";
+export * from "./api";
