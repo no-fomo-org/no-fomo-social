@@ -1,8 +1,8 @@
 # no-fomo
 
-Your Instagram saved posts, on your own computer. Filter them by author, collection and type. A better video player and AI search come next.
+Your Instagram saved posts, on your own computer. Filter them by author, collection and type. Watch them in a better player and get a short AI report on any post. Semantic search comes next.
 
-Everything runs locally. Your data stays in `~/.no-fomo`. Nothing is sent to any server except Instagram itself.
+Everything runs locally. Your data stays in `~/.no-fomo`. Nothing is sent to any server except Instagram itself, and OpenAI when you analyze a post.
 
 > **Warning:** no-fomo uses Instagram's private web API with your own login, the same way the Instagram website does. This is not an official API. Syncing is slow on purpose (one request every 2 to 3 seconds) to keep your account safe. Use it at your own risk.
 
@@ -11,6 +11,7 @@ Everything runs locally. Your data stays in `~/.no-fomo`. Nothing is sent to any
 - Node.js 22 or newer
 - pnpm (`corepack enable pnpm`)
 - Google Chrome (or another Chromium browser)
+- ffmpeg, to analyze videos (`brew install ffmpeg`)
 
 ## Start
 
@@ -45,6 +46,16 @@ Instagram links expire after a few days. When that happens, the extension asks I
 ## Full resync
 
 Sync only adds new saves. To find posts you unsaved directly on Instagram, open the menu next to Sync and pick "Full resync". It checks every saved post (about 2 minutes per 1,000 posts) and hides the ones that are gone. If more than 30% of your posts seem gone, nothing is hidden, because that usually means an Instagram glitch.
+
+## Analyze a post
+
+Open a post and pick the **Report** tab. Press **Analyze** to get a short report: summary, key points, steps, what is mentioned, text shown on screen, and the full transcript. Copy it or download it as Markdown to use in any AI tool.
+
+- Add your OpenAI key first: gear icon, top right. Each analysis usually costs a few cents.
+- Videos are downloaded to a temp folder, analyzed, and deleted right after.
+- The key is stored encrypted in `~/.no-fomo/keys.enc`. The encryption secret is in `~/.no-fomo/secret`. This protects the key in a copied or backed-up `keys.enc`, not from other programs on your computer. The key is only sent to OpenAI.
+- Report language and model names can be changed in Settings.
+- Search also finds words from reports. Use the "Has report" filter to see analyzed posts.
 
 ## Development
 

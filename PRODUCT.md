@@ -38,10 +38,11 @@ Running locally and being free are constraints of the project, not its main sell
 
 **Shipped (milestone 1):** sync of saved posts and collection membership, a grid with author, collection and type filters, and a detail sheet with a link to the post on Instagram.
 
+**Shipped (milestones 2 and 4):** video player and photo viewer with link refresh, full resync, and a per-post AI report with the user's own OpenAI key.
+
 **Planned:** see `PLAN.md`.
-- Video player and photo viewer, with link refresh.
 - Batch unsave.
-- Per-post AI report, using OpenAI or Groq Whisper, or Gemini, with the user's own key.
+- Groq and Gemini options for the per-post report.
 - Semantic search and a topic map.
 - An AI report on the whole library.
 - Packaging with `npx` and Docker.
