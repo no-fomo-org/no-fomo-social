@@ -95,10 +95,19 @@ function upsertPost(q: Q, p: ParsedPost, runId: number, keyIfNew: number, keyUpd
       .run();
   }
   syncCollectionLinks(q, p, runId);
+  q.run(sql`DELETE FROM post_search WHERE post_id = ${p.id}`);
+  q.run(sql`INSERT INTO post_search (post_id, body) VALUES (${p.id}, ${searchBody(p)})`);
   if (!existing?.thumbPath && p.thumbnailUrl) jobs.push({ kind: "thumb", id: p.id, url: p.thumbnailUrl });
   // "Known" means first seen by an earlier run that finished walking the saved feed.
   // Posts from a run that was cut off may sit above a gap of posts nobody fetched yet.
   return { isNew: !existing, knownBefore: !!existing && existing.firstSeenRunId < runId && existing.firstRunComplete === true };
+}
+
+/** What a user may remember about a post. Must match the backfill in drizzle/0003_post_search.sql. */
+function searchBody(p: ParsedPost): string {
+  return [p.author.username, p.author.fullName, p.caption, p.musicTitle, p.musicArtist, p.locationName, p.accessibilityCaption]
+    .map((v) => v ?? "")
+    .join(" ");
 }
 
 /** The saved feed lists every collection a post is in, so it replaces the post's links. */

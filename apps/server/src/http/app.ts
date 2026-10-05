@@ -24,6 +24,7 @@ const FinishBody = z.union([
   z.object({ ok: z.literal(false), code: z.string().max(64), message: z.string().max(500) }),
 ]);
 const PostsQuerySchema = z.object({
+  q: z.string().max(200).optional(),
   author: Id.optional(),
   collection: Id.optional(),
   kind: z.enum(["image", "video", "carousel"]).optional(),

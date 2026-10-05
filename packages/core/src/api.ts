@@ -23,7 +23,7 @@ export interface PostListItem {
 }
 
 export interface PostsPage { items: PostListItem[]; nextCursor: number | null; total: number }
-export interface PostsQuery { author?: string; collection?: string; kind?: MediaKind; cursor?: number; limit: number }
+export interface PostsQuery { q?: string; author?: string; collection?: string; kind?: MediaKind; cursor?: number; limit: number }
 export interface AuthorFacet { id: string; username: string; fullName: string | null; avatarUrl: string; count: number }
 export interface CollectionFacet { id: string; name: string | null; count: number }
 

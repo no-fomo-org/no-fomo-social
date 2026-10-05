@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, isNull, lt, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, lt, sql, type SQL } from "drizzle-orm";
 import type { AuthorFacet, CollectionFacet, PostListItem, PostsPage, PostsQuery, SyncStatus } from "@no-fomo/core";
 import type { Db } from "./db/open";
 import { authors, collections, postCollections, posts } from "./db/schema";
@@ -6,8 +6,19 @@ import { lastSuccessAt, latestRun } from "./sync/ingest";
 
 const visible = and(isNull(posts.removedAt), isNull(posts.removedRemotelyAt));
 
+/**
+ * Turns free text into a safe FTS5 query: every word must match, each as a word start.
+ * Only letters and digits survive, so user input can never form FTS syntax.
+ */
+export function ftsQuery(text: string | undefined): string | null {
+  const words = (text ?? "").match(/[\p{L}\p{N}]+/gu) ?? [];
+  return words.length ? words.slice(0, 12).map((w) => `"${w}"*`).join(" ") : null;
+}
+
 export function listPosts(db: Db, q: PostsQuery): PostsPage {
+  const match = ftsQuery(q.q);
   const filters: (SQL | undefined)[] = [
+    match ? sql`${posts.id} IN (SELECT post_id FROM post_search WHERE post_search MATCH ${match})` : undefined,
     visible,
     q.author ? eq(posts.authorId, q.author) : undefined,
     q.kind ? eq(posts.kind, q.kind) : undefined,
