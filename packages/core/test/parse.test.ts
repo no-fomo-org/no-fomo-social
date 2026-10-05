@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import page1 from "../fixtures/saved-page-1.json";
 import page2 from "../fixtures/saved-page-2.json";
 import collectionsList from "../fixtures/collections-list.json";
+import mediaInfo from "../fixtures/media-info.json";
 import { parseCollectionsPage, parseMediaPage, readPageInfo } from "../src/ig/parse";
 
 describe("parseMediaPage", () => {
@@ -28,7 +29,7 @@ describe("parseMediaPage", () => {
       musicArtist: "M83",
       width: 1080,
       height: 1920,
-      parts: [],
+      parts: [{ index: 0, kind: "video", videoUrl: "https://scontent.cdninstagram.com/o1/v/reel1_720.mp4?oe=68C0A1B2", width: 720, height: 1280 }],
       collectionIds: ["17900000000000002"],
     });
   });
@@ -80,6 +81,21 @@ describe("parseMediaPage", () => {
     for (const junk of [null, 1, "x", [], { items: "nope" }, { items: [null, 1] }]) {
       expect(() => parseMediaPage(junk)).not.toThrow();
     }
+  });
+
+  it("gives single image posts one full-size part", () => {
+    const img = parseMediaPage(page1).items[1]!;
+    expect(img.parts).toEqual([{
+      index: 0, kind: "image", imageUrl: "https://scontent.cdninstagram.com/v/img2_1080.jpg", videoUrl: null,
+      width: 1080, height: 1350, accessibilityCaption: "May be an image of text that says 'Grid systems'.",
+    }]);
+  });
+
+  it("parses a media info response", () => {
+    const page = parseMediaPage(mediaInfo);
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]).toMatchObject({ id: "3500000000000000002", likeCount: 215 });
+    expect(page.items[0]!.parts[0]!.imageUrl).toBe("https://scontent.cdninstagram.com/v/img2_1080.jpg?oe=6A000000");
   });
 });
 

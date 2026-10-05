@@ -15,6 +15,7 @@ function setup(opts: { saved: Array<unknown | Error>; collections?: Array<unknow
       if (next instanceof Error) throw next;
       return next;
     },
+    async mediaInfo() { throw new Error("not used by sync"); },
     async collectionsPage(cursor) {
       log.push(`ig:collections:${cursor}`);
       const next = colls.shift();

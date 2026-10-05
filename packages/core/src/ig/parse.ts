@@ -69,12 +69,8 @@ export function parseMedia(raw: unknown): ParsedPost | null {
   const author = parseAuthor(obj(m.user));
   if (!id || !code || !kind || !author) return null;
 
-  const parts =
-    kind === "carousel"
-      ? arr(m.carousel_media)
-          .map((p, i) => parsePart(obj(p), i))
-          .filter((p): p is ParsedMediaPart => p !== null)
-      : [];
+  const parts = (kind === "carousel" ? arr(m.carousel_media).map((p, i) => parsePart(obj(p), i)) : [parsePart(m, 0)])
+    .filter((p): p is ParsedMediaPart => p !== null);
   const first = parts[0];
   const thumb =
     pickThumb(obj(m.image_versions2).candidates) ??
