@@ -34,6 +34,12 @@ describe("downloader", () => {
   it("stops at the size limit", async () => {
     await expect(createDownloader({ allowed: () => true, fetch: ok(5000) })("https://x/v", out(), 1000)).rejects.toMatchObject({ code: "too_large" });
   });
+  it("fails cleanly when the file cannot be written", async () => {
+    const f = join(mkdtempSync(join(tmpdir(), "nf-dl-")), "gone", "v.mp4");
+    const slow = (async () =>
+      new Response(new ReadableStream({ async pull(c) { await new Promise((r) => setTimeout(r, 20)); c.enqueue(new Uint8Array(10)); } }))) as typeof fetch;
+    await expect(createDownloader({ allowed: () => true, fetch: slow })("https://x/v", f, 1000)).rejects.toMatchObject({ code: "download_failed" });
+  });
   it("fails on HTTP errors", async () => {
     const dl = createDownloader({ allowed: () => true, fetch: (async () => new Response("no", { status: 403 })) as typeof fetch });
     await expect(dl("https://x/v", out(), 10)).rejects.toMatchObject({ code: "download_failed" });

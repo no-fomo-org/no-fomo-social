@@ -1,5 +1,5 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { APICallError, generateText, NoSuchModelError, RetryError, transcribe, type LanguageModel, type TranscriptionModel } from "ai";
+import { APICallError, generateText, NoSuchModelError, NoTranscriptGeneratedError, RetryError, transcribe, type LanguageModel, type TranscriptionModel } from "ai";
 import { AnalyzeError } from "./errors";
 
 export type ReportContent = Array<{ type: "text"; text: string } | { type: "image"; image: Uint8Array; mediaType: "image/jpeg" }>;
@@ -19,6 +19,8 @@ export function createProvider(models: { language: (id: string) => LanguageModel
         const r = await transcribe({ model: models.transcription(model), audio, abortSignal: AbortSignal.timeout(CALL_TIMEOUT_MS) });
         return r.text.trim();
       } catch (e) {
+        // Music or silence: the audio track exists but nobody speaks.
+        if (NoTranscriptGeneratedError.isInstance(e)) return "";
         throw toAnalyzeError(e, model);
       }
     },

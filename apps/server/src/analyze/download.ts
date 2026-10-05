@@ -20,13 +20,18 @@ export function createDownloader(o: { allowed: (url: string) => boolean; fetch?:
     if (!res.ok || !res.body) throw new AnalyzeError("download_failed", `HTTP ${res.status}`);
     if (Number(res.headers.get("content-length") ?? 0) > maxBytes) throw new AnalyzeError("too_large");
     const out = createWriteStream(file, { mode: 0o600 });
+    // Without a listener, a disk or folder error would crash the whole server.
+    let writeError: Error | null = null;
+    out.on("error", (e) => (writeError = e));
     let n = 0;
     try {
       for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
+        if (writeError) throw new AnalyzeError("download_failed", message(writeError));
         n += chunk.byteLength;
         if (n > maxBytes) throw new AnalyzeError("too_large");
         if (!out.write(chunk)) await once(out, "drain");
       }
+      if (writeError) throw new AnalyzeError("download_failed", message(writeError));
     } catch (e) {
       throw e instanceof AnalyzeError ? e : new AnalyzeError("download_failed", message(e));
     } finally {

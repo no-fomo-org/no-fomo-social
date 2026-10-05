@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PostReport } from "@no-fomo/core";
-import { analyzeErrorText, isWorking, reportFileName, reportView, stepText } from "../app/lib/report";
+import { analyzeErrorText, isWorking, reportFileName, reportView, safeMarkdownUrl, stepText } from "../app/lib/report";
 
 const r = (over: Partial<PostReport>): PostReport => ({
   postId: "1", status: "done", step: null, markdown: "# x", language: "English", reportModel: "m", transcribeModel: null,
@@ -51,5 +51,13 @@ describe("texts", () => {
     expect(isWorking(r({ status: "queued" }))).toBe(true);
     expect(isWorking(r({}))).toBe(false);
     expect(isWorking(null)).toBe(false);
+  });
+});
+
+describe("safeMarkdownUrl", () => {
+  it("keeps web links but never loads images or other schemes", () => {
+    expect(safeMarkdownUrl("https://docs.example/x", "href")).toBe("https://docs.example/x");
+    expect(safeMarkdownUrl("javascript:alert(1)", "href")).toBe("");
+    expect(safeMarkdownUrl("https://tracker.example/p.gif", "src")).toBe("");
   });
 });

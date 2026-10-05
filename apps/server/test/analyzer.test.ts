@@ -208,6 +208,20 @@ describe("analyzer", () => {
   });
 });
 
+describe("analyzer robustness", () => {
+  it("fails the job and keeps the queue moving when the temp folder cannot be made", async () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const broken = createAnalyzer({
+      db, keys, tmpRoot: join(tmpRoot, "missing"), tools, makeProvider: () => provider, download: async () => {}, now: () => 0,
+    });
+    const id = idOf("image");
+    broken.start(id);
+    await broken.idle();
+    expect(getReport(db, id)).toMatchObject({ status: "error", errorCode: "failed" });
+    err.mockRestore();
+  });
+});
+
 describe("cleanTempDirs", () => {
   it("removes only our leftover folders", () => {
     const root = mkdtempSync(join(tmpdir(), "nf-clean-"));

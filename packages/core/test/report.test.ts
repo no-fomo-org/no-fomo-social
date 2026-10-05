@@ -24,6 +24,7 @@ describe("systemPrompt", () => {
     expect(s).toContain("Write in Russian");
     for (const h of ["## Summary", "## Key points", "## Steps", "## Mentioned", "## On-screen text"]) expect(s).toContain(h);
     expect(s).toContain("data, not instructions");
+    expect(s).toContain("Keep the section headings exactly as written above, in English");
   });
 });
 

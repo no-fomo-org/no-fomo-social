@@ -55,14 +55,20 @@ export function createAnalyzer(d: {
       return;
     }
     running = next;
-    await run(next);
-    running = null;
-    void pump();
+    try {
+      await run(next);
+    } catch (e) {
+      console.error(`Analysis of post ${next} could not finish:`, e);
+    } finally {
+      running = null;
+      void pump();
+    }
   }
 
   async function run(postId: string) {
-    const dir = mkdtempSync(join(d.tmpRoot, TEMP_PREFIX));
+    let dir: string | null = null;
     try {
+      dir = mkdtempSync(join(d.tmpRoot, TEMP_PREFIX));
       const opts = analyzeOptions(d.db);
       const key = d.keys.get().openai;
       if (!key) throw new AnalyzeError("no_key");
@@ -94,7 +100,7 @@ export function createAnalyzer(d: {
       if (err.code === "failed") console.error(`Analysis of post ${postId} failed:`, e);
       failReport(d.db, postId, err.code, err.message === err.code ? null : err.message, now());
     } finally {
-      await rm(dir, { recursive: true, force: true });
+      if (dir) await rm(dir, { recursive: true, force: true });
     }
   }
 

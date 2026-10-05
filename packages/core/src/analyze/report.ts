@@ -24,6 +24,7 @@ export function systemPrompt(language: string): string {
     "## Steps: a numbered list, only if the post teaches how to do something. Otherwise leave this section out.",
     "## Mentioned: a bullet list of tools, products, links, books and people that are named or shown. Write 'Nothing named.' if there are none.",
     "## On-screen text: the important text shown in the frames, with its time, for example '0:12: npm i ai'. Write 'None.' if there is none.",
+    "Keep the section headings exactly as written above, in English, even when you write the rest in another language.",
     "Do not add a title, a transcript or any other section.",
   ].join("\n");
 }

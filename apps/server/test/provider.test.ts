@@ -40,6 +40,19 @@ describe("provider", () => {
   });
 });
 
+describe("silent audio", () => {
+  it("returns an empty transcript when the model hears no speech", async () => {
+    const tm = new MockTranscriptionModelV4({
+      doGenerate: async () => ({
+        text: "", segments: [], language: undefined, durationInSeconds: 3, warnings: [],
+        response: { timestamp: new Date(), modelId: "t", headers: {} },
+      }),
+    });
+    const p = createProvider({ language: unused, transcription: () => tm });
+    expect(await p.transcribe(new Uint8Array([1, 2, 3]), "t")).toBe("");
+  });
+});
+
 describe("toAnalyzeError", () => {
   const api = (statusCode: number, responseBody = "") =>
     new APICallError({ message: "x", url: "https://api.openai.com", requestBodyValues: {}, statusCode, responseBody, isRetryable: false });

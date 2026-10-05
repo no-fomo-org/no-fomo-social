@@ -5,12 +5,10 @@ import { Alert02Icon, Copy01Icon, Download04Icon, Loading03Icon } from "@hugeico
 import type { PostListItem, PostMedia } from "@no-fomo/core";
 import { api } from "../../lib/api";
 import { startAnalysis } from "../../lib/analyze";
-import { analyzeErrorText, isWorking, reportFileName, reportView, stepText } from "../../lib/report";
+import { analyzeErrorText, isWorking, reportFileName, reportView, safeMarkdownUrl, stepText } from "../../lib/report";
 import { useOpenSettings } from "../settings-dialog";
 import { Button } from "../ui/button";
 import { Icon } from "../ui/icon";
-
-const safeUrl = (url: string) => (/^https?:\/\//i.test(url) ? url : "");
 
 /** Mount with key={post.id}: start state and errors belong to one post. */
 export function ReportPanel({ post, extensionId }: { post: PostListItem; extensionId: string | undefined }) {
@@ -120,7 +118,8 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
           <article className="report-md">
             <Markdown
               skipHtml
-              urlTransform={safeUrl}
+              urlTransform={safeMarkdownUrl}
+              disallowedElements={["img"]}
               components={{
                 a: ({ href, children }) => (
                   <a href={href} target="_blank" rel="noopener noreferrer">

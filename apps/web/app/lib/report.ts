@@ -47,3 +47,6 @@ export function reportView(o: { hasKey: boolean; report: PostReport | null; star
   if (!o.hasKey && !error) return { kind: "no_key", error: null };
   return { kind: "empty", error };
 }
+
+/** Report links may open web pages. Images never load: a caption could make the model add a tracking pixel. */
+export const safeMarkdownUrl = (url: string, key: string) => (key !== "src" && /^https?:\/\//i.test(url) ? url : "");
