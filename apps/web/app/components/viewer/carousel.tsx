@@ -39,7 +39,7 @@ export function Carousel({
     const onKey = (e: KeyboardEvent) => {
       if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-      if (keyBelongsToWidget(e.target)) return;
+      if (keyBelongsToWidget(e.target, e.key)) return;
       e.preventDefault();
       goRef.current(indexRef.current + (e.key === "ArrowRight" ? 1 : -1));
     };

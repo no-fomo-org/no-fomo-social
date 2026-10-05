@@ -89,7 +89,7 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
           <p className="text-[13px] text-muted">Uses your OpenAI key. Usually a few cents per post.</p>
           <div>
             {hasKey ? (
-              <Button variant="primary" onClick={analyze}>Analyze</Button>
+              <Button variant="primary" onClick={analyze}>{view.error ? "Try again" : "Analyze"}</Button>
             ) : (
               <Button variant="primary" onClick={openSettings}>Open Settings</Button>
             )}

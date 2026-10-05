@@ -10,8 +10,11 @@ describe("keyBelongsToWidget", () => {
     }
   });
 
-  it("leaves arrow keys to focused tabs", () => {
-    expect(keyBelongsToWidget(target("[role=tab]"))).toBe(true);
+  it("leaves Left and Right to focused tabs, but not Up, Down or Space", () => {
+    expect(keyBelongsToWidget(target("[role=tab]"), "ArrowLeft")).toBe(true);
+    expect(keyBelongsToWidget(target("[role=tab]"), "End")).toBe(true);
+    expect(keyBelongsToWidget(target("[role=tab]"), "ArrowDown")).toBe(false);
+    expect(keyBelongsToWidget(target("[role=tab]"), " ")).toBe(false);
   });
 
   it("lets the viewer use keys everywhere else", () => {

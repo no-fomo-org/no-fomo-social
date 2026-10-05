@@ -36,7 +36,7 @@ export function Viewer({
         <Dialog.Popup
           initialFocus={stage}
           onKeyDown={(e) => {
-            if (keyBelongsToWidget(e.target)) return;
+            if (keyBelongsToWidget(e.target, e.key)) return;
             if (e.key === "ArrowUp" && onPrev) { e.preventDefault(); onPrev(); }
             if (e.key === "ArrowDown" && onNext) { e.preventDefault(); onNext(); }
           }}
