@@ -58,6 +58,22 @@ describe("saved feed ingest", () => {
     expect(order(db)).toEqual(["3500000000000000001", "3500000000000000002", "3500000000000000003", "3500000000000000004"]);
   });
 
+  it("does not stop on posts from a later sync that was cut off, and keeps feed order", () => {
+    const r1 = startRun(db);
+    ingestSavedPage(db, r1.runId, page1);
+    ingestSavedPage(db, r1.runId, page2);
+    finishRun(db, r1.runId, { ok: true });
+
+    const r2 = startRun(db);
+    expect(ingestSavedPage(db, r2.runId, pageOf(["201", "202"], true)).stop).toBe(false);
+    finishRun(db, r2.runId, { ok: false, code: "rate_limited", message: "slow down" });
+
+    const r3 = startRun(db);
+    expect(ingestSavedPage(db, r3.runId, pageOf(["200", "201", "202"], true)).stop).toBe(false);
+    expect(ingestSavedPage(db, r3.runId, pageOf(["203", "3500000000000000001"], true)).stop).toBe(true);
+    expect(order(db).slice(0, 5)).toEqual(["200", "201", "202", "203", "3500000000000000001"]);
+  });
+
   it("rejects pages for finished runs and fails runs left running", () => {
     const r1 = startRun(db);
     finishRun(db, r1.runId, { ok: true });

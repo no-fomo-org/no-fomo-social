@@ -64,8 +64,9 @@ function postFields(p: ParsedPost) {
 function upsertPost(q: Q, p: ParsedPost, runId: number, keyIfNew: number, keyUpdate: number | null, jobs: MediaJob[]) {
   upsertAuthor(q, p.author, jobs);
   const existing = q
-    .select({ firstSeenRunId: posts.firstSeenRunId, thumbPath: posts.thumbPath })
+    .select({ firstSeenRunId: posts.firstSeenRunId, thumbPath: posts.thumbPath, firstRunComplete: syncRuns.savedComplete })
     .from(posts)
+    .leftJoin(syncRuns, eq(syncRuns.id, posts.firstSeenRunId))
     .where(eq(posts.id, p.id))
     .get();
   if (!existing) {
@@ -86,7 +87,9 @@ function upsertPost(q: Q, p: ParsedPost, runId: number, keyIfNew: number, keyUpd
       .run();
   }
   if (!existing?.thumbPath && p.thumbnailUrl) jobs.push({ kind: "thumb", id: p.id, url: p.thumbnailUrl });
-  return { isNew: !existing, knownBefore: !!existing && existing.firstSeenRunId < runId };
+  // "Known" means first seen by an earlier run that finished walking the saved feed.
+  // Posts from a run that was cut off may sit above a gap of posts nobody fetched yet.
+  return { isNew: !existing, knownBefore: !!existing && existing.firstSeenRunId < runId && existing.firstRunComplete === true };
 }
 
 export function ingestSavedPage(db: Db, runId: number, raw: unknown) {
@@ -98,8 +101,10 @@ export function ingestSavedPage(db: Db, runId: number, raw: unknown) {
     let newCount = 0;
     let sawKnown = false;
     for (const p of page.items) {
+      // Every run walks a prefix of the feed, so giving each seen post a fresh key above
+      // all older keys keeps the whole list in feed order, in both modes.
       const key = run.baseKey - pos++;
-      const r = upsertPost(tx, p, runId, key, run.mode === "full" ? key : null, jobs);
+      const r = upsertPost(tx, p, runId, key, key, jobs);
       if (r.isNew) newCount++;
       if (r.knownBefore) sawKnown = true;
     }
@@ -112,8 +117,10 @@ export function ingestSavedPage(db: Db, runId: number, raw: unknown) {
       })
       .where(eq(syncRuns.id, runId))
       .run();
+    const stop = run.mode === "incremental" && sawKnown;
     if (!page.moreAvailable) setSetting(tx, SAVED_BACKFILL, "1");
-    return { stop: run.mode === "incremental" && sawKnown, newCount, seen: page.items.length, skipped: page.skipped, jobs };
+    if (stop || !page.moreAvailable) tx.update(syncRuns).set({ savedComplete: true }).where(eq(syncRuns.id, runId)).run();
+    return { stop, newCount, seen: page.items.length, skipped: page.skipped, jobs };
   });
 }
 

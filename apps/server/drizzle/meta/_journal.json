@@ -8,6 +8,13 @@
       "when": 1791193309540,
       "tag": "0000_dusty_romulus",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791193797837,
+      "tag": "0001_unique_stryfe",
+      "breakpoints": true
     }
   ]
 }

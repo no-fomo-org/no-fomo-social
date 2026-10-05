@@ -88,6 +88,8 @@ export const syncRuns = sqliteTable("sync_runs", {
   finishedAt: integer("finished_at"),
   baseKey: integer("base_key").notNull(),
   nextPos: integer("next_pos").notNull().default(0),
+  /** True once this run walked the saved feed down to known posts or to the end. */
+  savedComplete: integer("saved_complete", { mode: "boolean" }).notNull().default(false),
   pages: integer("pages").notNull().default(0),
   postsSeen: integer("posts_seen").notNull().default(0),
   postsNew: integer("posts_new").notNull().default(0),
