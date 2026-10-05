@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { PostListItem } from "../src/api";
 import { assembleReport, cleanModelSections, formatClock, hasSummary, postContext, systemPrompt } from "../src/analyze/report";
+import { summaryPreview } from "../src/analyze/report";
 
 const post: PostListItem = {
   id: "1", code: "DAbc", kind: "video", author: { id: "9", username: "dev.tips", fullName: "Dev Tips" },
   caption: "Claude Code in 60 seconds\nsecond line", hashtags: ["ai", "нейросети"], takenAt: 1773446400, durationSec: 72.4,
   likeCount: 10, viewCount: 100, commentCount: 1, accessibilityCaption: "A person at a laptop", locationName: "Berlin",
   musicTitle: "Midnight City", musicArtist: "M83", width: 1080, height: 1920, thumbUrl: "/media/thumbs/1",
-  permalink: "https://www.instagram.com/reel/DAbc/", hasReport: false,
+  permalink: "https://www.instagram.com/reel/DAbc/", hasReport: false, saved: false, profiles: [],
 };
 
 describe("formatClock", () => {
@@ -76,5 +77,18 @@ describe("assembleReport", () => {
   it("cuts a long first caption line to 80 characters", () => {
     const md = assembleReport({ ...base, post: { ...post, caption: "x".repeat(200) }, transcript: null, transcribeModel: null });
     expect(md.split("\n")[0]).toBe(`# @dev.tips: ${"x".repeat(79)}…`);
+  });
+});
+
+describe("summaryPreview", () => {
+  it("returns the Summary section on one line", () => {
+    const md = "# @a: title\n\n## Summary\nFirst line about **AI**.\nSecond `line`.\n\n## Key points\n- x\n";
+    expect(summaryPreview(md)).toBe("First line about AI. Second line.");
+  });
+  it("cuts long text with an ellipsis", () => {
+    expect(summaryPreview(`## Summary\n${"word ".repeat(100)}`, 20)).toBe("word word word word…");
+  });
+  it("falls back to the text without headings", () => {
+    expect(summaryPreview("# Title\nPlain body\n## Post info\n- Link: x")).toBe("Plain body - Link: x");
   });
 });

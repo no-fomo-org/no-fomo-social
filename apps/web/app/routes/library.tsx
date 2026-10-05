@@ -17,7 +17,7 @@ export default function Library() {
   const posts = useInfiniteQuery({
     queryKey: ["posts", filters],
     queryFn: ({ pageParam }) => api.posts(postsQueryString(filters, pageParam)),
-    initialPageParam: null as number | null,
+    initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextCursor,
   });
   const items = posts.data?.pages.flatMap((p) => p.items) ?? [];

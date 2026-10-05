@@ -83,3 +83,16 @@ export function assembleReport(o: {
   parts.push(`## Post info\n${info.join("\n")}`);
   return `${parts.join("\n\n")}\n`;
 }
+/** The report's Summary as one plain line, cut to `max` characters, for lists. */
+export function summaryPreview(md: string, max = 200): string {
+  const section = /^##\s+Summary\b[^\n]*\n([\s\S]*?)(?=^##\s|(?![\s\S]))/m.exec(md)?.[1] ?? md.replace(/^#.*$/gm, "");
+  const text = section
+    .split("\n")
+    .map((l) => l.replace(/^[\s>*]+/, "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\*\*|`/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}

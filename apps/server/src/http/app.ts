@@ -35,9 +35,9 @@ const PostsQuerySchema = z.object({
   author: Id.optional(),
   collection: Id.optional(),
   kind: z.enum(["image", "video", "carousel"]).optional(),
-  cursor: z.coerce.number().int().optional(),
+  profile: Id.optional(),
+  cursor: z.string().regex(/^\d{1,20}(\.\d{1,30})?$/).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(60),
-  report: z.literal("1").optional().transform((v) => v === "1"),
 });
 
 const SettingsBody = z.object({ openaiKey: z.string().trim().regex(/^[\x21-\x7e]{20,300}$/).nullable().optional() }).strict();

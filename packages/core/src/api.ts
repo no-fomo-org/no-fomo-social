@@ -23,6 +23,9 @@ export interface PostListItem {
   thumbUrl: string;
   permalink: string;
   hasReport: boolean;
+  saved: boolean;
+  /** Usernames of added profiles that contain this post. */
+  profiles: string[];
 }
 
 export interface MediaPart {
@@ -41,8 +44,42 @@ export interface PostMedia {
   expiresAt: number | null;
 }
 
-export interface PostsPage { items: PostListItem[]; nextCursor: number | null; total: number }
-export interface PostsQuery { q?: string; author?: string; collection?: string; kind?: MediaKind; cursor?: number; limit: number; report?: boolean }
+export interface PostsPage { items: PostListItem[]; nextCursor: string | null; total: number }
+/** `profile` switches from the saved list to one added profile. Cursors come from `nextCursor`. */
+export interface PostsQuery { q?: string; author?: string; collection?: string; kind?: MediaKind; profile?: string; cursor?: string; limit: number }
+export type AuthorScope = "saved" | "reports";
+export type ReportSource = "saved" | "profile";
+export interface ReportsQuery { q?: string; author?: string; kind?: MediaKind; source?: ReportSource; cursor?: string; limit: number }
+/** `reportedAt` is in milliseconds. `summary` is the report's Summary section as one short line. */
+export interface ReportListItem extends PostListItem { reportedAt: number; reportModel: string; summary: string }
+export interface ReportsPage { items: ReportListItem[]; nextCursor: string | null; total: number }
+export interface LoadRunInfo {
+  id: number;
+  mode: "add" | "older" | "refresh" | "following";
+  status: "running" | "done" | "error";
+  startedAt: number;
+  finishedAt: number | null;
+  pages: number;
+  /** New posts for a profile load; accounts seen for a following update. */
+  items: number;
+  errorCode: string | null;
+  errorMessage: string | null;
+}
+export interface ProfileItem {
+  id: string;
+  username: string;
+  fullName: string | null;
+  avatarUrl: string;
+  postCount: number | null;
+  loadedCount: number;
+  hasOlder: boolean;
+  isPrivate: boolean;
+  addedAt: number;
+  refreshedAt: number | null;
+  run: LoadRunInfo | null;
+}
+export interface FollowingItem { id: string; username: string; fullName: string | null; avatarUrl: string; added: boolean }
+export interface FollowingPage { items: FollowingItem[]; total: number; updatedAt: number | null; run: LoadRunInfo | null }
 export interface AuthorFacet { id: string; username: string; fullName: string | null; avatarUrl: string; count: number }
 export interface CollectionFacet { id: string; name: string | null; count: number }
 

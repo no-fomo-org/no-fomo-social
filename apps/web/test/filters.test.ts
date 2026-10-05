@@ -14,7 +14,7 @@ describe("filters", () => {
   });
 
   it("builds the posts query", () => {
-    expect(postsQueryString({ q: "claude code", author: "1", collection: null, kind: "video", report: false }, 55, 20)).toBe("limit=20&q=claude+code&author=1&kind=video&cursor=55");
+    expect(postsQueryString({ q: "claude code", author: "1", collection: null, kind: "video", report: false }, "55", 20)).toBe("limit=20&q=claude+code&author=1&kind=video&cursor=55");
     expect(hasFilters({ q: null, author: null, collection: null, kind: null, report: false })).toBe(false);
     expect(hasFilters({ q: "x", author: null, collection: null, kind: null, report: false })).toBe(true);
   });

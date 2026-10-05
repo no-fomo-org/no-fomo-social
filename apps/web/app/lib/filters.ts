@@ -35,14 +35,14 @@ export function writeFilters(sp: URLSearchParams, patch: Partial<Filters>): URLS
   return next;
 }
 
-export function postsQueryString(f: Filters, cursor: number | null, limit = 60): string {
+export function postsQueryString(f: Filters, cursor: string | null, limit = 60): string {
   const q = new URLSearchParams({ limit: String(limit) });
   if (f.q) q.set("q", f.q);
   if (f.author) q.set("author", f.author);
   if (f.collection) q.set("collection", f.collection);
   if (f.kind) q.set("kind", f.kind);
   if (f.report) q.set("report", "1");
-  if (cursor !== null) q.set("cursor", String(cursor));
+  if (cursor !== null) q.set("cursor", cursor);
   return q.toString();
 }
 
