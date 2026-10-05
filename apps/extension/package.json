@@ -1,0 +1,18 @@
+{
+  "name": "@no-fomo/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "postinstall": "wxt prepare",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@no-fomo/core": "workspace:*"
+  },
+  "devDependencies": {
+    "wxt": "^0.21.4"
+  }
+}

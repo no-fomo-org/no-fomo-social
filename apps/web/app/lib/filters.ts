@@ -1,0 +1,47 @@
+import type { MediaKind } from "@no-fomo/core";
+
+export interface Filters { q: string | null; author: string | null; collection: string | null; kind: MediaKind | null }
+
+export const NO_FILTERS: Filters = { q: null, author: null, collection: null, kind: null };
+
+const KINDS: readonly MediaKind[] = ["image", "video", "carousel"];
+const ID = /^\d{1,30}$/;
+
+const cleanQuery = (v: string | null | undefined) => {
+  const t = (v ?? "").trim().slice(0, 200);
+  return t ? t : null;
+};
+
+export function readFilters(sp: URLSearchParams): Filters {
+  const author = sp.get("author");
+  const collection = sp.get("collection");
+  const kind = sp.get("kind") as MediaKind | null;
+  return {
+    q: cleanQuery(sp.get("q")),
+    author: author && ID.test(author) ? author : null,
+    collection: collection && ID.test(collection) ? collection : null,
+    kind: kind && KINDS.includes(kind) ? kind : null,
+  };
+}
+
+export function writeFilters(sp: URLSearchParams, patch: Partial<Filters>): URLSearchParams {
+  const next = new URLSearchParams(sp);
+  for (const [k, v] of Object.entries(patch)) {
+    const value = k === "q" ? cleanQuery(v) : v;
+    if (value) next.set(k, value);
+    else next.delete(k);
+  }
+  return next;
+}
+
+export function postsQueryString(f: Filters, cursor: number | null, limit = 60): string {
+  const q = new URLSearchParams({ limit: String(limit) });
+  if (f.q) q.set("q", f.q);
+  if (f.author) q.set("author", f.author);
+  if (f.collection) q.set("collection", f.collection);
+  if (f.kind) q.set("kind", f.kind);
+  if (cursor !== null) q.set("cursor", String(cursor));
+  return q.toString();
+}
+
+export const hasFilters = (f: Filters) => Boolean(f.q || f.author || f.collection || f.kind);

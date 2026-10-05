@@ -1,0 +1,1 @@
+ALTER TABLE `sync_runs` ADD `saved_complete` integer DEFAULT false NOT NULL;

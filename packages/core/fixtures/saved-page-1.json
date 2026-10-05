@@ -1,0 +1,90 @@
+{
+  "items": [
+    {
+      "media": {
+        "pk": "3500000000000000001",
+        "id": "3500000000000000001_111",
+        "code": "DAbcReel01",
+        "saved_collection_ids": ["17900000000000002"],
+        "taken_at": 1756000000,
+        "media_type": 2,
+        "product_type": "clips",
+        "caption": { "text": "Claude Code tips you need #claudecode #AI @anthropic. Подписывайся #нейросети" },
+        "user": { "pk": "111", "username": "devtips", "full_name": "Dev Tips", "profile_pic_url": "https://scontent.cdninstagram.com/v/p150/devtips.jpg?oe=68C0A1B2" },
+        "image_versions2": { "candidates": [
+          { "width": 1080, "height": 1920, "url": "https://scontent.cdninstagram.com/v/reel1_1080.jpg?oe=68C0A1B2" },
+          { "width": 640, "height": 1138, "url": "https://scontent.cdninstagram.com/v/reel1_640.jpg?oe=68C0A1B2" },
+          { "width": 320, "height": 569, "url": "https://scontent.cdninstagram.com/v/reel1_320.jpg?oe=68C0A1B2" }
+        ] },
+        "video_versions": [
+          { "type": 101, "width": 720, "height": 1280, "url": "https://scontent.cdninstagram.com/o1/v/reel1_720.mp4?oe=68C0A1B2" },
+          { "type": 102, "width": 480, "height": 854, "url": "https://scontent.cdninstagram.com/o1/v/reel1_480.mp4?oe=68C0A1B2" }
+        ],
+        "original_width": 1080,
+        "original_height": 1920,
+        "video_duration": 42.5,
+        "like_count": 1532,
+        "play_count": 48211,
+        "comment_count": 87,
+        "accessibility_caption": null,
+        "location": null,
+        "clips_metadata": {
+          "music_info": { "music_asset_info": { "title": "Midnight City", "display_artist": "M83" } },
+          "original_sound_info": null
+        }
+      }
+    },
+    {
+      "media": {
+        "pk": "3500000000000000002",
+        "code": "DAbcImg002",
+        "taken_at": 1755900000,
+        "media_type": 1,
+        "product_type": "feed",
+        "caption": { "text": "Grid systems, thanks @someone. for the tip #design" },
+        "user": { "pk": "222", "username": "designnotes", "full_name": "Design Notes", "profile_pic_url": "https://scontent.cdninstagram.com/v/p150/designnotes.jpg" },
+        "image_versions2": { "candidates": [
+          { "width": 1080, "height": 1350, "url": "https://scontent.cdninstagram.com/v/img2_1080.jpg" },
+          { "width": 480, "height": 600, "url": "https://scontent.cdninstagram.com/v/img2_480.jpg" }
+        ] },
+        "like_count": 210,
+        "comment_count": 4,
+        "accessibility_caption": "May be an image of text that says 'Grid systems'.",
+        "location": { "pk": 1, "name": "Berlin, Germany" }
+      }
+    },
+    {
+      "media": {
+        "pk": "3500000000000000003",
+        "code": "DAbcCar003",
+        "saved_collection_ids": [17900000000000002, "17900000000000003"],
+        "taken_at": 1755800000,
+        "media_type": 8,
+        "product_type": "carousel_container",
+        "caption": { "text": "Setup guide part 1" },
+        "user": { "pk": "111", "username": "devtips", "full_name": "Dev Tips" },
+        "carousel_media": [
+          {
+            "pk": "3500000000000000031",
+            "media_type": 1,
+            "image_versions2": { "candidates": [ { "width": 1080, "height": 1350, "url": "https://scontent.cdninstagram.com/v/car3a_1080.jpg" } ] },
+            "accessibility_caption": "May be an image of a laptop"
+          },
+          {
+            "pk": "3500000000000000032",
+            "media_type": 2,
+            "image_versions2": { "candidates": [ { "width": 1080, "height": 1350, "url": "https://scontent.cdninstagram.com/v/car3b_1080.jpg" } ] },
+            "video_versions": [ { "width": 720, "height": 900, "url": "https://scontent.cdninstagram.com/o1/v/car3b_720.mp4?oe=68C0A1B2" } ],
+            "video_duration": 12
+          },
+          { "pk": "3500000000000000033", "media_type": 99 }
+        ],
+        "like_count": 98
+      }
+    }
+  ],
+  "more_available": true,
+  "next_max_id": "QVFCursorPage2",
+  "num_results": 3,
+  "status": "ok"
+}
