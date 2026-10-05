@@ -5,11 +5,8 @@ CREATE TABLE `following` (
 	FOREIGN KEY (`author_id`) REFERENCES `authors`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `load_runs` (
+CREATE TABLE `following_runs` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`kind` text NOT NULL,
-	`author_id` text,
-	`mode` text NOT NULL,
 	`status` text NOT NULL,
 	`started_at` integer NOT NULL,
 	`active_at` integer NOT NULL,
@@ -20,26 +17,6 @@ CREATE TABLE `load_runs` (
 	`complete` integer DEFAULT false NOT NULL,
 	`error_code` text,
 	`error_message` text
-);
---> statement-breakpoint
-CREATE TABLE `profile_posts` (
-	`author_id` text NOT NULL,
-	`post_id` text NOT NULL,
-	`run_id` integer NOT NULL,
-	PRIMARY KEY(`author_id`, `post_id`),
-	FOREIGN KEY (`author_id`) REFERENCES `profiles`(`author_id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON UPDATE no action ON DELETE cascade
-);
---> statement-breakpoint
-CREATE INDEX `profile_posts_post_idx` ON `profile_posts` (`post_id`);--> statement-breakpoint
-CREATE TABLE `profiles` (
-	`author_id` text PRIMARY KEY NOT NULL,
-	`added_at` integer NOT NULL,
-	`refreshed_at` integer,
-	`post_count` integer,
-	`older_cursor` text,
-	`is_private` integer DEFAULT false NOT NULL,
-	FOREIGN KEY (`author_id`) REFERENCES `authors`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
 CREATE TABLE `saved_posts` (

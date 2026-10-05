@@ -1,22 +1,20 @@
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, lt, sql, type SQL } from "drizzle-orm";
-import { expiresAtFromUrl, summaryPreview } from "@no-fomo/core";
+import { buildPostMedia, permalinkOf, summaryPreview } from "@no-fomo/core";
 import type {
-  AuthorFacet, AuthorScope, CollectionFacet, FollowingPage, LoadRunInfo, MediaPart, PostListItem, PostMedia, PostsPage, PostsQuery,
-  ProfileItem, ReportsPage, ReportsQuery, SyncStatus,
+  AuthorFacet, AuthorScope, CollectionFacet, FollowingPage, FollowingRunInfo, MediaPart, PostListItem, PostMedia, PostsPage, PostsQuery,
+  ReportsPage, ReportsQuery, SyncStatus,
 } from "@no-fomo/core";
 import type { Db } from "./db/open";
 import { getSetting } from "./db/settings";
-import { authors, collections, following, loadRuns, postCollections, postParts, posts, profilePosts, profiles, reports, savedPosts } from "./db/schema";
+import { authors, collections, following, followingRuns, postCollections, postParts, posts, reports, savedPosts } from "./db/schema";
 import { lastFullAt, lastSuccessAt, latestRun } from "./sync/ingest";
-import { FOLLOWING_UPDATED_AT } from "./sync/loads";
+import { FOLLOWING_UPDATED_AT } from "./sync/following";
 
 const visible = and(isNull(savedPosts.removedAt), isNull(savedPosts.removedRemotelyAt));
 const hasReport = sql<number>`EXISTS (SELECT 1 FROM reports r WHERE r.post_id = ${posts.id} AND r.markdown IS NOT NULL)`;
 const isSaved = sql<number>`EXISTS (SELECT 1 FROM saved_posts s WHERE s.post_id = ${posts.id} AND s.removed_at IS NULL AND s.removed_remotely_at IS NULL)`;
-const inAnyProfile = sql<number>`EXISTS (SELECT 1 FROM profile_posts pp WHERE pp.post_id = ${posts.id})`;
-const profileNames = sql<string | null>`(SELECT group_concat(a.username, ' ') FROM profile_posts pp JOIN authors a ON a.id = pp.author_id WHERE pp.post_id = ${posts.id})`;
-const itemColumns = { post: posts, username: authors.username, fullName: authors.fullName, hasReport, saved: isSaved, profileNames };
-type ItemRow = { post: typeof posts.$inferSelect; username: string; fullName: string | null; hasReport: number; saved: number; profileNames: string | null };
+const itemColumns = { post: posts, username: authors.username, fullName: authors.fullName, hasReport, saved: isSaved };
+type ItemRow = { post: typeof posts.$inferSelect; username: string; fullName: string | null; hasReport: number; saved: number };
 
 /**
  * Turns free text into a safe FTS5 query: every word must match, each as a word start.
@@ -51,20 +49,6 @@ export function listPosts(db: Db, q: PostsQuery): PostsPage {
     q.kind ? eq(posts.kind, q.kind) : undefined,
   );
 
-  if (q.profile) {
-    const where = and(common, inArray(posts.id, db.select({ id: profilePosts.postId }).from(profilePosts).where(eq(profilePosts.authorId, q.profile))));
-    const total = db.select({ n: count() }).from(posts).where(where).get()?.n ?? 0;
-    const rows = db
-      .select(itemColumns)
-      .from(posts)
-      .innerJoin(authors, eq(authors.id, posts.authorId))
-      .where(and(where, after(posts.takenAt, posts.id, splitCursor(q.cursor))))
-      .orderBy(desc(posts.takenAt), desc(posts.id))
-      .limit(q.limit + 1)
-      .all();
-    return paged(rows, q.limit, toItem, (r) => `${r.post.takenAt}.${r.post.id}`, total);
-  }
-
   const where = and(
     common,
     visible,
@@ -96,10 +80,9 @@ function toItem(r: ItemRow): PostListItem {
     accessibilityCaption: p.accessibilityCaption, locationName: p.locationName,
     musicTitle: p.musicTitle, musicArtist: p.musicArtist, width: p.width, height: p.height,
     thumbUrl: `/media/thumbs/${p.id}`,
-    permalink: `https://www.instagram.com/${p.productType === "clips" ? "reel" : "p"}/${p.code}/`,
+    permalink: permalinkOf(p.code, p.productType),
     hasReport: Boolean(r.hasReport),
     saved: Boolean(r.saved),
-    profiles: r.profileNames ? r.profileNames.split(" ") : [],
   };
 }
 
@@ -117,7 +100,7 @@ export function listReports(db: Db, q: ReportsQuery): ReportsPage {
     match ? sql`${reports.postId} IN (SELECT post_id FROM report_search WHERE report_search MATCH ${match})` : undefined,
     q.author ? eq(posts.authorId, q.author) : undefined,
     q.kind ? eq(posts.kind, q.kind) : undefined,
-    q.source === "saved" ? isSaved : q.source === "profile" ? inAnyProfile : undefined,
+    q.source === "saved" ? isSaved : q.source === "other" ? sql`NOT ${isSaved}` : undefined,
   );
   const total = db.select({ n: count() }).from(reports).innerJoin(posts, eq(posts.id, reports.postId)).where(where).get()?.n ?? 0;
   const rows = db
@@ -152,11 +135,7 @@ export function getPostMedia(db: Db, id: string): PostMedia | null {
   if (parts.length === 0 && p.kind === "video" && p.videoUrl) {
     parts.push({ index: 0, kind: "video", imageUrl: p.thumbnailUrl, videoUrl: p.videoUrl, width: p.width, height: p.height });
   }
-  const expiries = parts
-    .flatMap((x) => [x.imageUrl, x.videoUrl])
-    .map(expiresAtFromUrl)
-    .filter((x): x is number => x !== null);
-  return { id: p.id, kind: p.kind, parts, expiresAt: expiries.length ? Math.min(...expiries) : null };
+  return buildPostMedia(p.id, p.kind, parts);
 }
 
 export function listAuthors(db: Db, scope: AuthorScope = "saved"): AuthorFacet[] {
@@ -198,34 +177,29 @@ export function syncStatus(db: Db): SyncStatus {
   };
 }
 
-/** A load page takes seconds. A run silent this long lost its Instagram tab and will never finish. */
+/** A page takes seconds. An update silent this long lost its Instagram tab and will never finish. */
 const STALE_MS = 2 * 60_000;
 
-function runInfo(r: typeof loadRuns.$inferSelect | undefined, now: number): LoadRunInfo | null {
+function runInfo(r: typeof followingRuns.$inferSelect | undefined, now: number): FollowingRunInfo | null {
   if (!r) return null;
   const stale = r.status === "running" && now - r.activeAt > STALE_MS;
   return {
-    id: r.id, mode: r.mode, startedAt: r.startedAt, finishedAt: r.finishedAt, pages: r.pages, items: r.items,
+    id: r.id, startedAt: r.startedAt, finishedAt: r.finishedAt, pages: r.pages, items: r.items,
     ...(stale
-      ? { status: "error" as const, errorCode: "interrupted", errorMessage: "The load stopped before it finished. Try again." }
+      ? { status: "error" as const, errorCode: "interrupted", errorMessage: "The update stopped before it finished. Try again." }
       : { status: r.status, errorCode: r.errorCode, errorMessage: r.errorMessage }),
   };
 }
 
-export function listProfiles(db: Db, now = Date.now()): ProfileItem[] {
-  const loaded = sql<number>`(SELECT count(*) FROM profile_posts pp WHERE pp.author_id = ${profiles.authorId})`;
+/** For posts shown straight from Instagram: which ones are stored, saved, or have a finished report. */
+export function postStates(db: Db, ids: string[]): Array<{ id: string; saved: boolean; hasReport: boolean }> {
+  if (ids.length === 0) return [];
   return db
-    .select({ p: profiles, username: authors.username, fullName: authors.fullName, loaded })
-    .from(profiles)
-    .innerJoin(authors, eq(authors.id, profiles.authorId))
-    .orderBy(desc(profiles.addedAt))
+    .select({ id: posts.id, saved: isSaved, hasReport })
+    .from(posts)
+    .where(inArray(posts.id, ids))
     .all()
-    .map((r) => ({
-      id: r.p.authorId, username: r.username, fullName: r.fullName, avatarUrl: `/media/avatars/${r.p.authorId}`,
-      postCount: r.p.postCount, loadedCount: r.loaded, hasOlder: r.p.olderCursor !== null, isPrivate: r.p.isPrivate,
-      addedAt: r.p.addedAt, refreshedAt: r.p.refreshedAt,
-      run: runInfo(db.select().from(loadRuns).where(and(eq(loadRuns.kind, "profile"), eq(loadRuns.authorId, r.p.authorId))).orderBy(desc(loadRuns.id)).limit(1).get(), now),
-    }));
+    .map((r) => ({ id: r.id, saved: Boolean(r.saved), hasReport: Boolean(r.hasReport) }));
 }
 
 /** Escapes LIKE wildcards so typed text matches literally. */
@@ -237,19 +211,18 @@ export function listFollowing(db: Db, o: { q?: string; limit: number }, now = Da
     ? sql`(lower(${authors.username}) LIKE ${likePattern(text)} ESCAPE '\\' OR lower(coalesce(${authors.fullName}, '')) LIKE ${likePattern(text)} ESCAPE '\\')`
     : undefined;
   const total = db.select({ n: count() }).from(following).innerJoin(authors, eq(authors.id, following.authorId)).where(where).get()?.n ?? 0;
-  const added = sql<number>`EXISTS (SELECT 1 FROM profiles p WHERE p.author_id = ${following.authorId})`;
   const items = db
-    .select({ id: authors.id, username: authors.username, fullName: authors.fullName, added })
+    .select({ id: authors.id, username: authors.username, fullName: authors.fullName })
     .from(following)
     .innerJoin(authors, eq(authors.id, following.authorId))
     .where(where)
     .orderBy(asc(following.position))
     .limit(o.limit)
     .all()
-    .map((a) => ({ ...a, avatarUrl: `/media/avatars/${a.id}`, added: Boolean(a.added) }));
+    .map((a) => ({ ...a, avatarUrl: `/media/avatars/${a.id}` }));
   const updated = getSetting(db, FOLLOWING_UPDATED_AT);
   return {
     items, total, updatedAt: updated ? Number(updated) : null,
-    run: runInfo(db.select().from(loadRuns).where(eq(loadRuns.kind, "following")).orderBy(desc(loadRuns.id)).limit(1).get(), now),
+    run: runInfo(db.select().from(followingRuns).orderBy(desc(followingRuns.id)).limit(1).get(), now),
   };
 }

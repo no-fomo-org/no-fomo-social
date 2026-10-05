@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { openDb, type Db } from "../src/db/open";
-import { finishRun, ingestSavedPage, startRun } from "../src/sync/ingest";
-import { finishLoadRun, ingestFollowingPage, ingestProfilePage, startFollowingRun, startProfileRun } from "../src/sync/loads";
+import { finishRun, ingestMediaInfo, ingestSavedPage, startRun } from "../src/sync/ingest";
+import { finishFollowingRun, ingestFollowingPage, startFollowingRun } from "../src/sync/following";
 import { finishReport, queueReport } from "../src/analyze/report-store";
-import { listAuthors, listFollowing, listPosts, listProfiles, listReports } from "../src/queries";
+import { listAuthors, listFollowing, listPosts, listReports } from "../src/queries";
 
 const media = (pk: string, author: string, kind = 1, takenAt = Number(pk)) => ({
   pk, code: `C${pk}`, media_type: kind, taken_at: takenAt, user: { pk: author, username: `u${author}` },
@@ -18,34 +18,19 @@ const report = (db: Db, id: string, text: string, at: number) => {
 let db: Db;
 beforeEach(() => {
   db = openDb(":memory:");
-  // Saved: 1 (author 5), 2 (author 77, also in profile 77).
+  // Saved: 1 (author 5), 2 (author 77). Analyzed from an account page: 3 (author 77, a video).
   const run = startRun(db);
   ingestSavedPage(db, run.runId, { items: [{ media: media("1", "5") }, { media: media("2", "77") }], more_available: false });
   finishRun(db, run.runId, { ok: true });
-  // Profile 77: 2, 3, 4 (3 and 4 same time).
-  const p = startProfileRun(db, { mode: "add", payload: { data: { user: { id: "77", username: "u77" } } } }, 10);
-  ingestProfilePage(db, p.runId, { items: [media("2", "77"), media("3", "77", 1, 50), media("4", "77", 2, 50)], more_available: true, next_max_id: "N" });
-  finishLoadRun(db, p.runId, { ok: true }, 11);
+  ingestMediaInfo(db, "3", { items: [media("3", "77", 2)] }, { store: true });
 });
 
-describe("posts by scope", () => {
-  it("saved scope shows only saved posts, with badges", () => {
-    const page = listPosts(db, { limit: 50 });
-    expect(page.items.map((p) => [p.id, p.saved, p.profiles])).toEqual([["1", true, []], ["2", true, ["u77"]]]);
+describe("saved posts", () => {
+  it("shows only saved posts, marked as saved", () => {
+    expect(listPosts(db, { limit: 50 }).items.map((p) => [p.id, p.saved])).toEqual([["1", true], ["2", true]]);
   });
 
-  it("profile scope shows the profile's posts newest first and pages without skipping equal times", () => {
-    const a = listPosts(db, { profile: "77", limit: 1 });
-    expect(a.items.map((p) => p.id)).toEqual(["4"]);
-    expect(a.nextCursor).toBe("50.4");
-    const b = listPosts(db, { profile: "77", limit: 1, cursor: a.nextCursor! });
-    expect(b.items.map((p) => p.id)).toEqual(["3"]);
-    const c = listPosts(db, { profile: "77", limit: 5, cursor: b.nextCursor! });
-    expect(c.items.map((p) => [p.id, p.saved])).toEqual([["2", true]]);
-    expect(listPosts(db, { profile: "77", limit: 5, kind: "video" }).items.map((p) => p.id)).toEqual(["4"]);
-  });
-
-  it("a report made from the profile shows on the same post in Saved", () => {
+  it("a report shows on the saved post", () => {
     report(db, "2", "zanzibar", 100);
     expect(listPosts(db, { limit: 50 }).items.find((p) => p.id === "2")!.hasReport).toBe(true);
   });
@@ -70,8 +55,8 @@ describe("reports list", () => {
     expect(listReports(db, { limit: 50, q: "zanzib" }).items.map((r) => r.id)).toEqual(["1"]);
     expect(listReports(db, { limit: 50, author: "77" }).items.map((r) => r.id)).toEqual(["3"]);
     expect(listReports(db, { limit: 50, source: "saved" }).items.map((r) => r.id)).toEqual(["1"]);
-    expect(listReports(db, { limit: 50, source: "profile" }).items.map((r) => r.id)).toEqual(["3"]);
-    expect(listReports(db, { limit: 50, kind: "video" }).total).toBe(0);
+    expect(listReports(db, { limit: 50, source: "other" }).items.map((r) => r.id)).toEqual(["3"]);
+    expect(listReports(db, { limit: 50, kind: "video" }).items.map((r) => r.id)).toEqual(["3"]);
   });
 
   it("pages with a cursor", () => {
@@ -85,32 +70,25 @@ describe("reports list", () => {
   });
 });
 
-describe("profiles and following", () => {
-  it("lists profiles with loaded count and last run", () => {
-    expect(listProfiles(db)).toEqual([expect.objectContaining({
-      id: "77", username: "u77", loadedCount: 3, hasOlder: true, refreshedAt: 11, avatarUrl: "/media/avatars/77",
-      run: expect.objectContaining({ status: "done", mode: "add", pages: 1, items: 3 }),
-    })]);
-  });
-
-  it("reports a load with no news for over 2 minutes as interrupted, so it can be run again", () => {
-    startProfileRun(db, { mode: "refresh", authorId: "77" }, Date.now() - 3 * 60_000);
-    expect(listProfiles(db)[0]!.run).toMatchObject({ status: "error", errorCode: "interrupted" });
-    startProfileRun(db, { mode: "refresh", authorId: "77" });
-    expect(listProfiles(db)[0]!.run).toMatchObject({ status: "running" });
-  });
-
-  it("filters the following list by name and marks added profiles", () => {
+describe("following list", () => {
+  it("filters by name, in Instagram's order", () => {
     const run = startFollowingRun(db);
     ingestFollowingPage(db, run.runId, { users: [
       { pk: "77", username: "u77" }, { pk: "8", username: "maria.codes", full_name: "Maria Lopes" }, { pk: "9", username: "kenji" },
     ] });
-    finishLoadRun(db, run.runId, { ok: true }, 99);
+    finishFollowingRun(db, run.runId, { ok: true }, 99);
     const all = listFollowing(db, { limit: 100 });
-    expect(all.items.map((f) => [f.username, f.added])).toEqual([["u77", true], ["maria.codes", false], ["kenji", false]]);
+    expect(all.items.map((f) => f.username)).toEqual(["u77", "maria.codes", "kenji"]);
     expect(all.updatedAt).toBe(99);
     expect(listFollowing(db, { q: "LOPES", limit: 100 }).items.map((f) => f.id)).toEqual(["8"]);
     expect(listFollowing(db, { q: "%", limit: 100 }).total).toBe(0);
     expect(listFollowing(db, { limit: 1 })).toMatchObject({ total: 3, items: [expect.objectContaining({ id: "77" })] });
+  });
+
+  it("shows an update with no news for over 2 minutes as stopped, so it can run again", () => {
+    startFollowingRun(db, Date.now() - 3 * 60_000);
+    expect(listFollowing(db, { limit: 10 }).run).toMatchObject({ status: "error", errorCode: "interrupted" });
+    startFollowingRun(db);
+    expect(listFollowing(db, { limit: 10 }).run).toMatchObject({ status: "running" });
   });
 });

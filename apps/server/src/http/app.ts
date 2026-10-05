@@ -16,18 +16,21 @@ import { getReport } from "../analyze/report-store";
 import { imageType, type MediaStore } from "../media/store";
 import type { KeyStore } from "../secrets/key-store";
 import { readSettings, updateSettings } from "../settings";
-import { getPostMedia, listAuthors, listCollections, listFollowing, listPosts, listProfiles, listReports, syncStatus } from "../queries";
+import { getPostMedia, listAuthors, listCollections, listFollowing, listPosts, listReports, postStates, syncStatus } from "../queries";
 import {
   finishRun, ingestCollections, ingestMediaInfo, ingestSavedPage, MismatchError, NotFoundError, RunNotActiveError, startRun,
 } from "../sync/ingest";
-import {
-  finishLoadRun, ingestFollowingPage, ingestProfilePage, LoadError, removeProfile, startFollowingRun, startProfileRun,
-} from "../sync/loads";
+import { finishFollowingRun, ingestFollowingPage, startFollowingRun } from "../sync/following";
 import { security } from "./security";
 
 const Id = z.string().regex(/^\d{1,30}$/);
 const RunId = z.coerce.number().int().positive();
 const PageBody = z.object({ payload: z.unknown() });
+const MediaBody = z.object({ payload: z.unknown(), store: z.boolean().default(false) });
+/** Up to 100 post ids, comma separated; empty means none. */
+const KnownQuery = z.object({
+  ids: z.string().max(3200).default("").transform((v) => (v ? v.split(",") : [])).pipe(z.array(Id).max(100)),
+});
 const StartBody = z.object({ mode: z.enum(["incremental", "full"]).optional() });
 const FinishBody = z.union([
   z.object({ ok: z.literal(true) }),
@@ -48,16 +51,12 @@ const ReportsQuerySchema = z.object({
   q: z.string().max(200).optional(),
   author: Id.optional(),
   kind: Kind.optional(),
-  source: z.enum(["saved", "profile"]).optional(),
+  source: z.enum(["saved", "other"]).optional(),
   cursor: Cursor.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(40),
 });
 const FollowingQuery = z.object({ q: z.string().max(100).optional(), limit: z.coerce.number().int().min(1).max(500).default(100) });
 const AuthorsQuery = z.object({ scope: z.enum(["saved", "reports"]).default("saved") });
-const ProfileStartSchema = z.union([
-  z.object({ mode: z.literal("add"), payload: z.unknown() }),
-  z.object({ mode: z.enum(["older", "refresh"]), authorId: Id }),
-]);
 
 const SettingsBody = z.object({ openaiKey: z.string().trim().regex(/^[\x21-\x7e]{20,300}$/).nullable().optional() }).strict();
 const AnalyzeBody = z
@@ -104,7 +103,6 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     if (err instanceof NotFoundError) return c.json({ error: err.message }, 404);
     if (err instanceof RunNotActiveError) return c.json({ error: err.message }, 409);
     if (err instanceof MismatchError) return c.json({ error: err.message }, 422);
-    if (err instanceof LoadError) return c.json({ error: err.code }, 409);
     if (err instanceof AnalyzeError) return c.json({ error: err.code }, 409);
     console.error(err);
     return c.json({ error: "internal_error" }, 500);
@@ -140,24 +138,9 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
 
   app.post("/api/sync/media/:id", async (c) => {
     const id = Id.parse(c.req.param("id"));
-    const { payload } = PageBody.parse(await c.req.json());
-    media.enqueue(ingestMediaInfo(db, id, payload));
+    const { payload, store } = MediaBody.parse(await c.req.json());
+    media.enqueue(ingestMediaInfo(db, id, payload, { store }));
     return c.json(getPostMedia(db, id));
-  });
-
-  app.post("/api/sync/profiles/runs", async (c) => {
-    const r = startProfileRun(db, ProfileStartSchema.parse(await c.req.json()));
-    media.enqueue(r.jobs);
-    return c.json({ runId: r.runId, authorId: r.authorId, cursor: r.cursor, mode: r.mode }, 201);
-  });
-
-  app.post("/api/sync/profiles/runs/:id/page", async (c) => {
-    const runId = RunId.parse(c.req.param("id"));
-    const { payload } = PageBody.parse(await c.req.json());
-    await dump(runId, "load-profile", payload);
-    const r = ingestProfilePage(db, runId, payload);
-    media.enqueue(r.jobs);
-    return c.json({ stop: r.stop, newCount: r.newCount });
   });
 
   app.post("/api/sync/following/runs", (c) => c.json(startFollowingRun(db), 201));
@@ -169,13 +152,14 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     return c.json(ingestFollowingPage(db, runId, payload));
   });
 
-  app.post("/api/sync/loads/:id/finish", async (c) => {
-    finishLoadRun(db, RunId.parse(c.req.param("id")), FinishBody.parse(await c.req.json()));
+  app.post("/api/sync/following/runs/:id/finish", async (c) => {
+    finishFollowingRun(db, RunId.parse(c.req.param("id")), FinishBody.parse(await c.req.json()));
     return c.json({ ok: true });
   });
 
   app.get("/api/sync/status", (c) => c.json(syncStatus(db)));
   app.get("/api/posts", (c) => c.json(listPosts(db, PostsQuerySchema.parse(c.req.query()))));
+  app.get("/api/posts/known", (c) => c.json(postStates(db, KnownQuery.parse(c.req.query()).ids)));
   app.get("/api/posts/:id/media", (c) => {
     const found = getPostMedia(db, Id.parse(c.req.param("id")));
     return found ? c.json(found) : c.json({ error: "not_found" }, 404);
@@ -192,13 +176,6 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
   });
   app.get("/api/authors", (c) => c.json(listAuthors(db, AuthorsQuery.parse(c.req.query()).scope)));
   app.get("/api/reports", (c) => c.json(listReports(db, ReportsQuerySchema.parse(c.req.query()))));
-  app.get("/api/profiles", (c) => c.json(listProfiles(db)));
-  app.post("/api/profiles/:id/remove", async (c) => {
-    if (fromExtension(c)) return c.json({ error: "forbidden" }, 403);
-    const ids = removeProfile(db, Id.parse(c.req.param("id")));
-    await media.removeThumbs(ids);
-    return c.json({ ok: true, removed: ids.length });
-  });
   app.get("/api/following", (c) => c.json(listFollowing(db, FollowingQuery.parse(c.req.query()))));
   app.get("/api/collections", (c) => c.json(listCollections(db)));
   app.get("/api/settings", (c) => (fromExtension(c) ? c.json({ error: "forbidden" }, 403) : c.json(readSettings(db, keys))));

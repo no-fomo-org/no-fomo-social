@@ -136,28 +136,6 @@ export const savedPosts = sqliteTable(
   (t) => [index("saved_posts_sort_idx").on(t.sortKey)],
 );
 
-/** Instagram accounts the owner added to the library. */
-export const profiles = sqliteTable("profiles", {
-  authorId: text("author_id").primaryKey().references(() => authors.id),
-  addedAt: integer("added_at").notNull(),
-  refreshedAt: integer("refreshed_at"),
-  postCount: integer("post_count"),
-  /** Instagram's next_max_id for "Load older posts". Null when the end is reached. */
-  olderCursor: text("older_cursor"),
-  isPrivate: integer("is_private", { mode: "boolean" }).notNull().default(false),
-});
-
-export const profilePosts = sqliteTable(
-  "profile_posts",
-  {
-    authorId: text("author_id").notNull().references(() => profiles.authorId, { onDelete: "cascade" }),
-    postId: text("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
-    /** The load that last read this post. A refresh that never reached known posts leaves a gap below its posts. */
-    runId: integer("run_id").notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.authorId, t.postId] }), index("profile_posts_post_idx").on(t.postId)],
-);
-
 /** Accounts the owner follows. Names and avatars live in `authors`. */
 export const following = sqliteTable("following", {
   authorId: text("author_id").primaryKey().references(() => authors.id),
@@ -166,25 +144,19 @@ export const following = sqliteTable("following", {
   lastSeenRunId: integer("last_seen_run_id").notNull(),
 });
 
-/** Profile loads and following updates, run by the extension. */
-export const loadRuns = sqliteTable("load_runs", {
+/** Runs of "Update list" for the following list, done by the extension. */
+export const followingRuns = sqliteTable("following_runs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  kind: text("kind", { enum: ["profile", "following"] }).notNull(),
-  authorId: text("author_id"),
-  mode: text("mode", { enum: ["add", "older", "refresh", "following"] }).notNull(),
   status: text("status", { enum: ["running", "done", "error"] }).notNull(),
   startedAt: integer("started_at").notNull(),
   /** Last sign of life: the start or the last page. */
   activeAt: integer("active_at").notNull(),
   finishedAt: integer("finished_at"),
   pages: integer("pages").notNull().default(0),
-  /** New posts for a profile run; accounts seen for a following run. */
+  /** Accounts seen so far. */
   items: integer("items").notNull().default(0),
   nextPos: integer("next_pos").notNull().default(0),
-  /**
-   * Following: the run read the list to its end, so accounts it did not see were unfollowed.
-   * Profile refresh: the run reached posts it already had (or the end), so no gap is left below its posts.
-   */
+  /** The run read the list to its end, so accounts it did not see were unfollowed. */
   complete: integer("complete", { mode: "boolean" }).notNull().default(false),
   errorCode: text("error_code"),
   errorMessage: text("error_message"),

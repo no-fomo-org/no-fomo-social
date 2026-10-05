@@ -118,23 +118,26 @@ function replaceSearch(q: Q, p: ParsedPost) {
 }
 
 export class MismatchError extends Error {}
+/** The post is not stored and the caller did not ask to store it. The message is the code the extension checks. */
+export class NotStoredError extends NotFoundError {
+  constructor() {
+    super("not_stored");
+  }
+}
 
 /**
  * Fresh links for one post from Instagram's media info.
- * Keeps the post's feed position, run ids and collections: this answer says nothing about them.
+ * Keeps the post's saved place and collections: this answer says nothing about them.
+ * `store`: create the post when it is not stored yet (Analyze on an account page). It is not added to Saved.
  */
-export function ingestMediaInfo(db: Db, id: string, raw: unknown): MediaJob[] {
+export function ingestMediaInfo(db: Db, id: string, raw: unknown, o: { store: boolean }): MediaJob[] {
   const p = parseMediaPage(raw).items[0];
   if (!p || p.id !== id) throw new MismatchError(`Instagram answered about a different post than ${id}`);
   const jobs: MediaJob[] = [];
   db.transaction((tx) => {
-    const existing = tx.select({ thumbPath: posts.thumbPath }).from(posts).where(eq(posts.id, id)).get();
-    if (!existing) throw new NotFoundError(`Post ${id} is not in your library`);
-    upsertAuthor(tx, p.author, jobs);
-    tx.update(posts).set(postFields(p)).where(eq(posts.id, id)).run();
-    replaceParts(tx, p);
-    replaceSearch(tx, p);
-    if (!existing.thumbPath && p.thumbnailUrl) jobs.push({ kind: "thumb", id, url: p.thumbnailUrl });
+    const exists = tx.select({ id: posts.id }).from(posts).where(eq(posts.id, id)).get();
+    if (!exists && !o.store) throw new NotStoredError();
+    upsertPostContent(tx, p, jobs);
   });
   return jobs;
 }
