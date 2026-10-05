@@ -18,8 +18,17 @@ const media = createMediaStore({
 });
 const app = createApp({ db, config, media });
 
-serve({ fetch: app.fetch, port: config.port, hostname: "127.0.0.1" }, () => {
+const server = serve({ fetch: app.fetch, port: config.port, hostname: "127.0.0.1" }, () => {
   console.log(`no-fomo is running at http://localhost:${config.port}`);
   console.log(`Data folder: ${config.dataDir}`);
   if (!config.webDist) console.log("Web app not built yet. In dev, open http://localhost:5173");
+});
+
+server.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`Port ${config.port} is busy. no-fomo may already be running: open http://localhost:${config.port}`);
+    console.error(`To stop the old copy, run: kill $(lsof -ti tcp:${config.port})`);
+    process.exit(1);
+  }
+  throw err;
 });
