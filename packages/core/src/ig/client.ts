@@ -13,6 +13,10 @@ export interface IgClient {
   savedPage(cursor: string | null): Promise<unknown>;
   collectionsPage(cursor: string | null): Promise<unknown>;
   mediaInfo(id: string): Promise<unknown>;
+  profileInfo(username: string): Promise<unknown>;
+  userFeed(userId: string, cursor: string | null): Promise<unknown>;
+  searchUsers(query: string): Promise<unknown>;
+  followingPage(viewerId: string, cursor: string | null): Promise<unknown>;
 }
 
 const LOGIN_MESSAGE = "Log in to Instagram in this browser, then sync again.";
@@ -67,6 +71,12 @@ export function createIgClient(opts: {
     return body;
   }
 
+  /** Ids go into the URL path, so only digits may pass. */
+  const userPath = (id: string, rest: string) => {
+    if (!/^\d{1,30}$/.test(id)) throw new IgError("bad_response", "Bad Instagram user id.");
+    return `/api/v1/${rest.replace("{id}", id)}`;
+  };
+
   return {
     savedPage: (cursor) => get("saved posts", "/api/v1/feed/saved/posts/", { max_id: cursor }),
     // Same query the instagram.com Saved page sends. The parser keeps only user collections ("MEDIA").
@@ -78,5 +88,10 @@ export function createIgClient(opts: {
         max_id: cursor ?? "",
       }),
     mediaInfo: (id) => get("post", `/api/v1/media/${id}/info/`, {}, true),
+    profileInfo: (username) => get("profile", "/api/v1/users/web_profile_info/", { username }, true),
+    userFeed: async (userId, cursor) => get("profile posts", userPath(userId, "feed/user/{id}/"), { count: "12", max_id: cursor }),
+    searchUsers: (query) => get("search", "/api/v1/web/search/topsearch/", { context: "blended", query }),
+    followingPage: async (viewerId, cursor) =>
+      get("following list", userPath(viewerId, "friendships/{id}/following/"), { count: "100", max_id: cursor }),
   };
 }

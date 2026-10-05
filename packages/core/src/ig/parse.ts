@@ -1,14 +1,7 @@
 import { extractHashtags, extractMentions } from "./text";
 import { expiresAtFromUrl } from "./url";
+import { arr, isObj, num, obj, str, type Json } from "./json";
 import type { MediaKind, PageInfo, ParsedAuthor, ParsedCollection, ParsedMediaPart, ParsedPost } from "./types";
-
-type Json = Record<string, unknown>;
-const isObj = (v: unknown): v is Json => typeof v === "object" && v !== null && !Array.isArray(v);
-const obj = (v: unknown): Json => (isObj(v) ? v : {});
-const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
-const str = (v: unknown): string | null =>
-  typeof v === "string" && v.trim() !== "" ? v : typeof v === "number" && Number.isFinite(v) ? String(v) : null;
-const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 const KIND_BY_TYPE: Record<number, MediaKind> = { 1: "image", 2: "video", 8: "carousel" };
 
@@ -30,7 +23,7 @@ function pickThumb(list: unknown): Candidate | null {
 
 const pickLargest = (list: unknown): Candidate | null => candidates(list).at(-1) ?? null;
 
-function parseAuthor(u: Json): ParsedAuthor | null {
+export function parseAuthor(u: Json): ParsedAuthor | null {
   const id = str(u.pk) ?? str(u.pk_id) ?? str(u.id);
   const username = str(u.username);
   if (!id || !username) return null;
@@ -104,6 +97,7 @@ export function parseMedia(raw: unknown): ParsedPost | null {
     height: num(m.original_height) ?? (video ?? thumb)?.height ?? null,
     parts,
     collectionIds: [...new Set(arr(m.saved_collection_ids).map(str).filter((id): id is string => id !== null))],
+    pinned: arr(m.timeline_pinned_user_ids).length > 0,
   };
 }
 

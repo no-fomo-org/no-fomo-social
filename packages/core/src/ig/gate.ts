@@ -51,5 +51,9 @@ export function gateClient(ig: IgClient, gate: RequestGate): IgClient {
     savedPage: (cursor) => gate.run(() => ig.savedPage(cursor)),
     collectionsPage: (cursor) => gate.run(() => ig.collectionsPage(cursor)),
     mediaInfo: (id) => gate.run(() => ig.mediaInfo(id)),
+    profileInfo: (username) => gate.run(() => ig.profileInfo(username)),
+    userFeed: (userId, cursor) => gate.run(() => ig.userFeed(userId, cursor)),
+    searchUsers: (query) => gate.run(() => ig.searchUsers(query)),
+    followingPage: (viewerId, cursor) => gate.run(() => ig.followingPage(viewerId, cursor)),
   };
 }

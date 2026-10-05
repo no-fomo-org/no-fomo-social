@@ -43,6 +43,8 @@ export interface ParsedPost {
   parts: ParsedMediaPart[];
   /** Ids of the user's collections this post is in (from `saved_collection_ids`). */
   collectionIds: string[];
+  /** Pinned to the top of its author's profile. Only the profile feed sets this. */
+  pinned: boolean;
 }
 
 export interface ParsedCollection {
@@ -56,4 +58,22 @@ export interface PageInfo {
   moreAvailable: boolean;
   /** Instagram said plainly that this is the last page. A missing flag is not proof. */
   endOfFeed: boolean;
+}
+
+export interface ParsedProfile extends ParsedAuthor {
+  postCount: number | null;
+  isPrivate: boolean;
+  /** False for a private account the owner does not follow: its posts cannot be read. */
+  followedByViewer: boolean;
+}
+
+export interface UserSuggestion extends ParsedAuthor {
+  isPrivate: boolean;
+  isVerified: boolean;
+}
+
+export interface ParsedUserPage {
+  items: ParsedAuthor[];
+  nextCursor: string | null;
+  moreAvailable: boolean;
 }
