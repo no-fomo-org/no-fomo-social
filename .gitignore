@@ -1,0 +1,11 @@
+node_modules/
+.output/
+.wxt/
+build/
+dist/
+.react-router/
+.dev-data/
+*.log
+.DS_Store
+.claude/settings.local.json
+.superpowers/

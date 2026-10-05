@@ -1,0 +1,11 @@
+{
+  "name": "@no-fomo/core",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./extension-id": "./src/extension-id.ts",
+    "./fixtures/*": "./fixtures/*"
+  },
+  "scripts": { "typecheck": "tsc -p tsconfig.json" }
+}

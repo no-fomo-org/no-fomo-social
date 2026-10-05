@@ -1,0 +1,22 @@
+{
+  "name": "no-fomo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "pnpm -r typecheck",
+    "dev": "concurrently -k -n server,web -c blue,magenta \"pnpm --filter @no-fomo/server dev\" \"pnpm --filter @no-fomo/web dev\"",
+    "ext:build": "pnpm --filter @no-fomo/extension build",
+    "start": "pnpm --filter @no-fomo/web build && pnpm --filter @no-fomo/server start"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "concurrently": "^10.0.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}
