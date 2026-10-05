@@ -1,152 +1,108 @@
 # Profiles and Reports tabs
 
-**Date:** 2026-10-05
-**Source:** owner request, not in `PLAN.md`. It turns no-fomo from "saved posts only" into a place for any Instagram post the owner wants to watch, filter and analyze.
+**Date:** 2026-10-05 (revised the same day after the owner tried the first version)
+**Source:** owner request, not in `PLAN.md`. It turns no-fomo from "saved posts only" into a place for any Instagram post the owner wants to watch and analyze.
 
 ## Goal
 
 The app gets three tabs:
 
 1. **Saved:** today's library of saved posts.
-2. **Profiles:** the owner adds any Instagram account and works with its posts the same way as with saved posts: grid, filters, search, viewer, player, Analyze.
+2. **Profiles:** open any Instagram account instantly, watch its posts, and analyze the ones the owner picks.
 3. **Reports:** every report in one place, with its own filters.
 
-A post is stored once. If the owner analyzes a post from a profile and the same post is also saved, the report shows in both places, and in the Reports tab once.
+A post is stored once. If the owner analyzes a post from an account page and the same post is also saved, it is the same post: the report shows in Saved, on the account page and in Reports.
 
 ## Decisions (agreed with the owner)
 
-- **Profiles are added to the library.** Their posts are kept (metadata and thumbnails only, as for saved posts). Videos are never stored.
-- **Load size:** adding a profile loads the newest ~100 posts. A **Load older posts** button loads the next ~100. **Refresh** loads only posts newer than the newest one we have.
-- **Profile filters:** type (video, photo, carousel) and search text. No collections (profiles have none). No own tags in this work.
+- **Instant browsing, nothing kept.** Opening an account shows its posts straight from Instagram, page by page as the owner scrolls. Nothing is stored, except posts the owner analyzes.
+- **Speed:** the request gate's 2–3 s pause stays. The first 12 posts appear in about 2–4 s, each next 12 in about 3 s.
+- **Account page filters:** type (video, photo, carousel) and search text, applied to the posts loaded so far. While a filter is on, the page does not load more pages by itself.
 - **Saved tab:** the **Has report** filter is removed. Everything else stays.
-- **Reports tab:** a list. Each row: thumbnail, author, post date, report date, first lines of the summary. Filters: report text, author, source (saved / profile), type. A click opens the usual viewer on the **Report** tab.
-- A report stays in the Reports tab after its post is unsaved or its profile is removed.
-- **People you follow:** the Profiles tab shows the accounts the owner follows, and the owner can search them. The app keeps a copy of this list (names and avatars only). An **Update list** button loads it again. Search across all of Instagram also works from the same box.
+- **Reports tab:** a list. Each row: thumbnail, author, post date, report date, first lines of the summary, and "Saved" when the post is saved. Filters: report text, author, source (**Saved / Not saved**), type. A click opens the usual viewer on the **Report** tab.
+- A report stays in the Reports tab after its post is unsaved.
+- **People you follow:** the Profiles tab shows the accounts the owner follows, and the owner can search them. The app keeps a copy of this list (names and avatars only). An **Update list** button loads it again. Search across all of Instagram works from the same box.
+- **Superseded first version:** "Your profiles", Add / Remove, Refresh and "Load older posts" are dropped. They made the owner wait for ~100 posts and add accounts before seeing anything.
 
 ## 1. Data model
 
 Today `posts` mixes two things: the post itself and its place in the saved feed (`sort_key`, `first_seen_run_id`, `last_seen_run_id`, `removed_at`, `removed_remotely_at`). This work splits them.
 
-**`posts`** keeps only the post: id (Instagram media id), code, kind, author, caption, counts, links, thumbnail, and so on. Same columns as today minus the saved-feed ones.
+- **`posts`** keeps only the post content. A post is in `posts` when it is saved or was analyzed.
+- **`saved_posts`** (new): one row per post that is or was in the saved feed, with the five columns moved from `posts`.
+- **`following`** (new): `author_id` (references `authors`), `position` (Instagram's order), `last_seen_run_id`. Names and avatars live in `authors`.
+- **`following_runs`** (new): one row per **Update list** run: status, start and finish times, last activity time, pages, accounts seen, next position, whether it read the list to the end, error code and message.
+- **`reports`** does not change. It is keyed by `post_id`, so one report per post, wherever the post came from.
 
-**`saved_posts`** (new): one row per post that is or was in the saved feed.
-- `post_id` (primary key, references `posts`, cascade delete)
-- `sort_key`, `first_seen_run_id`, `last_seen_run_id`, `removed_at`, `removed_remotely_at`: moved from `posts` unchanged.
-- Index on `sort_key`.
-
-**`profiles`** (new): one row per added account.
-- `author_id` (primary key, references `authors`): the Instagram user id.
-- `added_at`, `refreshed_at`
-- `post_count`: from Instagram's profile info, shown as "120 of 3,400 loaded".
-- `older_cursor`: Instagram's `next_max_id` for **Load older posts**. Null when the end is reached.
-- `is_private`: private accounts the owner does not follow cannot be loaded. The app says so.
-
-**`profile_posts`** (new): `author_id`, `post_id`, primary key on both, cascade delete on both. A post's place in a profile grid is its `taken_at`, newest first. (Instagram puts pinned posts first in its feed. We ignore pins.)
-
-**`following`** (new): the accounts the owner follows.
-- `author_id` (primary key, references `authors`). The name, full name and avatar live in `authors`, so avatars use the existing avatar store.
-- `position`: order from Instagram (most recent follow first).
-- `last_seen_run_id`.
-- An update that walked the whole list deletes rows it did not see (people the owner unfollowed). An update that stopped early deletes nothing.
-- Settings key `following_updated_at` for "Updated 3 days ago".
-
-**`reports`** does not change. It is already keyed by `post_id`, so one report per post, wherever the post came from.
-
-**Migration** (one Drizzle migration, run on start like the others):
-1. Create `saved_posts` and copy the five columns from every existing post. Every post today is a saved post.
-2. Drop those columns from `posts` (SQLite table rebuild, which Drizzle generates).
-3. Create `profiles` and `profile_posts`.
-4. `post_search` and `report_search` stay as they are.
-
-A test opens a database at migration 0007 with sample rows, runs the new migration, and checks that every post, report and collection link is still there and that the saved order is the same.
-
-**Deleting.**
-- Removing a profile deletes its `profiles` row and its `profile_posts` rows. Then each of its posts is deleted only if it has no `saved_posts` row, no report, and no link to another profile. Thumbnails of deleted posts are deleted too.
-- Unsaving (milestone 3, later) only changes `saved_posts`. The post and its report stay.
+**Migration** (one Drizzle migration): create `saved_posts`, copy the five columns from every post (every post today is a saved post), create `following` and `following_runs`, then drop the five columns from `posts` with `ALTER TABLE … DROP COLUMN`. Never rebuild or drop `posts`: the migrator runs in one transaction, so `PRAGMA foreign_keys=OFF` does nothing and dropping `posts` would cascade-delete reports, parts and collection links. A test builds a database as the old app left it and checks that posts, saved order, unsaved marks, parts, collection links and reports survive.
 
 ## 2. Instagram calls (extension)
 
-All Instagram calls stay in the extension and in `packages/core/src/ig`, as today. Four new client calls:
+All Instagram calls stay in the extension and in `packages/core/src/ig`, through the one request gate.
 
-- `profileInfo(username)`: `GET /api/v1/users/web_profile_info/?username=...`. Gives user id, username, full name, avatar, post count, private flag.
-- `userFeed(userId, cursor)`: `GET /api/v1/feed/user/{userId}/?count=12&max_id=...`. Items are plain media objects, which `parseMediaPage` already reads.
-- `searchUsers(query)`: `GET /api/v1/web/search/topsearch/?context=user&query=...`. Search across all of Instagram, for suggestions while typing.
-- `followingPage(viewerId, cursor)`: `GET /api/v1/friendships/{viewerId}/following/?count=100&max_id=...`. The owner's own user id comes from the `ds_user_id` cookie, read in the content script the same way as `csrftoken`.
+- `profileInfo(username)`: `GET /api/v1/users/web_profile_info/?username=…` — id, names, avatar, post count, private flag, "followed by me".
+- `userFeed(userId, cursor)`: `GET /api/v1/feed/user/{userId}/?count=12&max_id=…` — plain media objects, read by `parseMediaPage`.
+- `searchUsers(query)`: `GET /api/v1/web/search/topsearch/?context=blended&query=…`.
+- `followingPage(viewerId, cursor)`: `GET /api/v1/friendships/{viewerId}/following/?count=100&max_id=…`. The owner's id comes from the `ds_user_id` cookie.
+- `mediaInfo(id)` (existing): fresh links for one post.
 
-These endpoint shapes come from public sources. The first implementation task calls each one once from the owner's browser, saves the answers as test fixtures (personal data replaced), and adjusts the parser if the shape differs. If an endpoint does not work, we stop and decide again with the owner.
+**Messages from the app page to the extension:**
+- `profile:search { query }` → suggested accounts. No server writes.
+- `profile:open { username }` → the account (id, names, avatar, post count, private flags) and its first page of posts, or no page when the account is private and not followed. No server writes.
+- `profile:page { userId, cursor }` → the next page. No server writes.
+- `following:update` → starts an **Update list** run that posts pages to the server.
+- `media:refresh { id, store }` (existing, extended) → fresh links for one post. The extension sends Instagram's answer to the server. If the server does not have the post and `store` is false, the extension builds the links itself and stores nothing. With `store` true the server stores the post (used by Analyze).
 
-**Load runner** (`packages/core/src/profiles/run-profile.ts`, same pattern as `run-sync.ts`):
-- Modes: `add` (newest ~100), `older` (next ~100 from `older_cursor`), `refresh` (newest pages until a known post).
-- 2–3 s pause between requests, same error handling as sync (login, rate limit, refused). At most 9 pages (about 100 posts) per run.
-- Only one Instagram job runs at a time in the extension: a profile load waits if a sync is running, and the other way round.
-
-**Following update:** walks the following list page by page, with the same pause and error rules. At most 50 pages (about 5,000 accounts). About 30 s for 1,000 accounts.
-
-**New extension messages:** `profile:search` (returns suggestions, no server writes), `profile:load` (mode + username or user id) and `following:update`. Media link refresh (`media:fetch`) already works for any post id.
+Each post on an account page carries its links, built from the page Instagram returned, so the viewer plays it without another request.
 
 ## 3. Server
 
-**Ingest.**
-- Saved sync works as today but writes feed state to `saved_posts` instead of `posts`. A full resync hides missing posts in `saved_posts` only.
-- New `ingestProfilePage(db, authorId, raw)`: upserts posts (shared code with saved ingest: author, parts, search, thumbnail jobs) and adds `profile_posts` links. It never touches `saved_posts`, so a profile load never changes the saved list.
-- `ingestMediaInfo` stays the same. It works for any post in `posts`.
-
-**API.**
-- `GET /api/posts` gets a `scope`: `saved` (default) or `profile:<authorId>`. The `report=1` filter is removed. Collection filter only applies to `saved`.
-- `GET /api/authors` takes the same `scope` so the author picker only lists authors in that tab.
-- `GET /api/profiles`: list of added profiles with counts.
-- `POST /api/profiles/runs`, `.../:id/page`, `.../:id/finish`: same shape as sync runs, called by the extension.
-- `DELETE /api/profiles/:authorId`: remove a profile (rules above).
-- `GET /api/following?q=...`: the stored following list, filtered by username and full name, in Instagram's order. Each item says whether the profile is already added.
-- `POST /api/following/runs`, `.../:id/page`, `.../:id/finish`: called by the extension during **Update list**.
-- `GET /api/reports`: finished reports, newest first, cursor paging. Query: `q` (report text, via `report_search`), `author`, `source` (`saved` | `profile`), `kind`. Each item: the post (same shape as in the grid), report date, model, and the first ~200 characters of the Summary section.
-- Every post item gets `saved: boolean` and `profiles: string[]` so the viewer can show "Saved" and "From @name" badges.
+- Saved sync works as today but writes feed state to `saved_posts`. A full resync hides missing posts in `saved_posts` only. A post first stored by Analyze and later found by saved sync gets its saved row then.
+- `POST /api/sync/media/:id { payload, store }`: updates a stored post's links; with `store` true it also creates a post it does not have. Without `store`, an unknown post answers 404.
+- `GET /api/posts/known?ids=…` (up to 100 ids): for each stored id, whether it is saved and whether it has a finished report. The account page uses it for "Saved" and report marks.
+- `GET /api/reports`: finished reports, newest first, cursor paging. Filters `q` (report text), `author`, `source` (`saved` | `other`), `kind`. Each item: the post, report date, model, and the first ~200 characters of the Summary.
+- `GET /api/authors?scope=saved|reports`.
+- `GET /api/following?q=…`: the stored following list, filtered by username and full name, in Instagram's order, plus the last update run.
+- `POST /api/sync/following/runs`, `…/:id/page`, `…/:id/finish`: called by the extension during **Update list**. A complete run removes accounts it did not see; a run that stopped early removes nothing. A run silent for over 2 minutes shows as stopped, so the owner can start it again.
 
 ## 4. Web app
 
-**Routes** (each tab has its own address, so back and forward work):
-- `/` → Saved (today's library).
-- `/profiles` → list of added profiles and the add box.
-- `/profiles/:username` → one profile's grid.
-- `/reports` → Reports list.
-- `?post=<id>` keeps opening the viewer on any of them, as today.
+**Routes:** `/` Saved, `/profiles` Profiles, `/profiles/:username` one account, `/reports` Reports. `?post=<id>` opens the viewer on any of them.
 
-**Top bar.** Three tabs after the app name: **Saved**, **Profiles**, **Reports**. The search box searches inside the current tab. Sync stays in the top bar (it only touches Saved).
+**Top bar:** tabs **Saved**, **Profiles**, **Reports**. The search box searches inside the current tab (Profiles has its own box).
 
-**Profiles page.**
-- One search box: type a name or paste a profile link. Results come in two groups:
-  - **People you follow:** from the stored list, instant, no Instagram call.
-  - **All Instagram:** from Instagram search, after 2 characters and a 400 ms pause, at most one request per second. Accounts already shown in the first group are not repeated.
-  - Pressing Enter on a username or a pasted link adds it directly.
-- **Your profiles:** added profiles as cards: avatar, name, "120 of 3,400 posts loaded", last refresh time, **Refresh**, **Remove** (asks first).
-- **People you follow:** a list below, with avatar, username and full name, and an **Add** button (or "Added"). The search box filters this list too. Header: "People you follow · 812 · Updated 3 days ago · **Update list**". Before the first update it shows a short note and the **Update list** button.
-- While a load runs, the card shows progress ("Loading page 3 of up to 9").
+**Profiles page:**
+- One search box: a name, @username or profile link. Results in two groups: **People you follow** (stored list, instant) and **All Instagram** (after 2 characters and a 400 ms pause). Clicking a result opens the account. Enter on a username or link opens it.
+- **People you follow** below: avatar, username, full name; a click opens the account. Header: count, "Updated 3 days ago", **Update list**.
 
-**Profile grid.** Same grid, tiles and viewer as Saved. Filter bar with type and search. At the bottom: **Load older posts** while there are more.
+**Account page:** header with avatar, @username, full name, post count, a link to Instagram. Then the filter bar (type, search) and the grid. Posts load as the owner scrolls. A private account the owner does not follow shows a short message instead of the grid. Opening a post plays it right away; the viewer works as in Saved, with Analyze in the Report tab.
 
-**Reports page.** List rows as described above. Filter bar: search, author picker, source switch (All / Saved / Profiles), type switch. Opening a row opens the viewer with the **Report** tab selected. Prev / next in the viewer move through the report list.
+**Analyze on a post that is not stored:** the app asks the extension for the post's links with `store` true (one Instagram request), the server stores the post, then the analysis runs as today.
 
-**Viewer.** Unchanged, plus small badges: "Saved" and "From @name". Analyze works the same in every tab.
+**Reports page:** list rows as above. Filter bar: search, author, source (All / Saved / Not saved), type. Opening a row opens the viewer on the Report tab, every time.
+
+**Viewer:** unchanged, plus a "Saved" badge.
 
 ## 5. Errors
 
-- Profile not found, or private and not followed: a clear message on the add box. Nothing is stored.
-- Login, rate limit, refused: same messages as sync. Posts already loaded in that run are kept. The run can be repeated.
-- The extension is missing or not connected: same setup steps as Saved.
+- Account not found: "No Instagram account has this name."
+- Private and not followed: "This account is private and you do not follow it."
+- Login, rate limit, refused: plain messages, as for sync.
+- Extension missing or out of date: setup steps, or "update the extension".
 
 ## 6. Testing
 
-- **Parser:** profile info, user feed, search and following fixtures (from the real calls in task 1).
-- **Following:** a complete update removes unfollowed accounts; a stopped update removes nothing; the filter matches username and full name.
-- **Migration:** the test in section 1.
-- **Ingest:** a profile page never changes `saved_posts`; the same post arriving from saved sync and from a profile is one row; removing a profile keeps saved posts and posts with reports.
-- **Queries:** scope filters; reports list filters (text, author, source, kind); a report made from a profile post shows on that post in the Saved tab.
-- **Load runner:** modes, page cap, error stop (fake client, as in `run-sync.test.ts`).
-- **Manual check in the real app** (`pnpm start`, :4747): update the following list and find one account in it, find one account you do not follow through Instagram search, add one profile, load older, refresh, analyze a profile post that is also saved and see the report in Saved and in Reports, remove the profile and see the saved post and the report remain, check the three tabs at phone width.
+- Parsers: profile info, user feed, search and following list (inline payloads in the documented shapes; real shapes are checked in the owner's manual run).
+- Migration: the test in section 1.
+- Core: building account-page posts and their links from a parsed post.
+- Extension: open, next page, private account, unknown post links built locally, `store` passed to the server.
+- Server: storing a post through the media route, `known`, report filters (`saved`, `other`), following updates.
+- Web: account-page filters, error texts, the viewer's start tab.
+- Manual check in the real app (`pnpm start`, :4747): open a followed account and an unfollowed one, scroll, play a video, analyze a post that is also saved and see the report in Saved, on the account page and in Reports, update the following list, check the three tabs at phone width.
 
 ## Out of scope
 
 - Own tags or categories.
-- Loading a whole profile automatically.
+- Keeping posts the owner only looked at.
 - Following hashtags or locations.
 - Batch unsave (milestone 3).
