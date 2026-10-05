@@ -10,7 +10,7 @@ import { FilterBar } from "../components/filter-bar";
 import { PostGrid } from "../components/post-grid";
 import { TopBar } from "../components/top-bar";
 import { Viewer } from "../components/viewer/viewer";
-import { loadNote } from "../components/profiles/profile-card";
+import { loadNote, loadProblem } from "../lib/profile-status";
 import { useProfileJobs } from "../components/profiles/use-profile-jobs";
 import { Button, buttonClass } from "../components/ui/button";
 import { Icon } from "../components/ui/icon";
@@ -78,7 +78,7 @@ export default function Profile() {
             </Button>
           </div>
         </div>
-        {error && <p role="alert" className="mt-2 text-[13px] text-danger">{error}</p>}
+        {(error ?? loadProblem(profile)) && <p role="alert" className="mt-2 text-[13px] text-danger">{error ?? loadProblem(profile)}</p>}
         <FilterBar scope="profile" filters={filters} total={list.total} onChange={update} />
         <PostGrid
           query={list.query}

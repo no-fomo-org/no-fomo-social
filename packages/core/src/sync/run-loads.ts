@@ -10,7 +10,8 @@ export type LoadStart = { ok: true; authorId?: string } | { ok: false; error: st
 export type LoadResult = { ok: boolean; pages: number; error?: { code: string; message: string } };
 
 export interface ProfileSink {
-  startRun(body: ProfileStartBody): Promise<{ runId: number; authorId: string; cursor: string | null }>;
+  /** `mode` is what the server chose: adding an added profile becomes a refresh, refreshing an empty one an add. */
+  startRun(body: ProfileStartBody): Promise<{ runId: number; authorId: string; cursor: string | null; mode: ProfileLoadMode }>;
   page(runId: number, payload: unknown): Promise<{ stop: boolean }>;
   finishRun(runId: number, result: SyncResult): Promise<void>;
 }
@@ -23,6 +24,8 @@ export interface FollowingSink {
 
 /** About 100 posts at 12 per page. */
 export const PROFILE_PAGES = 9;
+/** A refresh reads until it meets posts it already has; about 600 posts covers a long break. */
+export const REFRESH_PAGES = 50;
 /** About 5,000 accounts at 100 per page. */
 export const FOLLOWING_PAGES = 50;
 
@@ -61,7 +64,7 @@ export async function runProfileLoad(deps: {
   onStart: (s: LoadStart) => void;
   maxPages?: number;
 }): Promise<LoadResult> {
-  let started: { runId: number; authorId: string; cursor: string | null };
+  let started: Awaited<ReturnType<ProfileSink["startRun"]>>;
   try {
     const r = deps.request;
     const body: ProfileStartBody =
@@ -73,7 +76,8 @@ export async function runProfileLoad(deps: {
   }
   deps.onStart({ ok: true, authorId: started.authorId });
   let cursor = started.cursor;
-  return pageLoop(started.runId, deps.sink, deps.maxPages ?? PROFILE_PAGES, async () => {
+  const max = deps.maxPages ?? (started.mode === "refresh" ? REFRESH_PAGES : PROFILE_PAGES);
+  return pageLoop(started.runId, deps.sink, max, async () => {
     const raw = await deps.ig.userFeed(started.authorId, cursor);
     const { stop } = await deps.sink.page(started.runId, raw);
     const info = readPageInfo(raw);

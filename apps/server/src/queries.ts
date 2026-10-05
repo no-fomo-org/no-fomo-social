@@ -198,13 +198,21 @@ export function syncStatus(db: Db): SyncStatus {
   };
 }
 
-const runInfo = (r: typeof loadRuns.$inferSelect | undefined): LoadRunInfo | null =>
-  r ? {
-    id: r.id, mode: r.mode, status: r.status, startedAt: r.startedAt, finishedAt: r.finishedAt,
-    pages: r.pages, items: r.items, errorCode: r.errorCode, errorMessage: r.errorMessage,
-  } : null;
+/** A load page takes seconds. A run silent this long lost its Instagram tab and will never finish. */
+const STALE_MS = 2 * 60_000;
 
-export function listProfiles(db: Db): ProfileItem[] {
+function runInfo(r: typeof loadRuns.$inferSelect | undefined, now: number): LoadRunInfo | null {
+  if (!r) return null;
+  const stale = r.status === "running" && now - r.activeAt > STALE_MS;
+  return {
+    id: r.id, mode: r.mode, startedAt: r.startedAt, finishedAt: r.finishedAt, pages: r.pages, items: r.items,
+    ...(stale
+      ? { status: "error" as const, errorCode: "interrupted", errorMessage: "The load stopped before it finished. Try again." }
+      : { status: r.status, errorCode: r.errorCode, errorMessage: r.errorMessage }),
+  };
+}
+
+export function listProfiles(db: Db, now = Date.now()): ProfileItem[] {
   const loaded = sql<number>`(SELECT count(*) FROM profile_posts pp WHERE pp.author_id = ${profiles.authorId})`;
   return db
     .select({ p: profiles, username: authors.username, fullName: authors.fullName, loaded })
@@ -216,14 +224,14 @@ export function listProfiles(db: Db): ProfileItem[] {
       id: r.p.authorId, username: r.username, fullName: r.fullName, avatarUrl: `/media/avatars/${r.p.authorId}`,
       postCount: r.p.postCount, loadedCount: r.loaded, hasOlder: r.p.olderCursor !== null, isPrivate: r.p.isPrivate,
       addedAt: r.p.addedAt, refreshedAt: r.p.refreshedAt,
-      run: runInfo(db.select().from(loadRuns).where(and(eq(loadRuns.kind, "profile"), eq(loadRuns.authorId, r.p.authorId))).orderBy(desc(loadRuns.id)).limit(1).get()),
+      run: runInfo(db.select().from(loadRuns).where(and(eq(loadRuns.kind, "profile"), eq(loadRuns.authorId, r.p.authorId))).orderBy(desc(loadRuns.id)).limit(1).get(), now),
     }));
 }
 
 /** Escapes LIKE wildcards so typed text matches literally. */
 const likePattern = (text: string) => `%${text.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
-export function listFollowing(db: Db, o: { q?: string; limit: number }): FollowingPage {
+export function listFollowing(db: Db, o: { q?: string; limit: number }, now = Date.now()): FollowingPage {
   const text = o.q?.trim().replace(/^@/, "");
   const where = text
     ? sql`(lower(${authors.username}) LIKE ${likePattern(text)} ESCAPE '\\' OR lower(coalesce(${authors.fullName}, '')) LIKE ${likePattern(text)} ESCAPE '\\')`
@@ -242,6 +250,6 @@ export function listFollowing(db: Db, o: { q?: string; limit: number }): Followi
   const updated = getSetting(db, FOLLOWING_UPDATED_AT);
   return {
     items, total, updatedAt: updated ? Number(updated) : null,
-    run: runInfo(db.select().from(loadRuns).where(eq(loadRuns.kind, "following")).orderBy(desc(loadRuns.id)).limit(1).get()),
+    run: runInfo(db.select().from(loadRuns).where(eq(loadRuns.kind, "following")).orderBy(desc(loadRuns.id)).limit(1).get(), now),
   };
 }

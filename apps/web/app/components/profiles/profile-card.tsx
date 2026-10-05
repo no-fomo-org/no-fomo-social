@@ -1,16 +1,10 @@
 import { Link } from "react-router";
 import { Delete02Icon, RefreshIcon } from "@hugeicons/core-free-icons";
 import type { ProfileItem } from "@no-fomo/core";
-import { formatAgo } from "../../lib/format";
+import { loadNote, loadProblem } from "../../lib/profile-status";
 import { Avatar } from "../avatar";
 import { buttonClass } from "../ui/button";
 import { Icon } from "../ui/icon";
-
-export function loadNote(p: ProfileItem): string {
-  if (p.run?.status === "running") return `Loading, ${p.run.items.toLocaleString("en")} new posts so far`;
-  const loaded = `${p.loadedCount.toLocaleString("en")}${p.postCount !== null ? ` of ${p.postCount.toLocaleString("en")}` : ""} posts loaded`;
-  return p.refreshedAt ? `${loaded} · Updated ${formatAgo(p.refreshedAt)}` : loaded;
-}
 
 export function ProfileCard({ p, onRefresh, onRemove, disabled }: { p: ProfileItem; onRefresh: () => void; onRemove: () => void; disabled: boolean }) {
   const running = p.run?.status === "running";
@@ -21,7 +15,7 @@ export function ProfileCard({ p, onRefresh, onRemove, disabled }: { p: ProfileIt
         <span className="min-w-0">
           <span className="block truncate text-[15px] font-medium">@{p.username}</span>
           <span className="block truncate text-[13px] text-muted">{loadNote(p)}</span>
-          {p.run?.status === "error" && <span className="block truncate text-[12px] text-danger">{p.run.errorMessage ?? "The last load failed."}</span>}
+          {loadProblem(p) && <span className="block truncate text-[12px] text-danger">{loadProblem(p)}</span>}
         </span>
       </Link>
       <button type="button" onClick={onRefresh} disabled={disabled || running} aria-label={`Refresh @${p.username}`} title="Get new posts" className={buttonClass("ghost", "", "icon")}>

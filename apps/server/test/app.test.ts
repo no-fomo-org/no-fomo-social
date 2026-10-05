@@ -244,8 +244,8 @@ describe("profiles, following and reports API", () => {
   it("adds a profile through the sync routes and lists its posts", async () => {
     const start = await post("/api/sync/profiles/runs", { mode: "add", payload: profileInfo });
     expect(start.status).toBe(201);
-    const { runId, authorId } = (await start.json()) as { runId: number; authorId: string };
-    expect(authorId).toBe("77");
+    const { runId, authorId, mode } = (await start.json()) as { runId: number; authorId: string; mode: string };
+    expect([authorId, mode]).toEqual(["77", "add"]);
     expect(await (await post(`/api/sync/profiles/runs/${runId}/page`, { payload: feedPage })).json()).toEqual({ stop: false, newCount: 1 });
     expect((await post(`/api/sync/loads/${runId}/finish`, { ok: true })).status).toBe(200);
 

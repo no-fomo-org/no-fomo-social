@@ -152,6 +152,8 @@ export const profilePosts = sqliteTable(
   {
     authorId: text("author_id").notNull().references(() => profiles.authorId, { onDelete: "cascade" }),
     postId: text("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+    /** The load that last read this post. A refresh that never reached known posts leaves a gap below its posts. */
+    runId: integer("run_id").notNull(),
   },
   (t) => [primaryKey({ columns: [t.authorId, t.postId] }), index("profile_posts_post_idx").on(t.postId)],
 );
@@ -172,12 +174,17 @@ export const loadRuns = sqliteTable("load_runs", {
   mode: text("mode", { enum: ["add", "older", "refresh", "following"] }).notNull(),
   status: text("status", { enum: ["running", "done", "error"] }).notNull(),
   startedAt: integer("started_at").notNull(),
+  /** Last sign of life: the start or the last page. */
+  activeAt: integer("active_at").notNull(),
   finishedAt: integer("finished_at"),
   pages: integer("pages").notNull().default(0),
   /** New posts for a profile run; accounts seen for a following run. */
   items: integer("items").notNull().default(0),
   nextPos: integer("next_pos").notNull().default(0),
-  /** A following run read the list to its end, so accounts it did not see were unfollowed. */
+  /**
+   * Following: the run read the list to its end, so accounts it did not see were unfollowed.
+   * Profile refresh: the run reached posts it already had (or the end), so no gap is left below its posts.
+   */
   complete: integer("complete", { mode: "boolean" }).notNull().default(false),
   errorCode: text("error_code"),
   errorMessage: text("error_message"),

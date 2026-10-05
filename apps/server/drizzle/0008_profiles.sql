@@ -12,6 +12,7 @@ CREATE TABLE `load_runs` (
 	`mode` text NOT NULL,
 	`status` text NOT NULL,
 	`started_at` integer NOT NULL,
+	`active_at` integer NOT NULL,
 	`finished_at` integer,
 	`pages` integer DEFAULT 0 NOT NULL,
 	`items` integer DEFAULT 0 NOT NULL,
@@ -24,6 +25,7 @@ CREATE TABLE `load_runs` (
 CREATE TABLE `profile_posts` (
 	`author_id` text NOT NULL,
 	`post_id` text NOT NULL,
+	`run_id` integer NOT NULL,
 	PRIMARY KEY(`author_id`, `post_id`),
 	FOREIGN KEY (`author_id`) REFERENCES `profiles`(`author_id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON UPDATE no action ON DELETE cascade

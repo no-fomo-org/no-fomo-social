@@ -93,6 +93,13 @@ describe("profiles and following", () => {
     })]);
   });
 
+  it("reports a load with no news for over 2 minutes as interrupted, so it can be run again", () => {
+    startProfileRun(db, { mode: "refresh", authorId: "77" }, Date.now() - 3 * 60_000);
+    expect(listProfiles(db)[0]!.run).toMatchObject({ status: "error", errorCode: "interrupted" });
+    startProfileRun(db, { mode: "refresh", authorId: "77" });
+    expect(listProfiles(db)[0]!.run).toMatchObject({ status: "running" });
+  });
+
   it("filters the following list by name and marks added profiles", () => {
     const run = startFollowingRun(db);
     ingestFollowingPage(db, run.runId, { users: [

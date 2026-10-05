@@ -148,7 +148,7 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
   app.post("/api/sync/profiles/runs", async (c) => {
     const r = startProfileRun(db, ProfileStartSchema.parse(await c.req.json()));
     media.enqueue(r.jobs);
-    return c.json({ runId: r.runId, authorId: r.authorId, cursor: r.cursor }, 201);
+    return c.json({ runId: r.runId, authorId: r.authorId, cursor: r.cursor, mode: r.mode }, 201);
   });
 
   app.post("/api/sync/profiles/runs/:id/page", async (c) => {

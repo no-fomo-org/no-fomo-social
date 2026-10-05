@@ -74,6 +74,40 @@ describe("profile loads", () => {
     expect(db.select().from(profiles).get()!.olderCursor).toBe("NEXT");
   });
 
+  it("a refresh cut off before a known post leaves no gap: the next refresh reads past its posts", () => {
+    addProfile([feed(["10", "9"], "NEXT")]);
+    const r1 = startProfileRun(db, { mode: "refresh", authorId: "77" });
+    expect(r1.mode).toBe("refresh");
+    expect(ingestProfilePage(db, r1.runId, feed(["30", "29"], "X")).stop).toBe(false);
+    finishLoadRun(db, r1.runId, { ok: true }); // the page cap ended it
+    const r2 = startProfileRun(db, { mode: "refresh", authorId: "77" });
+    expect(ingestProfilePage(db, r2.runId, feed(["31", "30"], "X2")).stop).toBe(false);
+    expect(ingestProfilePage(db, r2.runId, feed(["29", "28"], "X3")).stop).toBe(false);
+    expect(ingestProfilePage(db, r2.runId, feed(["27", "10"], "X4")).stop).toBe(true);
+    finishLoadRun(db, r2.runId, { ok: true });
+    const r3 = startProfileRun(db, { mode: "refresh", authorId: "77" });
+    expect(ingestProfilePage(db, r3.runId, feed(["31", "30"], "X5")).stop).toBe(true);
+    expect(linked(db)).toEqual(["10", "27", "28", "29", "30", "31", "9"]);
+  });
+
+  it("a refresh that failed part way does not count as known", () => {
+    addProfile([feed(["10"], null)]);
+    const r1 = startProfileRun(db, { mode: "refresh", authorId: "77" });
+    ingestProfilePage(db, r1.runId, feed(["30"], "X"));
+    finishLoadRun(db, r1.runId, { ok: false, code: "rate_limited", message: "slow" });
+    const r2 = startProfileRun(db, { mode: "refresh", authorId: "77" });
+    expect(ingestProfilePage(db, r2.runId, feed(["30", "29"], "X")).stop).toBe(false);
+  });
+
+  it("refreshing a profile whose first load got nothing works like adding, so Load older works", () => {
+    const a = startProfileRun(db, { mode: "add", payload: info() });
+    finishLoadRun(db, a.runId, { ok: false, code: "rate_limited", message: "slow" });
+    const r = startProfileRun(db, { mode: "refresh", authorId: "77" });
+    expect(r.mode).toBe("add");
+    ingestProfilePage(db, r.runId, feed(["3"], "NEXT"));
+    expect(db.select().from(profiles).get()!.olderCursor).toBe("NEXT");
+  });
+
   it("a profile post that is also saved is one row, in both lists", () => {
     addProfile([feed(["3"], null)]);
     const run = startRun(db);
@@ -109,6 +143,13 @@ describe("removing a profile", () => {
     expect(removeProfile(db, "77").sort()).toEqual(["3", "5"]);
     expect(db.select({ id: posts.id }).from(posts).orderBy(asc(posts.id)).all().map((r) => r.id)).toEqual(["1", "2", "4"]);
     expect(db.select().from(profiles).all().map((p) => p.authorId)).toEqual(["88"]);
+  });
+
+  it("keeps a post whose report is still being made", () => {
+    addProfile([feed(["1", "2"], null)]);
+    queueReport(db, "1", opts, 1);
+    expect(removeProfile(db, "77")).toEqual(["2"]);
+    expect(db.select({ id: posts.id }).from(posts).all()).toEqual([{ id: "1" }]);
   });
 
   it("throws for an unknown profile", () => {

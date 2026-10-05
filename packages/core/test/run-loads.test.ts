@@ -29,7 +29,7 @@ function profileSetup(opts: { pages: Array<unknown | Error>; stopAt?: number; st
     async startRun(body) {
       log.push(`sink:start:${body.mode}`);
       if (opts.start) throw opts.start;
-      return { runId: 3, authorId: "77", cursor: body.mode === "older" ? "OLD" : null };
+      return { runId: 3, authorId: "77", cursor: body.mode === "older" ? "OLD" : null, mode: body.mode };
     },
     async page() { n++; log.push("sink:page"); return { stop: n === opts.stopAt }; },
     async finishRun(_id, r) { results.push(r); },
@@ -52,6 +52,15 @@ describe("runProfileLoad", () => {
     const r = await runProfileLoad({ ig: s.ig, sink: s.sink, request: { mode: "older", authorId: "77" }, onStart: s.onStart, maxPages: 2 });
     expect(r.pages).toBe(2);
     expect(s.log.filter((l) => l.startsWith("ig:feed"))).toEqual(["ig:feed:77:OLD", "ig:feed:77:B"]);
+  });
+
+  it("lets a refresh read more pages than an add, to reach the posts it already has", async () => {
+    const pages = Array.from({ length: 12 }, (_, i) => feedPage(i < 11 ? `P${i}` : null));
+    const s = profileSetup({ pages });
+    const r = await runProfileLoad({ ig: s.ig, sink: s.sink, request: { mode: "refresh", authorId: "77" }, onStart: s.onStart });
+    expect(r.pages).toBe(12);
+    const a = profileSetup({ pages: Array.from({ length: 12 }, (_, i) => feedPage(`P${i}`)) });
+    expect((await runProfileLoad({ ig: a.ig, sink: a.sink, request: { mode: "add", username: "x" }, onStart: a.onStart })).pages).toBe(9);
   });
 
   it("stops when the server says the rest is known", async () => {

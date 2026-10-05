@@ -1,5 +1,5 @@
 import { and, eq, inArray, lt, sql } from "drizzle-orm";
-import { parseFollowingPage, parseMediaPage, parseProfileInfo, type ProfileStartBody, type SyncResult } from "@no-fomo/core";
+import { parseFollowingPage, parseMediaPage, parseProfileInfo, type ProfileLoadMode, type ProfileStartBody, type SyncResult } from "@no-fomo/core";
 import type { Db } from "../db/open";
 import { following, loadRuns, posts, profilePosts, profiles } from "../db/schema";
 import { setSetting, type Q } from "../db/settings";
@@ -33,7 +33,7 @@ export function startProfileRun(db: Db, body: ProfileStartBody, now = Date.now()
   const jobs: MediaJob[] = [];
   return db.transaction((tx) => {
     let authorId: string;
-    let mode: "add" | "older" | "refresh" = body.mode;
+    let mode: ProfileLoadMode = body.mode;
     let cursor: string | null = null;
     if (body.mode === "add") {
       const info = parseProfileInfo(body.payload);
@@ -57,15 +57,22 @@ export function startProfileRun(db: Db, body: ProfileStartBody, now = Date.now()
       if (body.mode === "older") {
         if (!profile.olderCursor) throw new LoadError("no_more_posts");
         cursor = profile.olderCursor;
+      } else if (!tx.select({ id: profilePosts.postId }).from(profilePosts).where(eq(profilePosts.authorId, authorId)).limit(1).get()) {
+        // Nothing loaded yet (the first load failed): start over, so "Load older" gets its cursor.
+        mode = "add";
       }
     }
     interruptRunning(tx, "profile", authorId, now);
-    const run = tx.insert(loadRuns).values({ kind: "profile", authorId, mode, status: "running", startedAt: now }).returning({ id: loadRuns.id }).get();
-    return { runId: run.id, authorId, cursor, jobs };
+    const run = tx
+      .insert(loadRuns)
+      .values({ kind: "profile", authorId, mode, status: "running", startedAt: now, activeAt: now })
+      .returning({ id: loadRuns.id })
+      .get();
+    return { runId: run.id, authorId, cursor, mode, jobs };
   });
 }
 
-export function ingestProfilePage(db: Db, runId: number, raw: unknown) {
+export function ingestProfilePage(db: Db, runId: number, raw: unknown, now = Date.now()) {
   const page = parseMediaPage(raw);
   const jobs: MediaJob[] = [];
   return db.transaction((tx) => {
@@ -75,37 +82,55 @@ export function ingestProfilePage(db: Db, runId: number, raw: unknown) {
     let sawKnown = false;
     for (const p of page.items) {
       upsertPostContent(tx, p, jobs);
-      const known = tx.select({ id: profilePosts.postId }).from(profilePosts)
-        .where(and(eq(profilePosts.authorId, authorId), eq(profilePosts.postId, p.id))).get();
-      if (known) {
-        // Pinned posts sit on top of the profile however old they are, so they say nothing about where new posts end.
-        if (!p.pinned) sawKnown = true;
-      } else {
-        tx.insert(profilePosts).values({ authorId, postId: p.id }).run();
+      const link = tx
+        .select({ mode: loadRuns.mode, complete: loadRuns.complete })
+        .from(profilePosts)
+        .leftJoin(loadRuns, eq(loadRuns.id, profilePosts.runId))
+        .where(and(eq(profilePosts.authorId, authorId), eq(profilePosts.postId, p.id)))
+        .get();
+      if (!link) {
+        tx.insert(profilePosts).values({ authorId, postId: p.id, runId }).run();
         newCount++;
+        continue;
+      }
+      // Posts from a refresh that stopped early may sit above posts nobody read yet, so they are not proof.
+      const known = link.mode !== "refresh" || link.complete === true;
+      if (!known) {
+        tx.update(profilePosts).set({ runId }).where(and(eq(profilePosts.authorId, authorId), eq(profilePosts.postId, p.id))).run();
+      } else if (!p.pinned) {
+        // Pinned posts sit on top of the profile however old they are, so they say nothing about where new posts end.
+        sawKnown = true;
       }
     }
     // Refresh reads from the top, so its cursor says nothing about older posts.
     if (run.mode !== "refresh") {
       tx.update(profiles).set({ olderCursor: page.moreAvailable ? page.nextCursor : null }).where(eq(profiles.authorId, authorId)).run();
     }
+    const stop = run.mode === "refresh" && sawKnown;
     tx.update(loadRuns)
-      .set({ pages: sql`${loadRuns.pages} + 1`, items: sql`${loadRuns.items} + ${newCount}` })
+      .set({
+        pages: sql`${loadRuns.pages} + 1`, items: sql`${loadRuns.items} + ${newCount}`, activeAt: now,
+        complete: stop || !page.moreAvailable,
+      })
       .where(eq(loadRuns.id, runId))
       .run();
-    return { stop: run.mode === "refresh" && sawKnown, newCount, jobs };
+    return { stop, newCount, jobs };
   });
 }
 
 export function startFollowingRun(db: Db, now = Date.now()) {
   return db.transaction((tx) => {
     interruptRunning(tx, "following", null, now);
-    const run = tx.insert(loadRuns).values({ kind: "following", mode: "following", status: "running", startedAt: now }).returning({ id: loadRuns.id }).get();
+    const run = tx
+      .insert(loadRuns)
+      .values({ kind: "following", mode: "following", status: "running", startedAt: now, activeAt: now })
+      .returning({ id: loadRuns.id })
+      .get();
     return { runId: run.id };
   });
 }
 
-export function ingestFollowingPage(db: Db, runId: number, raw: unknown) {
+export function ingestFollowingPage(db: Db, runId: number, raw: unknown, now = Date.now()) {
   const page = parseFollowingPage(raw);
   return db.transaction((tx) => {
     const run = activeLoad(tx, runId, "following");
@@ -120,7 +145,10 @@ export function ingestFollowingPage(db: Db, runId: number, raw: unknown) {
         .run();
     }
     tx.update(loadRuns)
-      .set({ nextPos: pos, pages: sql`${loadRuns.pages} + 1`, items: sql`${loadRuns.items} + ${page.items.length}`, complete: !page.moreAvailable })
+      .set({
+        nextPos: pos, pages: sql`${loadRuns.pages} + 1`, items: sql`${loadRuns.items} + ${page.items.length}`,
+        complete: !page.moreAvailable, activeAt: now,
+      })
       .where(eq(loadRuns.id, runId))
       .run();
     return { seen: page.items.length };
@@ -149,7 +177,7 @@ export function finishLoadRun(db: Db, runId: number, result: SyncResult, now = D
 }
 
 /**
- * Removes a profile. Its posts go too, unless they are saved, have a finished report,
+ * Removes a profile. Its posts go too, unless they are saved, have a report (finished or being made),
  * or belong to another added profile. Returns the ids of deleted posts.
  */
 export function removeProfile(db: Db, authorId: string): string[] {
@@ -166,7 +194,8 @@ export function removeProfile(db: Db, authorId: string): string[] {
       .where(and(
         inArray(posts.id, ids),
         sql`NOT EXISTS (SELECT 1 FROM saved_posts s WHERE s.post_id = ${posts.id})`,
-        sql`NOT EXISTS (SELECT 1 FROM reports r WHERE r.post_id = ${posts.id} AND r.markdown IS NOT NULL)`,
+        // A finished report, or one still being made, keeps its post.
+        sql`NOT EXISTS (SELECT 1 FROM reports r WHERE r.post_id = ${posts.id} AND (r.markdown IS NOT NULL OR r.status IN ('queued', 'running')))`,
         sql`NOT EXISTS (SELECT 1 FROM profile_posts pp WHERE pp.post_id = ${posts.id})`,
       ))
       .all()
