@@ -30,6 +30,12 @@ describe("handleExternalMessage", () => {
     expect(d.sendToTab).toHaveBeenCalledWith(9, expect.anything());
   });
 
+  it("refuses sync requests from other local pages", async () => {
+    const d = deps();
+    expect(await handleExternalMessage({ type: "sync:start" }, "http://localhost:9999/", d)).toEqual({ ok: false, error: "untrusted_sender" });
+    expect(d.sendToTab).not.toHaveBeenCalled();
+  });
+
   it("rejects unknown or malformed messages", async () => {
     expect(await handleExternalMessage("x", undefined, deps())).toEqual({ ok: false, error: "bad_message" });
     expect(await handleExternalMessage({ type: "rm -rf" }, undefined, deps())).toEqual({ ok: false, error: "unknown_type" });

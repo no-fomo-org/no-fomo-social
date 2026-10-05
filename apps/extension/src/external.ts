@@ -1,3 +1,5 @@
+import { isAppOrigin } from "./origins";
+
 export type ExtResponse = { ok: true; version?: string } | { ok: false; error: string };
 
 export interface ExternalDeps {
@@ -13,6 +15,7 @@ export async function handleExternalMessage(msg: unknown, senderUrl: string | un
   if (type === "ping") return { ok: true, version: deps.version };
   if (type !== "sync:start") return { ok: false, error: "unknown_type" };
   if (!senderUrl) return { ok: false, error: "no_sender" };
+  if (!isAppOrigin(senderUrl)) return { ok: false, error: "untrusted_sender" };
   const serverUrl = new URL(senderUrl).origin;
   const tabId = (await deps.findInstagramTab()) ?? (await deps.openInstagramTab());
   const reply = (await deps.sendToTab(tabId, { type: "sync:run", serverUrl })) as ExtResponse | undefined;

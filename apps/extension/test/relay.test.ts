@@ -18,6 +18,11 @@ describe("handleRelay", () => {
       .toEqual({ ok: false, error: "bad_relay" });
   });
 
+  it("refuses other local ports", async () => {
+    expect(await handleRelay({ type: "relay", serverUrl: "http://localhost:9999", path: "/api/sync/runs", body: {} }, okFetch))
+      .toEqual({ ok: false, error: "bad_relay" });
+  });
+
   it("passes server errors through", async () => {
     const f = (async () => new Response(JSON.stringify({ error: "Sync run 1 is done" }), { status: 409 })) as typeof fetch;
     expect(await handleRelay({ type: "relay", serverUrl: "http://localhost:4747", path: "/api/sync/runs/1/saved", body: {} }, f))

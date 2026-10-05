@@ -1,17 +1,11 @@
+import { isAppOrigin } from "./origins";
+
 export interface RelayMessage { type: "relay"; serverUrl: string; path: string; body: unknown }
 export type RelayResponse = { ok: true; data: unknown } | { ok: false; error: string };
 
-function isLocal(serverUrl: string) {
-  try {
-    const u = new URL(serverUrl);
-    return u.protocol === "http:" && (u.hostname === "localhost" || u.hostname === "127.0.0.1");
-  } catch {
-    return false;
-  }
-}
 
 export async function handleRelay(msg: RelayMessage, fetchFn: typeof fetch): Promise<RelayResponse> {
-  if (msg?.type !== "relay" || !isLocal(msg.serverUrl) || typeof msg.path !== "string" || !msg.path.startsWith("/api/sync/")) {
+  if (msg?.type !== "relay" || !isAppOrigin(msg.serverUrl) || typeof msg.path !== "string" || !msg.path.startsWith("/api/sync/")) {
     return { ok: false, error: "bad_relay" };
   }
   try {
