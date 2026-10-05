@@ -39,11 +39,23 @@ describe("request gate", () => {
     const gate = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0 });
     await expect(gate.run(async () => { throw new IgError("rate_limited", "slow"); })).rejects.toMatchObject({ code: "rate_limited" });
     let called = false;
-    await expect(gate.run(async () => { called = true; })).rejects.toMatchObject({ code: "rate_limited" });
+    await expect(gate.run(async () => { called = true; })).rejects.toMatchObject({ code: "paused" });
     expect(called).toBe(false);
     c.advance(10 * 60_000);
     await gate.run(async () => { called = true; });
     expect(called).toBe(true);
+  });
+
+  it("while paused, says why and for how long", async () => {
+    const c = clock();
+    const gate = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0 });
+    await expect(gate.run(async () => { throw new IgError("refused", "Instagram refused the request (feedback_required)."); })).rejects.toMatchObject({ code: "refused" });
+    await expect(gate.run(async () => 1)).rejects.toMatchObject({
+      code: "paused",
+      message: "Instagram calls are paused for 10 more minutes to protect your account, because: Instagram refused the request (feedback_required).",
+    });
+    c.advance(4 * 60_000 + 1);
+    await expect(gate.run(async () => 1)).rejects.toMatchObject({ code: "paused", message: expect.stringContaining("for 6 more minutes") });
   });
 
   it("a failed call does not jam the queue", async () => {

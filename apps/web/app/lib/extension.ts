@@ -7,7 +7,7 @@ type ChromeRuntime = {
 
 export type ExtResponse =
   | { ok: true; version?: string; media?: PostMedia; users?: UserSuggestion[]; profile?: LiveProfile; page?: LivePage | null }
-  | { ok: false; error: string };
+  | { ok: false; error: string; detail?: string };
 
 function runtime(): ChromeRuntime | null {
   const c = (globalThis as { chrome?: { runtime?: ChromeRuntime } }).chrome;
@@ -45,8 +45,14 @@ export const openProfile = (id: string, username: string) => send(id, { type: "p
 export const profilePage = (id: string, cursor: string) => send(id, { type: "profile:page", cursor }, 45_000);
 export const updateFollowing = (id: string) => send(id, { type: "following:update" }, 45_000);
 
-export function loadErrorText(code: string): string {
+/** `detail`: what Instagram answered, shown where the code alone does not explain it. */
+export function loadErrorText(code: string, detail?: string): string {
   switch (code) {
+    case "paused": return detail ?? "Instagram calls are paused for a few minutes to protect your account. Try again later.";
+    case "refused":
+    case "http_error":
+    case "bad_response":
+    case "internal": return `Could not load from Instagram.${detail ? ` ${detail}` : ""}`;
     case "unknown_type":
       return "Your no-fomo extension is out of date. Run pnpm ext:build, then press Reload on the chrome://extensions page.";
     case "not_found":

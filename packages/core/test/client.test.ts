@@ -31,7 +31,7 @@ describe("createIgClient", () => {
       "https://www.instagram.com/api/v1/users/web_profile_info/?username=nasa",
       "https://www.instagram.com/api/v1/feed/user/528817151/?count=12&max_id=CUR",
       "https://www.instagram.com/api/v1/web/search/topsearch/?context=blended&query=na+sa",
-      "https://www.instagram.com/api/v1/friendships/42/following/?count=100",
+      "https://www.instagram.com/api/v1/friendships/42/following/?count=100&order=date_followed_latest",
     ]);
   });
 
@@ -74,7 +74,7 @@ describe("createIgClient", () => {
     expect(await codeOf(make(json({ status: "fail", message: "feedback_required" }, 200)))).toBe("refused");
     expect(await codeOf(make(json({}, 500)))).toBe("http_error");
     const err = await createIgClient({ fetch: fakeFetch(json({}, 404)).fn, csrfToken: () => null }).collectionsPage(null).catch((e) => e);
-    expect((err as Error).message).toBe("Instagram returned error 404 (collections list). Sync stopped.");
+    expect((err as Error).message).toBe("Instagram returned error 404 (collections list).");
     expect(await codeOf(make(() => new Response("<html>login</html>", { status: 200 })))).toBe("login_required");
   });
 

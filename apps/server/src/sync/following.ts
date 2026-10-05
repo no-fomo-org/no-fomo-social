@@ -31,7 +31,13 @@ export function ingestFollowingPage(db: Db, runId: number, raw: unknown, now = D
   return db.transaction((tx) => {
     const run = activeRun(tx, runId);
     let pos = run.nextPos;
+    let duplicates = 0;
     for (const a of page.items) {
+      const seen = tx.select({ runId: following.lastSeenRunId }).from(following).where(eq(following.authorId, a.id)).get();
+      if (seen?.runId === runId) {
+        duplicates++;
+        continue;
+      }
       // Avatars are fetched when the list shows them, not all at once.
       upsertAuthor(tx, a, []);
       const position = pos++;
@@ -43,7 +49,8 @@ export function ingestFollowingPage(db: Db, runId: number, raw: unknown, now = D
     tx.update(followingRuns)
       .set({
         nextPos: pos, pages: sql`${followingRuns.pages} + 1`, items: sql`${followingRuns.items} + ${page.items.length}`,
-        complete: !page.moreAvailable, activeAt: now,
+        duplicates: sql`${followingRuns.duplicates} + ${duplicates}`,
+        complete: !page.moreAvailable && run.duplicates + duplicates === 0, activeAt: now,
       })
       .where(eq(followingRuns.id, runId))
       .run();

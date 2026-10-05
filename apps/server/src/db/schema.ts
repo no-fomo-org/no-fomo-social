@@ -156,7 +156,9 @@ export const followingRuns = sqliteTable("following_runs", {
   /** Accounts seen so far. */
   items: integer("items").notNull().default(0),
   nextPos: integer("next_pos").notNull().default(0),
-  /** The run read the list to its end, so accounts it did not see were unfollowed. */
+  /** Accounts Instagram sent more than once in this run: then the walk missed others, so it proves nothing. */
+  duplicates: integer("duplicates").notNull().default(0),
+  /** The run read the whole list once, so accounts it did not see were unfollowed. */
   complete: integer("complete", { mode: "boolean" }).notNull().default(false),
   errorCode: text("error_code"),
   errorMessage: text("error_message"),

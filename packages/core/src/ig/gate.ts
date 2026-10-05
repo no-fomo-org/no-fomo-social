@@ -6,7 +6,7 @@ export interface RequestGate {
 
 /**
  * Every Instagram request in the tab goes through one gate: one at a time,
- * a pause between them, and a 10 minute stop after Instagram asks to slow down.
+ * a pause between them, and a 10 minute stop after Instagram asks to slow down or refuses a request.
  */
 export function createRequestGate(opts: {
   sleep: (ms: number) => Promise<void>;
@@ -20,10 +20,14 @@ export function createRequestGate(opts: {
   const cooldown = opts.cooldownMs ?? 10 * 60_000;
   let lastAt: number | null = null;
   let blockedUntil = 0;
+  let blockedBecause = "";
   let tail: Promise<unknown> = Promise.resolve();
 
   async function runOne<T>(call: () => Promise<T>): Promise<T> {
-    if (now() < blockedUntil) throw new IgError("rate_limited", "Instagram asked to slow down. Try again in a few minutes.");
+    if (now() < blockedUntil) {
+      const minutes = Math.ceil((blockedUntil - now()) / 60_000);
+      throw new IgError("paused", `Instagram calls are paused for ${minutes} more minute${minutes === 1 ? "" : "s"} to protect your account, because: ${blockedBecause}`);
+    }
     if (lastAt !== null) {
       const wait = lastAt + gap() - now();
       if (wait > 0) await opts.sleep(wait);
@@ -32,7 +36,10 @@ export function createRequestGate(opts: {
     try {
       return await call();
     } catch (e) {
-      if (e instanceof IgError && (e.code === "rate_limited" || e.code === "refused")) blockedUntil = now() + cooldown;
+      if (e instanceof IgError && (e.code === "rate_limited" || e.code === "refused")) {
+        blockedUntil = now() + cooldown;
+        blockedBecause = e.message;
+      }
       throw e;
     }
   }

@@ -1,6 +1,7 @@
 export const IG_APP_ID = "936619743392459";
 
-export type IgErrorCode = "login_required" | "rate_limited" | "refused" | "http_error" | "bad_response" | "not_found";
+/** `paused`: the app itself holds Instagram calls back for a while after a refusal or a rate limit. */
+export type IgErrorCode = "login_required" | "rate_limited" | "refused" | "http_error" | "bad_response" | "not_found" | "paused";
 
 export class IgError extends Error {
   constructor(public readonly code: IgErrorCode, message: string, public readonly status?: number) {
@@ -19,7 +20,7 @@ export interface IgClient {
   followingPage(viewerId: string, cursor: string | null): Promise<unknown>;
 }
 
-const LOGIN_MESSAGE = "Log in to Instagram in this browser, then sync again.";
+const LOGIN_MESSAGE = "Log in to Instagram in this browser, then try again.";
 const NOT_FOUND_MESSAGE = "This post was deleted on Instagram.";
 const isNotFound = (message: unknown) => typeof message === "string" && /not found|unavailable|deleted/i.test(message);
 
@@ -48,14 +49,14 @@ export function createIgClient(opts: {
     } catch (e) {
       throw new IgError("http_error", `Could not reach Instagram: ${(e as Error).message}`);
     }
-    if (res.status === 429) throw new IgError("rate_limited", "Instagram asked to slow down. Sync stopped. Try again later.", 429);
+    if (res.status === 429) throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.", 429);
     if (res.status === 401 || res.status === 403) throw new IgError("login_required", LOGIN_MESSAGE, res.status);
     if (notFound && res.status === 404) throw new IgError("not_found", NOT_FOUND_MESSAGE, 404);
     if (notFound && res.status === 400) {
       const b = (await res.clone().json().catch(() => null)) as { message?: unknown } | null;
       if (isNotFound(b?.message)) throw new IgError("not_found", NOT_FOUND_MESSAGE, 400);
     }
-    if (!res.ok) throw new IgError("http_error", `Instagram returned error ${res.status} (${label}). Sync stopped.`, res.status);
+    if (!res.ok) throw new IgError("http_error", `Instagram returned error ${res.status} (${label}).`, res.status);
 
     let body: unknown;
     try {
@@ -65,9 +66,9 @@ export function createIgClient(opts: {
     }
     const b = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
     if (b.require_login === true || b.message === "login_required") throw new IgError("login_required", LOGIN_MESSAGE);
-    if (b.spam === true) throw new IgError("rate_limited", "Instagram asked to slow down. Sync stopped. Try again later.");
+    if (b.spam === true) throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.");
     if (notFound && b.status === "fail" && isNotFound(b.message)) throw new IgError("not_found", NOT_FOUND_MESSAGE);
-    if (b.status === "fail") throw new IgError("refused", `Instagram refused the request (${String(b.message ?? "unknown")}). Sync stopped.`);
+    if (b.status === "fail") throw new IgError("refused", `Instagram refused the request (${String(b.message ?? "unknown")}).`);
     return body;
   }
 
@@ -91,7 +92,9 @@ export function createIgClient(opts: {
     profileInfo: (username) => get("profile", "/api/v1/users/web_profile_info/", { username }, true),
     userFeed: async (userId, cursor) => get("profile posts", userPath(userId, "feed/user/{id}/"), { count: "12", max_id: cursor }),
     searchUsers: (query) => get("search", "/api/v1/web/search/topsearch/", { context: "blended", query }),
+    // The default order is a ranking that changes between pages, so pages overlap and miss accounts.
+    // Ordered by follow date, the owner's own list stays put while it is read.
     followingPage: async (viewerId, cursor) =>
-      get("following list", userPath(viewerId, "friendships/{id}/following/"), { count: "100", max_id: cursor }),
+      get("following list", userPath(viewerId, "friendships/{id}/following/"), { count: "100", order: "date_followed_latest", max_id: cursor }),
   };
 }

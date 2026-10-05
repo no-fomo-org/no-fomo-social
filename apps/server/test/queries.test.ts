@@ -85,6 +85,14 @@ describe("following list", () => {
     expect(listFollowing(db, { limit: 1 })).toMatchObject({ total: 3, items: [expect.objectContaining({ id: "77" })] });
   });
 
+  it("tells when Instagram sent accounts twice, so the list may miss some", () => {
+    const run = startFollowingRun(db);
+    ingestFollowingPage(db, run.runId, { users: [{ pk: "8", username: "a" }], next_max_id: "1" });
+    ingestFollowingPage(db, run.runId, { users: [{ pk: "8", username: "a" }] });
+    finishFollowingRun(db, run.runId, { ok: true });
+    expect(listFollowing(db, { limit: 10 }).run).toMatchObject({ status: "done", duplicates: 1 });
+  });
+
   it("shows an update with no news for over 2 minutes as stopped, so it can run again", () => {
     startFollowingRun(db, Date.now() - 3 * 60_000);
     expect(listFollowing(db, { limit: 10 }).run).toMatchObject({ status: "error", errorCode: "interrupted" });

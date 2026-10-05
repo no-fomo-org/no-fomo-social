@@ -19,7 +19,7 @@ export default function Saved() {
 
   return (
     <>
-      <TopBar search={{ value: filters.q, onChange: (q) => update({ q }), placeholder: "Search captions, authors, music", label: "Search saved posts" }} />
+      <TopBar search={{ value: filters.q, onChange: (q) => update({ q }), placeholder: "Search captions, authors, music", label: "Search saved posts" }} sync />
       <main className="mx-auto max-w-[1600px] px-4 pb-16 md:px-6">
         <FilterBar scope="saved" filters={filters} total={list.total} onChange={update} />
         <PostGrid

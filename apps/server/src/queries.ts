@@ -184,7 +184,7 @@ function runInfo(r: typeof followingRuns.$inferSelect | undefined, now: number):
   if (!r) return null;
   const stale = r.status === "running" && now - r.activeAt > STALE_MS;
   return {
-    id: r.id, startedAt: r.startedAt, finishedAt: r.finishedAt, pages: r.pages, items: r.items,
+    id: r.id, startedAt: r.startedAt, finishedAt: r.finishedAt, pages: r.pages, items: r.items, duplicates: r.duplicates,
     ...(stale
       ? { status: "error" as const, errorCode: "interrupted", errorMessage: "The update stopped before it finished. Try again." }
       : { status: r.status, errorCode: r.errorCode, errorMessage: r.errorMessage }),

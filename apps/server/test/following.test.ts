@@ -53,4 +53,17 @@ describe("following updates", () => {
     expect(db.select().from(followingRuns).all()[0]).toMatchObject({ status: "error", errorCode: "interrupted" });
     expect(() => ingestFollowingPage(db, a.runId, page(["1"], null))).toThrow();
   });
+
+  it("does not trust a walk that got the same account twice, and removes nothing after it", () => {
+    const a = startFollowingRun(db);
+    ingestFollowingPage(db, a.runId, page(["1", "2", "3"], null));
+    finishFollowingRun(db, a.runId, { ok: true });
+    // Instagram's ranked order moved between pages: "2" came twice, "3" never came.
+    const b = startFollowingRun(db);
+    ingestFollowingPage(db, b.runId, page(["1", "2"], "C"));
+    ingestFollowingPage(db, b.runId, page(["2"], null));
+    finishFollowingRun(db, b.runId, { ok: true });
+    expect(ids().sort()).toEqual(["1", "2", "3"]);
+    expect(db.select().from(followingRuns).all()[1]).toMatchObject({ complete: false, duplicates: 1, items: 3 });
+  });
 });

@@ -6,9 +6,10 @@ import { createFollowingSink } from "./relay-sink";
 import type { RelayMessage, RelayResponse } from "./relay";
 
 type Msg = { type?: unknown; query?: unknown; serverUrl?: unknown; username?: unknown; cursor?: unknown };
-type Reply = { ok: true; [k: string]: unknown } | { ok: false; error: string };
+type Reply = { ok: true; [k: string]: unknown } | { ok: false; error: string; detail?: string };
 
-const errorCode = (e: unknown) => (e instanceof IgError ? e.code : "internal");
+/** The code picks the app's text; the detail says what Instagram answered. */
+const failure = (e: unknown): Reply => ({ ok: false, error: e instanceof IgError ? e.code : "internal", detail: (e as Error).message });
 
 /** One page of an account, ready to show. The cursor carries the user id, so the next call needs nothing else. */
 function livePage(userId: string, raw: unknown): LivePage {
@@ -45,7 +46,7 @@ export function createTabJobs(deps: { ig: IgClient; send: (m: RelayMessage) => P
     return { ok: true, page: livePage(userId, await deps.ig.userFeed(userId, cursor.slice(at + 1))) };
   }
 
-  const safely = (run: () => Promise<Reply>): Promise<Reply> => run().catch((e: unknown) => ({ ok: false as const, error: errorCode(e) }));
+  const safely = (run: () => Promise<Reply>): Promise<Reply> => run().catch(failure);
 
   /** Answers as soon as the update started (or failed to), then lets it run. */
   function startUpdate(serverUrl: string): Promise<LoadStart> {

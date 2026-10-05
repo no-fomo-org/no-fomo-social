@@ -29,7 +29,7 @@ describe("tab jobs", () => {
 
   it("returns the Instagram error code of a failed search", async () => {
     const { jobs } = setup({ searchUsers: async () => { throw new IgError("login_required", "x"); } });
-    expect(await jobs.handle({ type: "profile:search", query: "one" })).toEqual({ ok: false, error: "login_required" });
+    expect(await jobs.handle({ type: "profile:search", query: "one" })).toEqual({ ok: false, error: "login_required", detail: "x" });
   });
 
   it("opens an account with its first page, ready to show, and stores nothing", async () => {
@@ -61,7 +61,7 @@ describe("tab jobs", () => {
     const { jobs } = setup({ profileInfo: async () => ({ data: { user: null } }) });
     expect(await jobs.handle({ type: "profile:open", username: "ghost" })).toEqual({ ok: false, error: "profile_not_found" });
     const { jobs: j2 } = setup({ profileInfo: async () => { throw new IgError("not_found", "x"); } });
-    expect(await j2.handle({ type: "profile:open", username: "ghost" })).toEqual({ ok: false, error: "not_found" });
+    expect(await j2.handle({ type: "profile:open", username: "ghost" })).toEqual({ ok: false, error: "not_found", detail: "x" });
   });
 
   it("reads the next page from the cursor alone, and ends without a cursor", async () => {

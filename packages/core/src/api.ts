@@ -60,6 +60,8 @@ export interface FollowingRunInfo {
   pages: number;
   /** Accounts seen so far. */
   items: number;
+  /** Accounts Instagram sent twice: then some others were missed and nothing was removed. */
+  duplicates: number;
   errorCode: string | null;
   errorMessage: string | null;
 }

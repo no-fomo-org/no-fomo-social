@@ -27,6 +27,9 @@ export function FollowingList(props: {
       </div>
       {props.error && <p role="alert" className="mt-2 text-[13px] text-danger">{props.error}</p>}
       {page?.run?.status === "error" && !props.error && <p className="mt-2 text-[13px] text-danger">{page.run.errorMessage ?? "The last update failed."}</p>}
+      {page?.run?.status === "done" && page.run.duplicates > 0 && (
+        <p className="mt-2 text-[13px] text-muted">Instagram changed the list while it was read, so some accounts may be missing. Nothing was removed. Try Update list again later.</p>
+      )}
       {!page?.updatedAt && !running && (
         <p className="mt-3 max-w-[60ch] text-[15px] text-muted">Load the list of accounts you follow once, so you can open them here without searching Instagram. It takes about 30 seconds for 1,000 accounts.</p>
       )}

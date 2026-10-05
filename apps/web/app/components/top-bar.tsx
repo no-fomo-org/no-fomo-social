@@ -8,7 +8,8 @@ import { Icon } from "./ui/icon";
 
 export type SearchConfig = { value: string | null; onChange: (q: string | null) => void; placeholder: string; label: string };
 
-export function TopBar({ search }: { search: SearchConfig | null }) {
+/** `sync`: show saved-post syncing. Only the Saved tab has it; other tabs load their own way. */
+export function TopBar({ search, sync = false }: { search: SearchConfig | null; sync?: boolean }) {
   const openSettings = useOpenSettings();
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-bg">
@@ -24,7 +25,7 @@ export function TopBar({ search }: { search: SearchConfig | null }) {
           <button type="button" onClick={openSettings} aria-label="Settings" title="Settings" className={buttonClass("ghost", "", "icon")}>
             <Icon icon={Settings01Icon} size={18} />
           </button>
-          <SyncControl />
+          {sync && <SyncControl />}
         </div>
       </div>
     </header>

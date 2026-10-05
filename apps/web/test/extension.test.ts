@@ -52,3 +52,12 @@ describe("loadErrorText", () => {
     expect(loadErrorText("something_new")).toMatch(/something_new/);
   });
 });
+
+describe("loadErrorText details", () => {
+  it("adds what Instagram said for pauses, refusals and errors", () => {
+    expect(loadErrorText("paused", "Instagram calls are paused for 6 more minutes to protect your account, because: Instagram refused the request (feedback_required)."))
+      .toBe("Instagram calls are paused for 6 more minutes to protect your account, because: Instagram refused the request (feedback_required).");
+    expect(loadErrorText("http_error", "Instagram returned error 500 (profile).")).toBe("Could not load from Instagram. Instagram returned error 500 (profile).");
+    expect(loadErrorText("rate_limited", "x")).toBe("Instagram asked to slow down. Try again in a few minutes.");
+  });
+});
