@@ -1,34 +1,31 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { CheckmarkBadge01Icon, Search01Icon, SquareLock02Icon } from "@hugeicons/core-free-icons";
-import type { FollowingItem, ProfileItem, UserSuggestion } from "@no-fomo/core";
+import type { FollowingItem, UserSuggestion } from "@no-fomo/core";
 import { loadErrorText, searchInstagram } from "../../lib/extension";
 import { parseProfileInput } from "../../lib/profile-input";
 import { Avatar } from "../avatar";
-import { Button } from "../ui/button";
 import { Icon } from "../ui/icon";
 
 type Row = { id: string; username: string; fullName: string | null; avatar: string | null; isPrivate?: boolean; isVerified?: boolean };
 
+/** One box for people you follow (stored, instant) and all of Instagram (through the extension). */
 export function ProfileSearch(props: {
   text: string;
   onTextChange: (t: string) => void;
   followingMatches: FollowingItem[];
-  profiles: ProfileItem[];
   extensionId: string | undefined;
   ready: boolean;
-  busyUsername: string | null;
-  error: string | null;
-  onAdd: (username: string) => void;
-  onOpen: (username: string) => void;
 }) {
+  const navigate = useNavigate();
   const [debounced, setDebounced] = useState("");
   useEffect(() => {
     const t = setTimeout(() => setDebounced(props.text.trim()), 400);
     return () => clearTimeout(t);
   }, [props.text]);
 
-  const asLink = parseProfileInput(props.text);
+  const asName = parseProfileInput(props.text);
   const query = /instagram\.com/i.test(debounced) ? "" : debounced.replace(/^@/, "");
   const ig = useQuery({
     queryKey: ["ig-search", query],
@@ -43,20 +40,20 @@ export function ProfileSearch(props: {
     retry: false,
   });
 
-  const added = new Map(props.profiles.map((p) => [p.username.toLowerCase(), p]));
   const followed: Row[] = props.followingMatches.slice(0, 5).map((f) => ({ id: f.id, username: f.username, fullName: f.fullName, avatar: f.avatarUrl }));
   const shownIds = new Set(followed.map((r) => r.id));
   const others: Row[] = (ig.data ?? [])
     .filter((u: UserSuggestion) => !shownIds.has(u.id))
     .slice(0, 8)
-    .map((u) => ({ id: u.id, username: u.username, fullName: u.fullName, avatar: null, isPrivate: u.isPrivate, isVerified: u.isVerified }));
+    .map((u) => ({ id: u.id, username: u.username, fullName: u.fullName, avatar: u.avatarUrl, isPrivate: u.isPrivate, isVerified: u.isVerified }));
   const open = props.text.trim().length > 0;
 
-  const row = (r: Row) => {
-    const isAdded = added.has(r.username.toLowerCase());
-    const busy = props.busyUsername === r.username;
-    return (
-      <li key={r.id} className="flex items-center gap-3 rounded-[6px] px-2.5 py-2 hover:bg-surface">
+  const row = (r: Row) => (
+    <li key={r.id}>
+      <Link
+        to={`/profiles/${r.username}`}
+        className="flex items-center gap-3 rounded-[6px] px-2.5 py-2 hover:bg-surface focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
+      >
         <Avatar src={r.avatar} name={r.username} size={32} />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1 truncate text-[14px]">
@@ -66,23 +63,16 @@ export function ProfileSearch(props: {
           </span>
           {r.fullName && <span className="block truncate text-[12px] text-muted">{r.fullName}</span>}
         </span>
-        {isAdded ? (
-          <Button variant="ghost" onClick={() => props.onOpen(r.username)}>Open</Button>
-        ) : (
-          <Button onClick={() => props.onAdd(r.username)} disabled={!props.ready || busy}>{busy ? "Adding…" : "Add"}</Button>
-        )}
-      </li>
-    );
-  };
+      </Link>
+    </li>
+  );
 
   return (
     <div>
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (!asLink) return;
-          if (added.has(asLink)) props.onOpen(asLink);
-          else props.onAdd(asLink);
+          if (asName) navigate(`/profiles/${asName}`);
         }}
         className="relative"
       >
@@ -98,7 +88,6 @@ export function ProfileSearch(props: {
           className="h-11 w-full rounded-control border border-line bg-surface ps-11 pe-3 text-[15px] text-text placeholder:text-muted focus-visible:border-accent-line focus-visible:bg-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent [&::-webkit-search-cancel-button]:hidden"
         />
       </form>
-      {props.error && <p role="alert" className="mt-2 text-[13px] text-danger">{props.error}</p>}
       {open && (
         <div className="mt-2 grid gap-3 rounded-control border border-line p-2">
           <section aria-label="People you follow">
@@ -121,7 +110,7 @@ export function ProfileSearch(props: {
               <p className="px-2.5 py-2 text-[13px] text-muted">No other accounts found.</p>
             )}
           </section>
-          {asLink && <p className="px-2.5 pb-1 text-[12px] text-muted">Press Enter to add @{asLink}.</p>}
+          {asName && <p className="px-2.5 pb-1 text-[12px] text-muted">Press Enter to open @{asName}.</p>}
         </div>
       )}
     </div>

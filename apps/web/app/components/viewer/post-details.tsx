@@ -39,13 +39,8 @@ export function PostDetails({
         <div className="min-w-0 flex-1">
           <Dialog.Title className="truncate text-[15px] font-semibold">@{p.author.username}</Dialog.Title>
           {p.author.fullName && <p className="truncate text-[13px] text-muted">{p.author.fullName}</p>}
-          {(p.saved || p.profiles.length > 0) && (
-            <p className="mt-1 flex flex-wrap gap-1.5">
-              {p.saved && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12px] text-muted">Saved</span>}
-              {p.profiles.map((u) => (
-                <span key={u} className="rounded-full bg-surface-2 px-2 py-0.5 text-[12px] text-muted">From @{u}</span>
-              ))}
-            </p>
+          {p.saved && (
+            <p className="mt-1"><span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12px] text-muted">Saved</span></p>
           )}
         </div>
         <div className="flex items-center">

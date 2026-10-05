@@ -6,7 +6,7 @@ import { Icon } from "../ui/icon";
 
 export function ReportRow({ r, onOpen }: { r: ReportListItem; onOpen: (id: string) => void }) {
   const [failed, setFailed] = useState(false);
-  const source = [r.saved ? "Saved" : null, ...r.profiles.map((u) => `From @${u}`)].filter(Boolean).join(" · ");
+  const source = r.saved ? "Saved" : null;
   return (
     <li>
       <button

@@ -77,6 +77,7 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
       void qc.invalidateQueries({ queryKey: ["posts"] });
       void qc.invalidateQueries({ queryKey: ["reports"] });
       void qc.invalidateQueries({ queryKey: ["authors", "reports"] });
+      void qc.invalidateQueries({ queryKey: ["known"] });
     }
     wasWorking.current = working;
   }, [working, qc]);

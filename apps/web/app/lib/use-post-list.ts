@@ -10,6 +10,10 @@ export function usePostList<P extends Page<{ id: string }>>(o: {
   fetchPage: (cursor: string | null) => Promise<P>;
   enabled?: boolean;
   staleTime?: number;
+  /** Ask again after an error. Off for Instagram pages: a retry is one more Instagram request. */
+  retry?: boolean;
+  /** What to show of the loaded items (filtering, extra marks). The viewer moves through these. */
+  view?: (items: P["items"][number][]) => P["items"][number][];
 }) {
   const [params, setParams] = useSearchParams();
   const query = useInfiniteQuery({
@@ -19,9 +23,11 @@ export function usePostList<P extends Page<{ id: string }>>(o: {
     initialPageParam: null as string | null,
     getNextPageParam: (last: P) => last.nextCursor,
     staleTime: o.staleTime,
+    ...(o.retry === false ? { retry: false } : {}),
   });
   type T = P["items"][number];
-  const items: T[] = query.data?.pages.flatMap((p) => p.items as T[]) ?? [];
+  const loaded: T[] = query.data?.pages.flatMap((p) => p.items as T[]) ?? [];
+  const items = o.view ? o.view(loaded) : loaded;
   const openId = params.get("post");
   const openIndex = openId ? items.findIndex((p) => p.id === openId) : -1;
 
@@ -47,6 +53,7 @@ export function usePostList<P extends Page<{ id: string }>>(o: {
   return {
     query,
     items,
+    loaded,
     total: query.data?.pages[0]?.total,
     open: openIndex >= 0 ? items[openIndex]! : null,
     prev: openIndex > 0 ? items[openIndex - 1]! : null,

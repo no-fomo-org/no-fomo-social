@@ -15,13 +15,16 @@ export function PostGrid(props: {
   onClearFilters: () => void;
   /** Shown when there are no posts and no filters. */
   empty: ReactNode;
+  /** Load the next page when the end of the grid comes into view. Default on. */
+  autoLoad?: boolean;
 }) {
   const { query } = props;
   const sentinel = useRef<HTMLDivElement>(null);
+  const autoLoad = props.autoLoad ?? true;
 
   useEffect(() => {
     const el = sentinel.current;
-    if (!el) return;
+    if (!el || !autoLoad) return;
     const io = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting && query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
@@ -30,7 +33,7 @@ export function PostGrid(props: {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage]);
+  }, [autoLoad, query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage]);
 
   if (query.isPending) return <Skeleton count={21} />;
   if (query.isError) {

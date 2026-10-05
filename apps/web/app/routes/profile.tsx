@@ -1,101 +1,136 @@
-import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft01Icon, RefreshIcon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft01Icon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
+import type { LivePost, LiveProfile } from "@no-fomo/core";
 import { api } from "../lib/api";
-import { NO_FILTERS, postsQueryString, readFilters, writeFilters, type Filters } from "../lib/filters";
+import { loadErrorText, openProfile, profilePage } from "../lib/extension";
+import { NO_FILTERS, readFilters, writeFilters, type Filters } from "../lib/filters";
+import { filterLive } from "../lib/live-filter";
 import { usePostList } from "../lib/use-post-list";
 import { Avatar } from "../components/avatar";
 import { FilterBar } from "../components/filter-bar";
 import { PostGrid } from "../components/post-grid";
+import { SetupSteps } from "../components/setup-steps";
 import { TopBar } from "../components/top-bar";
 import { Viewer } from "../components/viewer/viewer";
-import { loadNote, loadProblem } from "../lib/profile-status";
-import { useProfileJobs } from "../components/profiles/use-profile-jobs";
+import { useExtension } from "../components/profiles/use-extension";
 import { Button, buttonClass } from "../components/ui/button";
 import { Icon } from "../components/ui/icon";
 
+type AccountPage = { items: LivePost[]; nextCursor: string | null; total: number; profile: LiveProfile | null };
+
+/** Which loaded posts the app stores, in chunks the server accepts. */
+async function knownStates(ids: string[]) {
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += 100) chunks.push(ids.slice(i, i + 100));
+  const rows = (await Promise.all(chunks.map((c) => api.known(c)))).flat();
+  return new Map(rows.map((r) => [r.id, r]));
+}
+
+/** An Instagram account, shown straight from Instagram. Nothing is stored unless a post is analyzed. */
 export default function Profile() {
   const { username = "" } = useParams();
   const [params, setParams] = useSearchParams();
   const filters = readFilters(params);
   const update = (patch: Partial<Filters>) => setParams(writeFilters(params, patch), { replace: true });
-  const jobs = useProfileJobs();
-  const qc = useQueryClient();
-  const profile = jobs.profiles.data?.find((p) => p.username.toLowerCase() === username.toLowerCase()) ?? null;
-  const [error, setError] = useState<string | null>(null);
+  const ext = useExtension();
+
   const list = usePostList({
-    queryKey: ["posts", "profile", profile?.id, filters],
-    fetchPage: (cursor) => api.posts(postsQueryString(filters, cursor, { profile: profile!.id })),
-    enabled: !!profile,
+    queryKey: ["live-profile", username.toLowerCase()],
+    enabled: ext.ready,
+    // Links in a page stay good for hours; coming back to the account within minutes shows it at once.
+    staleTime: 5 * 60_000,
+    retry: false,
+    fetchPage: async (cursor): Promise<AccountPage> => {
+      const reply = cursor ? await profilePage(ext.extensionId!, cursor) : await openProfile(ext.extensionId!, username);
+      if (!reply) throw new Error(loadErrorText("no_extension"));
+      if (!reply.ok) throw new Error(loadErrorText(reply.error));
+      return { items: reply.page?.posts ?? [], nextCursor: reply.page?.nextCursor ?? null, total: 0, profile: reply.profile ?? null };
+    },
+    view: (posts) => filterLive(posts, { q: filters.q, kind: filters.kind }),
   });
-  const running = profile?.run?.status === "running";
+  const ids = list.loaded.map((p) => p.id);
+  const known = useQuery({
+    queryKey: ["known", ids.join(",")],
+    queryFn: () => knownStates(ids),
+    enabled: ids.length > 0,
+    placeholderData: (prev) => prev,
+  });
+  /** A post the app stores may be saved or have a report: show that here too. */
+  const mark = (p: LivePost): LivePost => {
+    const k = known.data?.get(p.id);
+    return k ? { ...p, saved: k.saved, hasReport: k.hasReport } : p;
+  };
 
-  // New posts arrive page by page while a load runs.
-  const loaded = profile?.loadedCount;
-  useEffect(() => {
-    if (profile) void qc.invalidateQueries({ queryKey: ["posts", "profile", profile.id] });
-  }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
-
+  const profile = list.query.data?.pages[0]?.profile ?? null;
+  const filtering = Boolean(filters.q || filters.kind);
+  const closed = profile ? profile.isPrivate && !profile.followedByViewer : false;
   const search = { value: filters.q, onChange: (q: string | null) => update({ q }), placeholder: `Search @${username}`, label: `Search posts of @${username}` };
 
-  if (jobs.profiles.isPending) return <TopBar search={null} />;
-  if (!profile) {
-    return (
+  let body;
+  if (ext.missing) {
+    body = (
+      <section className="py-10">
+        <h2 className="text-[17px] font-semibold">The no-fomo extension is needed to open accounts</h2>
+        <SetupSteps />
+      </section>
+    );
+  } else if (list.query.isError) {
+    body = (
+      <section className="py-16">
+        <h2 className="text-[17px] font-semibold">Could not open @{username}</h2>
+        <p className="mt-1 max-w-[60ch] text-muted">{(list.query.error as Error).message}</p>
+        <Button className="mt-4" onClick={() => void list.query.refetch()}>Try again</Button>
+      </section>
+    );
+  } else if (closed) {
+    body = <p className="py-16 text-[15px] text-muted">This account is private and you do not follow it, so its posts cannot be shown.</p>;
+  } else {
+    body = (
       <>
-        <TopBar search={null} />
-        <main className="mx-auto max-w-[1100px] px-4 py-16 md:px-6">
-          <h1 className="text-[17px] font-semibold">@{username} is not in your profiles</h1>
-          <p className="mt-1 text-muted">Add it on the Profiles tab first.</p>
-          <Link to="/profiles" className={buttonClass("secondary", "mt-4")}>Go to Profiles</Link>
-        </main>
+        <FilterBar scope="profile" filters={filters} total={filtering ? list.items.length : (profile?.postCount ?? undefined)} onChange={update} />
+        {filtering && list.query.hasNextPage && (
+          <p className="-mt-1 mb-3 text-[13px] text-muted">
+            Filters look at the {list.loaded.length} posts loaded so far.{" "}
+            <button type="button" onClick={() => void list.query.fetchNextPage()} disabled={list.query.isFetchingNextPage} className="text-text underline underline-offset-2 hover:text-accent">
+              {list.query.isFetchingNextPage ? "Loading…" : "Load 12 more"}
+            </button>
+          </p>
+        )}
+        <PostGrid
+          query={list.query}
+          items={list.items.map(mark)}
+          filters={filters}
+          onOpen={(id) => list.setPost(id)}
+          onClearFilters={() => update(NO_FILTERS)}
+          autoLoad={!filtering}
+          empty={<h2 className="text-[17px] font-semibold">This account has no posts.</h2>}
+        />
       </>
     );
   }
 
-  const run = async (mode: "older" | "refresh") => {
-    setError(null);
-    setError(await jobs.load(profile.id, mode));
-  };
-
   return (
     <>
-      <TopBar search={search} />
+      <TopBar search={closed || list.query.isError ? null : search} />
       <main className="mx-auto max-w-[1600px] px-4 pb-16 md:px-6">
         <div className="flex flex-wrap items-center gap-3 pt-4">
           <Link to="/profiles" aria-label="Back to Profiles" className={buttonClass("ghost", "", "icon")}><Icon icon={ArrowLeft01Icon} size={18} /></Link>
-          <Avatar src={profile.avatarUrl} name={profile.username} size={40} />
+          <Avatar src={profile?.avatarUrl ?? null} name={username} size={40} />
           <div className="min-w-0">
-            <h1 className="truncate text-[17px] font-semibold">@{profile.username}</h1>
-            <p className="truncate text-[13px] text-muted" role="status" aria-live="polite">{loadNote(profile)}</p>
+            <h1 className="truncate text-[17px] font-semibold">@{profile?.username ?? username}</h1>
+            <p className="truncate text-[13px] text-muted">
+              {[profile?.fullName, profile?.postCount != null ? `${profile.postCount.toLocaleString("en")} posts` : null].filter(Boolean).join(" · ") || " "}
+            </p>
           </div>
-          <div className="ms-auto flex gap-2">
-            <a href={`https://www.instagram.com/${profile.username}/`} target="_blank" rel="noopener noreferrer" className={buttonClass("ghost")}>
-              <Icon icon={SquareArrowUpRightIcon} />Instagram
-            </a>
-            <Button onClick={() => void run("refresh")} disabled={!jobs.ready || running}>
-              <Icon icon={RefreshIcon} className={running ? "motion-safe:animate-spin" : ""} />Refresh
-            </Button>
-          </div>
+          <a href={`https://www.instagram.com/${profile?.username ?? username}/`} target="_blank" rel="noopener noreferrer" className={buttonClass("ghost", "ms-auto")}>
+            <Icon icon={SquareArrowUpRightIcon} />Instagram
+          </a>
         </div>
-        {(error ?? loadProblem(profile)) && <p role="alert" className="mt-2 text-[13px] text-danger">{error ?? loadProblem(profile)}</p>}
-        <FilterBar scope="profile" filters={filters} total={list.total} onChange={update} />
-        <PostGrid
-          query={list.query}
-          items={list.items}
-          filters={filters}
-          onOpen={(id) => list.setPost(id)}
-          onClearFilters={() => update(NO_FILTERS)}
-          empty={<h2 className="text-[17px] font-semibold">{running ? "Loading posts from Instagram…" : "No posts loaded yet. Press Refresh."}</h2>}
-        />
-        {profile.hasOlder && !list.query.hasNextPage && list.items.length > 0 && (
-          <div className="mt-8 flex justify-center">
-            <Button onClick={() => void run("older")} disabled={!jobs.ready || running}>{running ? "Loading…" : "Load older posts"}</Button>
-          </div>
-        )}
+        {body}
       </main>
       <Viewer
-        post={list.open}
+        post={list.open && mark(list.open)}
         onClose={() => list.setPost(null)}
         onPrev={list.prev ? () => list.setPost(list.prev!.id, true) : null}
         onNext={list.next ? () => list.setPost(list.next!.id, true) : null}
