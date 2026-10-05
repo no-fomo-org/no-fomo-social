@@ -7,12 +7,23 @@ import page2 from "@no-fomo/core/fixtures/saved-page-2.json";
 import collectionsList from "@no-fomo/core/fixtures/collections-list.json";
 import mediaInfo from "@no-fomo/core/fixtures/media-info.json";
 import type { AuthorFacet, PostMedia, PostsPage, SyncStatus } from "@no-fomo/core";
-import { openDb } from "../src/db/open";
+import { openDb, type Db } from "../src/db/open";
 import { createApp } from "../src/http/app";
 import { createMediaStore } from "../src/media/store";
-import { createKeyStore } from "../src/secrets/key-store";
+import { createKeyStore, type KeyStore } from "../src/secrets/key-store";
+import { createAnalyzer } from "../src/analyze/analyzer";
 import type { ServerConfig } from "../src/config";
 import { markMediaSaved } from "../src/sync/ingest";
+
+/** Routes under test never reach a real job; any tool call would be a bug in the test. */
+const never = () => {
+  throw new Error("not used in this test");
+};
+const analyzerFor = (db: Db, keys: KeyStore) =>
+  createAnalyzer({
+    db, keys, tmpRoot: tmpdir(), makeProvider: never, download: never,
+    tools: { probe: never, sceneTimes: never, tinyRgb: never, frameJpeg: never, extractAudio: never, scaleImage: never },
+  });
 
 const EXT = "abcdefghijklmnopabcdefghijklmnop";
 const HOST = "localhost:4747";
@@ -29,7 +40,8 @@ beforeEach(() => {
     fetch: (async () => new Response(Buffer.from([0xff, 0xd8, 0xff, 0]))) as typeof fetch,
     onSaved: (job) => markMediaSaved(db, job),
   });
-  app = createApp({ db, config, media, keys: createKeyStore(dataDir) });
+  const keys = createKeyStore(dataDir);
+  app = createApp({ db, config, media, keys, analyzer: analyzerFor(db, keys) });
 });
 
 const post = (path: string, body: unknown, origin = `chrome-extension://${EXT}`) =>
@@ -185,5 +197,20 @@ describe("media links", () => {
   it("refuses fresh links from web pages", async () => {
     await syncFixtures();
     expect((await post("/api/sync/media/3500000000000000002", { payload: mediaInfo }, "https://evil.example")).status).toBe(403);
+  });
+});
+
+describe("analyze routes", () => {
+  it("rejects bad ids, unknown posts and the extension origin", async () => {
+    expect((await post("/api/posts/abc/analyze", {}, "http://localhost:4747")).status).toBe(400);
+    expect((await post("/api/posts/999/analyze", {}, "http://localhost:4747")).status).toBe(404);
+    expect((await post("/api/posts/999/analyze", {})).status).toBe(403);
+    expect((await get("/api/posts/999/report")).status).toBe(404);
+  });
+  it("answers 409 no_key before any key is saved", async () => {
+    await syncFixtures();
+    const id = ((await (await get("/api/posts?limit=1")).json()) as PostsPage).items[0]!.id;
+    const res = await post(`/api/posts/${id}/analyze`, {}, "http://localhost:4747");
+    expect([res.status, ((await res.json()) as { error: string }).error]).toEqual([409, "no_key"]);
   });
 });

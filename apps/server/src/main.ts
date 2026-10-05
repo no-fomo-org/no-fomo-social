@@ -1,10 +1,16 @@
 import { mkdirSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { loadConfig } from "./config";
 import { openDb } from "./db/open";
+import { cleanTempDirs, createAnalyzer } from "./analyze/analyzer";
+import { createDownloader } from "./analyze/download";
+import { ffmpegTools } from "./analyze/ffmpeg";
+import { createOpenAIProvider } from "./analyze/provider";
+import { failStaleReports } from "./analyze/report-store";
 import { createApp } from "./http/app";
-import { createMediaStore } from "./media/store";
+import { createMediaStore, isMediaUrl } from "./media/store";
 import { createKeyStore } from "./secrets/key-store";
 import { failStaleRuns, markMediaSaved } from "./sync/ingest";
 
@@ -12,13 +18,23 @@ const config = loadConfig();
 mkdirSync(config.dataDir, { recursive: true });
 const db = openDb(join(config.dataDir, "no-fomo.db"));
 failStaleRuns(db);
+failStaleReports(db, Date.now());
+cleanTempDirs(tmpdir());
 const media = createMediaStore({
   dir: join(config.dataDir, "media"),
   extraHosts: config.extraMediaHosts,
   onSaved: (job) => markMediaSaved(db, job),
 });
 const keys = createKeyStore(config.dataDir);
-const app = createApp({ db, config, media, keys });
+const analyzer = createAnalyzer({
+  db,
+  keys,
+  tmpRoot: tmpdir(),
+  tools: ffmpegTools,
+  makeProvider: createOpenAIProvider,
+  download: createDownloader({ allowed: (url) => isMediaUrl(url, config.extraMediaHosts) }),
+});
+const app = createApp({ db, config, media, keys, analyzer });
 
 const server = serve({ fetch: app.fetch, port: config.port, hostname: "127.0.0.1" }, () => {
   console.log(`no-fomo is running at http://localhost:${config.port}`);

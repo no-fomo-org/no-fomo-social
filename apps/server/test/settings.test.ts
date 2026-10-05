@@ -3,11 +3,22 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { AppSettings } from "@no-fomo/core";
-import { openDb } from "../src/db/open";
+import { openDb, type Db } from "../src/db/open";
 import { createApp } from "../src/http/app";
 import { createMediaStore } from "../src/media/store";
-import { createKeyStore } from "../src/secrets/key-store";
+import { createKeyStore, type KeyStore } from "../src/secrets/key-store";
+import { createAnalyzer } from "../src/analyze/analyzer";
 import type { ServerConfig } from "../src/config";
+
+/** Routes under test never reach a real job; any tool call would be a bug in the test. */
+const never = () => {
+  throw new Error("not used in this test");
+};
+const analyzerFor = (db: Db, keys: KeyStore) =>
+  createAnalyzer({
+    db, keys, tmpRoot: tmpdir(), makeProvider: never, download: never,
+    tools: { probe: never, sceneTimes: never, tinyRgb: never, frameJpeg: never, extractAudio: never, scaleImage: never },
+  });
 
 const EXT = "abcdefghijklmnopabcdefghijklmnop";
 const HOST = "localhost:4747";
@@ -19,7 +30,8 @@ beforeEach(() => {
   const db = openDb(":memory:");
   const config: ServerConfig = { port: 4747, dataDir, webDist: null, extensionId: EXT, devOrigins: [], dumpPayloads: false, extraMediaHosts: [] };
   const media = createMediaStore({ dir: join(dataDir, "media"), onSaved: () => {} });
-  app = createApp({ db, config, media, keys: createKeyStore(dataDir) });
+  const keys = createKeyStore(dataDir);
+  app = createApp({ db, config, media, keys, analyzer: analyzerFor(db, keys) });
 });
 
 const save = (body: unknown, origin = APP) =>

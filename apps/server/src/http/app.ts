@@ -9,6 +9,9 @@ import { APP_VERSION } from "@no-fomo/core";
 import type { ServerConfig } from "../config";
 import type { Db } from "../db/open";
 import { authors, posts } from "../db/schema";
+import type { Analyzer } from "../analyze/analyzer";
+import { AnalyzeError } from "../analyze/errors";
+import { getReport } from "../analyze/report-store";
 import { imageType, type MediaStore } from "../media/store";
 import type { KeyStore } from "../secrets/key-store";
 import { readSettings, updateSettings } from "../settings";
@@ -54,8 +57,8 @@ const MIME: Record<string, string> = {
   ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".webmanifest": "application/manifest+json",
 };
 
-export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStore; keys: KeyStore }) {
-  const { db, config, media, keys } = deps;
+export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStore; keys: KeyStore; analyzer: Analyzer }) {
+  const { db, config, media, keys, analyzer } = deps;
   const app = new Hono();
   let dumpCount = 0;
 
@@ -82,6 +85,7 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     if (err instanceof NotFoundError) return c.json({ error: err.message }, 404);
     if (err instanceof RunNotActiveError) return c.json({ error: err.message }, 409);
     if (err instanceof MismatchError) return c.json({ error: err.message }, 422);
+    if (err instanceof AnalyzeError) return c.json({ error: err.code }, 409);
     console.error(err);
     return c.json({ error: "internal_error" }, 500);
   });
@@ -125,6 +129,14 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
   app.get("/api/posts", (c) => c.json(listPosts(db, PostsQuerySchema.parse(c.req.query()))));
   app.get("/api/posts/:id/media", (c) => {
     const found = getPostMedia(db, Id.parse(c.req.param("id")));
+    return found ? c.json(found) : c.json({ error: "not_found" }, 404);
+  });
+  app.post("/api/posts/:id/analyze", (c) => {
+    if (fromExtension(c)) return c.json({ error: "forbidden" }, 403);
+    return c.json(analyzer.start(Id.parse(c.req.param("id"))), 202);
+  });
+  app.get("/api/posts/:id/report", (c) => {
+    const found = getReport(db, Id.parse(c.req.param("id")));
     return found ? c.json(found) : c.json({ error: "not_found" }, 404);
   });
   app.get("/api/authors", (c) => c.json(listAuthors(db)));
