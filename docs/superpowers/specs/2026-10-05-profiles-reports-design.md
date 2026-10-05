@@ -21,6 +21,7 @@ A post is stored once. If the owner analyzes a post from a profile and the same 
 - **Saved tab:** the **Has report** filter is removed. Everything else stays.
 - **Reports tab:** a list. Each row: thumbnail, author, post date, report date, first lines of the summary. Filters: report text, author, source (saved / profile), type. A click opens the usual viewer on the **Report** tab.
 - A report stays in the Reports tab after its post is unsaved or its profile is removed.
+- **People you follow:** the Profiles tab shows the accounts the owner follows, and the owner can search them. The app keeps a copy of this list (names and avatars only). An **Update list** button loads it again. Search across all of Instagram also works from the same box.
 
 ## 1. Data model
 
@@ -42,6 +43,13 @@ Today `posts` mixes two things: the post itself and its place in the saved feed 
 
 **`profile_posts`** (new): `author_id`, `post_id`, primary key on both, cascade delete on both. A post's place in a profile grid is its `taken_at`, newest first. (Instagram puts pinned posts first in its feed. We ignore pins.)
 
+**`following`** (new): the accounts the owner follows.
+- `author_id` (primary key, references `authors`). The name, full name and avatar live in `authors`, so avatars use the existing avatar store.
+- `position`: order from Instagram (most recent follow first).
+- `last_seen_run_id`.
+- An update that walked the whole list deletes rows it did not see (people the owner unfollowed). An update that stopped early deletes nothing.
+- Settings key `following_updated_at` for "Updated 3 days ago".
+
 **`reports`** does not change. It is already keyed by `post_id`, so one report per post, wherever the post came from.
 
 **Migration** (one Drizzle migration, run on start like the others):
@@ -58,11 +66,12 @@ A test opens a database at migration 0007 with sample rows, runs the new migrati
 
 ## 2. Instagram calls (extension)
 
-All Instagram calls stay in the extension and in `packages/core/src/ig`, as today. Three new client calls:
+All Instagram calls stay in the extension and in `packages/core/src/ig`, as today. Four new client calls:
 
 - `profileInfo(username)`: `GET /api/v1/users/web_profile_info/?username=...`. Gives user id, username, full name, avatar, post count, private flag.
 - `userFeed(userId, cursor)`: `GET /api/v1/feed/user/{userId}/?count=12&max_id=...`. Items are plain media objects, which `parseMediaPage` already reads.
-- `searchUsers(query)`: `GET /api/v1/web/search/topsearch/?context=user&query=...`. Used for suggestions while typing.
+- `searchUsers(query)`: `GET /api/v1/web/search/topsearch/?context=user&query=...`. Search across all of Instagram, for suggestions while typing.
+- `followingPage(viewerId, cursor)`: `GET /api/v1/friendships/{viewerId}/following/?count=100&max_id=...`. The owner's own user id comes from the `ds_user_id` cookie, read in the content script the same way as `csrftoken`.
 
 These endpoint shapes come from public sources. The first implementation task calls each one once from the owner's browser, saves the answers as test fixtures (personal data replaced), and adjusts the parser if the shape differs. If an endpoint does not work, we stop and decide again with the owner.
 
@@ -71,7 +80,9 @@ These endpoint shapes come from public sources. The first implementation task ca
 - 2–3 s pause between requests, same error handling as sync (login, rate limit, refused). At most 9 pages (about 100 posts) per run.
 - Only one Instagram job runs at a time in the extension: a profile load waits if a sync is running, and the other way round.
 
-**New extension messages:** `profile:search` (returns suggestions, no server writes) and `profile:load` (mode + username or user id). Media link refresh (`media:fetch`) already works for any post id.
+**Following update:** walks the following list page by page, with the same pause and error rules. At most 50 pages (about 5,000 accounts). About 30 s for 1,000 accounts.
+
+**New extension messages:** `profile:search` (returns suggestions, no server writes), `profile:load` (mode + username or user id) and `following:update`. Media link refresh (`media:fetch`) already works for any post id.
 
 ## 3. Server
 
@@ -86,6 +97,8 @@ These endpoint shapes come from public sources. The first implementation task ca
 - `GET /api/profiles`: list of added profiles with counts.
 - `POST /api/profiles/runs`, `.../:id/page`, `.../:id/finish`: same shape as sync runs, called by the extension.
 - `DELETE /api/profiles/:authorId`: remove a profile (rules above).
+- `GET /api/following?q=...`: the stored following list, filtered by username and full name, in Instagram's order. Each item says whether the profile is already added.
+- `POST /api/following/runs`, `.../:id/page`, `.../:id/finish`: called by the extension during **Update list**.
 - `GET /api/reports`: finished reports, newest first, cursor paging. Query: `q` (report text, via `report_search`), `author`, `source` (`saved` | `profile`), `kind`. Each item: the post (same shape as in the grid), report date, model, and the first ~200 characters of the Summary section.
 - Every post item gets `saved: boolean` and `profiles: string[]` so the viewer can show "Saved" and "From @name" badges.
 
@@ -101,8 +114,12 @@ These endpoint shapes come from public sources. The first implementation task ca
 **Top bar.** Three tabs after the app name: **Saved**, **Profiles**, **Reports**. The search box searches inside the current tab. Sync stays in the top bar (it only touches Saved).
 
 **Profiles page.**
-- An add box: type a username or paste a profile link. Suggestions appear as you type (after 2 characters, 400 ms pause, at most one request per second). Pressing Enter on a username adds it directly.
-- Added profiles as cards: avatar, name, "120 of 3,400 posts loaded", last refresh time, **Refresh**, **Remove** (asks first).
+- One search box: type a name or paste a profile link. Results come in two groups:
+  - **People you follow:** from the stored list, instant, no Instagram call.
+  - **All Instagram:** from Instagram search, after 2 characters and a 400 ms pause, at most one request per second. Accounts already shown in the first group are not repeated.
+  - Pressing Enter on a username or a pasted link adds it directly.
+- **Your profiles:** added profiles as cards: avatar, name, "120 of 3,400 posts loaded", last refresh time, **Refresh**, **Remove** (asks first).
+- **People you follow:** a list below, with avatar, username and full name, and an **Add** button (or "Added"). The search box filters this list too. Header: "People you follow · 812 · Updated 3 days ago · **Update list**". Before the first update it shows a short note and the **Update list** button.
 - While a load runs, the card shows progress ("Loading page 3 of up to 9").
 
 **Profile grid.** Same grid, tiles and viewer as Saved. Filter bar with type and search. At the bottom: **Load older posts** while there are more.
@@ -119,12 +136,13 @@ These endpoint shapes come from public sources. The first implementation task ca
 
 ## 6. Testing
 
-- **Parser:** profile info, user feed and search fixtures (from the real calls in task 1).
+- **Parser:** profile info, user feed, search and following fixtures (from the real calls in task 1).
+- **Following:** a complete update removes unfollowed accounts; a stopped update removes nothing; the filter matches username and full name.
 - **Migration:** the test in section 1.
 - **Ingest:** a profile page never changes `saved_posts`; the same post arriving from saved sync and from a profile is one row; removing a profile keeps saved posts and posts with reports.
 - **Queries:** scope filters; reports list filters (text, author, source, kind); a report made from a profile post shows on that post in the Saved tab.
 - **Load runner:** modes, page cap, error stop (fake client, as in `run-sync.test.ts`).
-- **Manual check in the real app** (`pnpm start`, :4747): add one profile, load older, refresh, analyze a profile post that is also saved and see the report in Saved and in Reports, remove the profile and see the saved post and the report remain, check the three tabs at phone width.
+- **Manual check in the real app** (`pnpm start`, :4747): update the following list and find one account in it, find one account you do not follow through Instagram search, add one profile, load older, refresh, analyze a profile post that is also saved and see the report in Saved and in Reports, remove the profile and see the saved post and the report remain, check the three tabs at phone width.
 
 ## Out of scope
 
