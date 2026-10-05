@@ -9,3 +9,6 @@ dist/
 .DS_Store
 .claude/settings.local.json
 .superpowers/
+.impeccable/config.local.json
+.impeccable/live/*
+!.impeccable/live/config.json
