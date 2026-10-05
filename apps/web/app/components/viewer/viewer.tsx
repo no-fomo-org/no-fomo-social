@@ -13,17 +13,19 @@ export function Viewer({
   onPrev,
   onNext,
   onShowAuthor,
+  initialTab,
 }: {
   post: PostListItem | null;
   onClose: () => void;
   onPrev: (() => void) | null;
   onNext: (() => void) | null;
-  onShowAuthor: (id: string) => void;
+  onShowAuthor: ((id: string) => void) | null;
+  initialTab?: DetailsTab;
 }) {
   const config = useQuery({ queryKey: ["config"], queryFn: api.config, staleTime: Infinity });
   const stage = useRef<HTMLDivElement>(null);
   // Lives here, so the chosen tab stays while moving between posts.
-  const [tab, setTab] = useState<DetailsTab>("details");
+  const [tab, setTab] = useState<DetailsTab>(initialTab ?? "details");
   // Keep showing the last post while the close animation runs.
   const last = useRef<PostListItem | null>(null);
   if (post) last.current = post;

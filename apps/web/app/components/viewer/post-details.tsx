@@ -21,7 +21,7 @@ export function PostDetails({
   post: PostListItem;
   onPrev: (() => void) | null;
   onNext: (() => void) | null;
-  onShowAuthor: (id: string) => void;
+  onShowAuthor: ((id: string) => void) | null;
   tab: DetailsTab;
   onTabChange: (tab: DetailsTab) => void;
   extensionId: string | undefined;
@@ -39,6 +39,14 @@ export function PostDetails({
         <div className="min-w-0 flex-1">
           <Dialog.Title className="truncate text-[15px] font-semibold">@{p.author.username}</Dialog.Title>
           {p.author.fullName && <p className="truncate text-[13px] text-muted">{p.author.fullName}</p>}
+          {(p.saved || p.profiles.length > 0) && (
+            <p className="mt-1 flex flex-wrap gap-1.5">
+              {p.saved && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12px] text-muted">Saved</span>}
+              {p.profiles.map((u) => (
+                <span key={u} className="rounded-full bg-surface-2 px-2 py-0.5 text-[12px] text-muted">From @{u}</span>
+              ))}
+            </p>
+          )}
         </div>
         <div className="flex items-center">
           <button type="button" onClick={onPrev ?? undefined} disabled={!onPrev} aria-label="Previous post" title="Previous post (Up arrow)" className={buttonClass("ghost", "", "icon")}>
@@ -71,7 +79,7 @@ export function PostDetails({
               <Icon icon={SquareArrowUpRightIcon} />
               Open on Instagram
             </a>
-            <Button onClick={() => onShowAuthor(p.author.id)}>More from @{p.author.username}</Button>
+            {onShowAuthor && <Button onClick={() => onShowAuthor(p.author.id)}>More from @{p.author.username}</Button>}
           </div>
 
           {p.caption && <p className="whitespace-pre-wrap px-5 pt-5 text-[15px] leading-relaxed">{p.caption}</p>}
