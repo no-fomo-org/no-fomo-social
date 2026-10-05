@@ -97,7 +97,6 @@ export function parseMedia(raw: unknown): ParsedPost | null {
     height: num(m.original_height) ?? (video ?? thumb)?.height ?? null,
     parts,
     collectionIds: [...new Set(arr(m.saved_collection_ids).map(str).filter((id): id is string => id !== null))],
-    pinned: arr(m.timeline_pinned_user_ids).length > 0,
   };
 }
 

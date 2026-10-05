@@ -43,8 +43,6 @@ export interface ParsedPost {
   parts: ParsedMediaPart[];
   /** Ids of the user's collections this post is in (from `saved_collection_ids`). */
   collectionIds: string[];
-  /** Pinned to the top of its author's profile. Only the profile feed sets this. */
-  pinned: boolean;
 }
 
 export interface ParsedCollection {

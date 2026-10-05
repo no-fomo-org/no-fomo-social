@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { parseMediaPage } from "../src/ig/parse";
 import { parseFollowingPage, parseProfileInfo, parseUserSearch } from "../src/ig/users";
 
 describe("parseProfileInfo", () => {
@@ -17,15 +16,6 @@ describe("parseProfileInfo", () => {
   it("returns null without a user", () => {
     expect(parseProfileInfo({ data: { user: null }, status: "ok" })).toBeNull();
     expect(parseProfileInfo(null)).toBeNull();
-  });
-});
-
-describe("user feed", () => {
-  it("reads plain media items and marks pinned posts", () => {
-    const m = { pk: "1", code: "C1", media_type: 1, taken_at: 1, user: { pk: "9", username: "a" } };
-    const page = parseMediaPage({ items: [{ ...m, timeline_pinned_user_ids: ["9"] }, { ...m, pk: "2" }], more_available: true, next_max_id: "N" });
-    expect(page.items.map((p) => [p.id, p.pinned])).toEqual([["1", true], ["2", false]]);
-    expect(page).toMatchObject({ skipped: 0, moreAvailable: true, nextCursor: "N" });
   });
 });
 

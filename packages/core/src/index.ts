@@ -4,6 +4,7 @@ export * from "./ig/text";
 export * from "./ig/url";
 export * from "./ig/parse";
 export * from "./ig/users";
+export * from "./ig/live";
 export * from "./ig/client";
 export * from "./ig/gate";
 export * from "./sync/run-sync";

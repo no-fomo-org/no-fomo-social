@@ -8,7 +8,7 @@ const post: PostListItem = {
   caption: "Claude Code in 60 seconds\nsecond line", hashtags: ["ai", "нейросети"], takenAt: 1773446400, durationSec: 72.4,
   likeCount: 10, viewCount: 100, commentCount: 1, accessibilityCaption: "A person at a laptop", locationName: "Berlin",
   musicTitle: "Midnight City", musicArtist: "M83", width: 1080, height: 1920, thumbUrl: "/media/thumbs/1",
-  permalink: "https://www.instagram.com/reel/DAbc/", hasReport: false, saved: false, profiles: [],
+  permalink: "https://www.instagram.com/reel/DAbc/", hasReport: false, saved: false,
 };
 
 describe("formatClock", () => {
