@@ -40,6 +40,8 @@ Running locally and being free are constraints of the project, not its main sell
 
 **Shipped (milestones 2 and 4):** video player and photo viewer with link refresh, full resync, and a per-post AI report with the user's own OpenAI key.
 
+**Shipped (profiles and reports):** a Profiles tab to add any Instagram account and browse, filter and analyze its posts, with the list of people you follow and search across Instagram; a Reports tab with every report and its own filters. A post is stored once, so a report shows wherever the post appears.
+
 **Planned:** see `PLAN.md`.
 - Batch unsave.
 - Groq and Gemini options for the per-post report.
