@@ -10,6 +10,7 @@ import type { AuthorFacet, PostMedia, PostsPage, SyncStatus } from "@no-fomo/cor
 import { openDb } from "../src/db/open";
 import { createApp } from "../src/http/app";
 import { createMediaStore } from "../src/media/store";
+import { createKeyStore } from "../src/secrets/key-store";
 import type { ServerConfig } from "../src/config";
 import { markMediaSaved } from "../src/sync/ingest";
 
@@ -28,7 +29,7 @@ beforeEach(() => {
     fetch: (async () => new Response(Buffer.from([0xff, 0xd8, 0xff, 0]))) as typeof fetch,
     onSaved: (job) => markMediaSaved(db, job),
   });
-  app = createApp({ db, config, media });
+  app = createApp({ db, config, media, keys: createKeyStore(dataDir) });
 });
 
 const post = (path: string, body: unknown, origin = `chrome-extension://${EXT}`) =>

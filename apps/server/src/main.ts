@@ -5,6 +5,7 @@ import { loadConfig } from "./config";
 import { openDb } from "./db/open";
 import { createApp } from "./http/app";
 import { createMediaStore } from "./media/store";
+import { createKeyStore } from "./secrets/key-store";
 import { failStaleRuns, markMediaSaved } from "./sync/ingest";
 
 const config = loadConfig();
@@ -16,7 +17,8 @@ const media = createMediaStore({
   extraHosts: config.extraMediaHosts,
   onSaved: (job) => markMediaSaved(db, job),
 });
-const app = createApp({ db, config, media });
+const keys = createKeyStore(config.dataDir);
+const app = createApp({ db, config, media, keys });
 
 const server = serve({ fetch: app.fetch, port: config.port, hostname: "127.0.0.1" }, () => {
   console.log(`no-fomo is running at http://localhost:${config.port}`);

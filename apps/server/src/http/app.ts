@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, statSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { extname, join, resolve, sep } from "node:path";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
@@ -10,6 +10,8 @@ import type { ServerConfig } from "../config";
 import type { Db } from "../db/open";
 import { authors, posts } from "../db/schema";
 import { imageType, type MediaStore } from "../media/store";
+import type { KeyStore } from "../secrets/key-store";
+import { readSettings, updateSettings } from "../settings";
 import { getPostMedia, listAuthors, listCollections, listPosts, syncStatus } from "../queries";
 import {
   finishRun, ingestCollections, ingestMediaInfo, ingestSavedPage, MismatchError, NotFoundError, RunNotActiveError, startRun,
@@ -34,13 +36,26 @@ const PostsQuerySchema = z.object({
   report: z.literal("1").optional().transform((v) => v === "1"),
 });
 
+const Model = z.string().regex(/^[a-z0-9.:_-]{1,80}$/);
+const SettingsBody = z
+  .object({
+    openaiKey: z.string().trim().regex(/^[\x21-\x7e]{20,300}$/).nullable().optional(),
+    reportLanguage: z.string().trim().regex(/^[\p{L} ]{2,40}$/u).optional(),
+    reportModel: Model.optional(),
+    transcribeModel: Model.optional(),
+  })
+  .strict();
+
+/** Keys and analysis belong to the app page only. The extension never needs them. */
+const fromExtension = (c: Context) => (c.req.header("origin") ?? "").startsWith("chrome-extension://");
+
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json",
   ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".webmanifest": "application/manifest+json",
 };
 
-export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStore }) {
-  const { db, config, media } = deps;
+export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStore; keys: KeyStore }) {
+  const { db, config, media, keys } = deps;
   const app = new Hono();
   let dumpCount = 0;
 
@@ -114,6 +129,11 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
   });
   app.get("/api/authors", (c) => c.json(listAuthors(db)));
   app.get("/api/collections", (c) => c.json(listCollections(db)));
+  app.get("/api/settings", (c) => (fromExtension(c) ? c.json({ error: "forbidden" }, 403) : c.json(readSettings(db, keys))));
+  app.post("/api/settings", async (c) => {
+    if (fromExtension(c)) return c.json({ error: "forbidden" }, 403);
+    return c.json(updateSettings(db, keys, SettingsBody.parse(await c.req.json())));
+  });
   app.all("/api/*", (c) => c.json({ error: "not_found" }, 404));
 
   app.get("/media/:folder{thumbs|avatars}/:id{[0-9]+}", async (c) => {
