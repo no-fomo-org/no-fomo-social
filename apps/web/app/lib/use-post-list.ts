@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { shouldLoadAhead } from "./live-pages";
 
 type Page<T> = { items: T[]; nextCursor: string | null; total: number };
 
@@ -9,9 +10,10 @@ export function usePostList<P extends Page<{ id: string }>>(o: {
   queryKey: unknown[];
   fetchPage: (cursor: string | null) => Promise<P>;
   enabled?: boolean;
-  staleTime?: number;
-  /** Ask again after an error. Off for Instagram pages: a retry is one more Instagram request. */
-  retry?: boolean;
+  /** Caching rules, for example LIVE_LIST_OPTIONS for lists read from Instagram. */
+  cache?: { staleTime?: number; gcTime?: number; refetchOnMount?: boolean; refetchOnReconnect?: boolean; retry?: boolean };
+  /** Load the next page by itself when the viewer nears the end. Default on. */
+  autoLoad?: boolean;
   /** What to show of the loaded items (filtering, extra marks). The viewer moves through these. */
   view?: (items: P["items"][number][]) => P["items"][number][];
 }) {
@@ -22,8 +24,7 @@ export function usePostList<P extends Page<{ id: string }>>(o: {
     queryFn: ({ pageParam }) => o.fetchPage(pageParam),
     initialPageParam: null as string | null,
     getNextPageParam: (last: P) => last.nextCursor,
-    staleTime: o.staleTime,
-    ...(o.retry === false ? { retry: false } : {}),
+    ...o.cache,
   });
   type T = P["items"][number];
   const loaded: T[] = query.data?.pages.flatMap((p) => p.items as T[]) ?? [];
@@ -33,10 +34,15 @@ export function usePostList<P extends Page<{ id: string }>>(o: {
 
   // Keep a few posts ahead loaded so "next" never stalls at the end of a page.
   const nearEnd = openIndex >= 0 && openIndex >= items.length - 3;
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
+  const { hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage } = query;
+  const autoLoad = o.autoLoad ?? true;
+  const key = `${openId}:${loaded.length}`;
+  const lastKey = useRef<string | null>(null);
   useEffect(() => {
-    if (nearEnd && hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [nearEnd, hasNextPage, isFetchingNextPage, fetchNextPage]);
+    if (!shouldLoadAhead({ nearEnd, hasNextPage, isFetchingNextPage, autoLoad, failed: isFetchNextPageError, key, lastKey: lastKey.current })) return;
+    lastKey.current = key;
+    void fetchNextPage();
+  }, [nearEnd, hasNextPage, isFetchingNextPage, isFetchNextPageError, autoLoad, key, fetchNextPage]);
 
   /** Opening a post adds a history entry; moving between posts replaces it. */
   const setPost = (id: string | null, replace = false) =>

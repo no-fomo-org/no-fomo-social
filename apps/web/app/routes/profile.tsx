@@ -5,7 +5,8 @@ import type { LivePost, LiveProfile } from "@no-fomo/core";
 import { api } from "../lib/api";
 import { loadErrorText, openProfile, profilePage } from "../lib/extension";
 import { NO_FILTERS, readFilters, writeFilters, type Filters } from "../lib/filters";
-import { filterLive } from "../lib/live-filter";
+import { filterLive, uniqueById } from "../lib/live-filter";
+import { listBody, LIVE_LIST_OPTIONS } from "../lib/live-pages";
 import { usePostList } from "../lib/use-post-list";
 import { Avatar } from "../components/avatar";
 import { FilterBar } from "../components/filter-bar";
@@ -34,20 +35,21 @@ export default function Profile() {
   const filters = readFilters(params);
   const update = (patch: Partial<Filters>) => setParams(writeFilters(params, patch), { replace: true });
   const ext = useExtension();
+  const filtering = Boolean(filters.q || filters.kind);
 
   const list = usePostList({
     queryKey: ["live-profile", username.toLowerCase()],
     enabled: ext.ready,
-    // Links in a page stay good for hours; coming back to the account within minutes shows it at once.
-    staleTime: 5 * 60_000,
-    retry: false,
+    // Every page is an Instagram request: loaded pages stay as they are until the owner leaves for 30 minutes.
+    cache: LIVE_LIST_OPTIONS,
+    autoLoad: !filtering,
     fetchPage: async (cursor): Promise<AccountPage> => {
       const reply = cursor ? await profilePage(ext.extensionId!, cursor) : await openProfile(ext.extensionId!, username);
       if (!reply) throw new Error(loadErrorText("no_extension"));
       if (!reply.ok) throw new Error(loadErrorText(reply.error));
       return { items: reply.page?.posts ?? [], nextCursor: reply.page?.nextCursor ?? null, total: 0, profile: reply.profile ?? null };
     },
-    view: (posts) => filterLive(posts, { q: filters.q, kind: filters.kind }),
+    view: (posts) => filterLive(uniqueById(posts), { q: filters.q, kind: filters.kind }),
   });
   const ids = list.loaded.map((p) => p.id);
   const known = useQuery({
@@ -63,7 +65,6 @@ export default function Profile() {
   };
 
   const profile = list.query.data?.pages[0]?.profile ?? null;
-  const filtering = Boolean(filters.q || filters.kind);
   const closed = profile ? profile.isPrivate && !profile.followedByViewer : false;
   const search = { value: filters.q, onChange: (q: string | null) => update({ q }), placeholder: `Search @${username}`, label: `Search posts of @${username}` };
 
@@ -75,7 +76,7 @@ export default function Profile() {
         <SetupSteps />
       </section>
     );
-  } else if (list.query.isError) {
+  } else if (listBody({ isError: list.query.isError, hasData: !!list.query.data }) === "error") {
     body = (
       <section className="py-16">
         <h2 className="text-[17px] font-semibold">Could not open @{username}</h2>
@@ -104,6 +105,7 @@ export default function Profile() {
           onOpen={(id) => list.setPost(id)}
           onClearFilters={() => update(NO_FILTERS)}
           autoLoad={!filtering}
+          nextErrorText={list.query.isFetchNextPageError ? (list.query.error as Error).message : undefined}
           empty={<h2 className="text-[17px] font-semibold">This account has no posts.</h2>}
         />
       </>

@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import type { UseInfiniteQueryResult, InfiniteData } from "@tanstack/react-query";
 import type { PostListItem } from "@no-fomo/core";
 import { hasFilters, type Filters } from "../lib/filters";
+import { listBody } from "../lib/live-pages";
 import { PostTile } from "./post-tile";
 import { Button } from "./ui/button";
 
@@ -17,10 +18,13 @@ export function PostGrid(props: {
   empty: ReactNode;
   /** Load the next page when the end of the grid comes into view. Default on. */
   autoLoad?: boolean;
+  /** Shown when a next page failed. */
+  nextErrorText?: string;
 }) {
   const { query } = props;
   const sentinel = useRef<HTMLDivElement>(null);
-  const autoLoad = props.autoLoad ?? true;
+  // After a failed page, wait for the owner: loading again by itself would repeat the failing request in a loop.
+  const autoLoad = (props.autoLoad ?? true) && !query.isFetchNextPageError;
 
   useEffect(() => {
     const el = sentinel.current;
@@ -36,7 +40,7 @@ export function PostGrid(props: {
   }, [autoLoad, query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage]);
 
   if (query.isPending) return <Skeleton count={21} />;
-  if (query.isError) {
+  if (listBody({ isError: query.isError, hasData: !!query.data }) === "error") {
     return (
       <section className="py-16">
         <h2 className="text-[17px] font-semibold">Could not load your posts</h2>
@@ -80,6 +84,14 @@ export function PostGrid(props: {
       </ul>
       <div ref={sentinel} aria-hidden="true" />
       {query.isFetchingNextPage && <div className="mt-4"><Skeleton count={7} /></div>}
+      {query.isFetchNextPageError && !query.isFetchingNextPage && (
+        <p role="alert" className="mt-6 text-[14px] text-danger">
+          {props.nextErrorText ?? "Could not load more posts."}{" "}
+          <button type="button" onClick={() => void query.fetchNextPage()} className="text-text underline underline-offset-2 hover:text-accent">
+            Try again
+          </button>
+        </p>
+      )}
     </>
   );
 }

@@ -49,7 +49,7 @@ All Instagram calls stay in the extension and in `packages/core/src/ig`, through
 **Messages from the app page to the extension:**
 - `profile:search { query }` → suggested accounts. No server writes.
 - `profile:open { username }` → the account (id, names, avatar, post count, private flags) and its first page of posts, or no page when the account is private and not followed. No server writes.
-- `profile:page { userId, cursor }` → the next page. No server writes.
+- `profile:page { cursor }` → the next page. The cursor comes from the previous page as `"<userId>:<max_id>"`, so nothing else is needed. No server writes.
 - `following:update` → starts an **Update list** run that posts pages to the server.
 - `media:refresh { id, store }` (existing, extended) → fresh links for one post. The extension sends Instagram's answer to the server. If the server does not have the post and `store` is false, the extension builds the links itself and stores nothing. With `store` true the server stores the post (used by Analyze).
 
@@ -75,7 +75,7 @@ Each post on an account page carries its links, built from the page Instagram re
 - One search box: a name, @username or profile link. Results in two groups: **People you follow** (stored list, instant) and **All Instagram** (after 2 characters and a 400 ms pause). Clicking a result opens the account. Enter on a username or link opens it.
 - **People you follow** below: avatar, username, full name; a click opens the account. Header: count, "Updated 3 days ago", **Update list**.
 
-**Account page:** header with avatar, @username, full name, post count, a link to Instagram. Then the filter bar (type, search) and the grid. Posts load as the owner scrolls. A private account the owner does not follow shows a short message instead of the grid. Opening a post plays it right away; the viewer works as in Saved, with Analyze in the Report tab.
+**Account page:** header with avatar, @username, full name, post count, a link to Instagram. Then the filter bar (type, search) and the grid. Posts load as the owner scrolls. A page that fails keeps the posts already shown and offers **Try again**; loaded pages are never fetched again by themselves. A private account the owner does not follow shows a short message instead of the grid. Opening a post plays it right away; the viewer works as in Saved, with Analyze in the Report tab.
 
 **Analyze on a post that is not stored:** the app asks the extension for the post's links with `store` true (one Instagram request), the server stores the post, then the analysis runs as today.
 
