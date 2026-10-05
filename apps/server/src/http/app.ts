@@ -16,10 +16,13 @@ import { getReport } from "../analyze/report-store";
 import { imageType, type MediaStore } from "../media/store";
 import type { KeyStore } from "../secrets/key-store";
 import { readSettings, updateSettings } from "../settings";
-import { getPostMedia, listAuthors, listCollections, listPosts, syncStatus } from "../queries";
+import { getPostMedia, listAuthors, listCollections, listFollowing, listPosts, listProfiles, listReports, syncStatus } from "../queries";
 import {
   finishRun, ingestCollections, ingestMediaInfo, ingestSavedPage, MismatchError, NotFoundError, RunNotActiveError, startRun,
 } from "../sync/ingest";
+import {
+  finishLoadRun, ingestFollowingPage, ingestProfilePage, LoadError, removeProfile, startFollowingRun, startProfileRun,
+} from "../sync/loads";
 import { security } from "./security";
 
 const Id = z.string().regex(/^\d{1,30}$/);
@@ -30,15 +33,31 @@ const FinishBody = z.union([
   z.object({ ok: z.literal(true) }),
   z.object({ ok: z.literal(false), code: z.string().max(64), message: z.string().max(500) }),
 ]);
+const Kind = z.enum(["image", "video", "carousel"]);
+const Cursor = z.string().regex(/^\d{1,20}(\.\d{1,30})?$/);
 const PostsQuerySchema = z.object({
   q: z.string().max(200).optional(),
   author: Id.optional(),
   collection: Id.optional(),
-  kind: z.enum(["image", "video", "carousel"]).optional(),
+  kind: Kind.optional(),
   profile: Id.optional(),
-  cursor: z.string().regex(/^\d{1,20}(\.\d{1,30})?$/).optional(),
+  cursor: Cursor.optional(),
   limit: z.coerce.number().int().min(1).max(200).default(60),
 });
+const ReportsQuerySchema = z.object({
+  q: z.string().max(200).optional(),
+  author: Id.optional(),
+  kind: Kind.optional(),
+  source: z.enum(["saved", "profile"]).optional(),
+  cursor: Cursor.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(40),
+});
+const FollowingQuery = z.object({ q: z.string().max(100).optional(), limit: z.coerce.number().int().min(1).max(500).default(100) });
+const AuthorsQuery = z.object({ scope: z.enum(["saved", "reports"]).default("saved") });
+const ProfileStartSchema = z.union([
+  z.object({ mode: z.literal("add"), payload: z.unknown() }),
+  z.object({ mode: z.enum(["older", "refresh"]), authorId: Id }),
+]);
 
 const SettingsBody = z.object({ openaiKey: z.string().trim().regex(/^[\x21-\x7e]{20,300}$/).nullable().optional() }).strict();
 const AnalyzeBody = z
@@ -85,6 +104,7 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     if (err instanceof NotFoundError) return c.json({ error: err.message }, 404);
     if (err instanceof RunNotActiveError) return c.json({ error: err.message }, 409);
     if (err instanceof MismatchError) return c.json({ error: err.message }, 422);
+    if (err instanceof LoadError) return c.json({ error: err.code }, 409);
     if (err instanceof AnalyzeError) return c.json({ error: err.code }, 409);
     console.error(err);
     return c.json({ error: "internal_error" }, 500);
@@ -125,6 +145,35 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     return c.json(getPostMedia(db, id));
   });
 
+  app.post("/api/sync/profiles/runs", async (c) => {
+    const r = startProfileRun(db, ProfileStartSchema.parse(await c.req.json()));
+    media.enqueue(r.jobs);
+    return c.json({ runId: r.runId, authorId: r.authorId, cursor: r.cursor }, 201);
+  });
+
+  app.post("/api/sync/profiles/runs/:id/page", async (c) => {
+    const runId = RunId.parse(c.req.param("id"));
+    const { payload } = PageBody.parse(await c.req.json());
+    await dump(runId, "load-profile", payload);
+    const r = ingestProfilePage(db, runId, payload);
+    media.enqueue(r.jobs);
+    return c.json({ stop: r.stop, newCount: r.newCount });
+  });
+
+  app.post("/api/sync/following/runs", (c) => c.json(startFollowingRun(db), 201));
+
+  app.post("/api/sync/following/runs/:id/page", async (c) => {
+    const runId = RunId.parse(c.req.param("id"));
+    const { payload } = PageBody.parse(await c.req.json());
+    await dump(runId, "load-following", payload);
+    return c.json(ingestFollowingPage(db, runId, payload));
+  });
+
+  app.post("/api/sync/loads/:id/finish", async (c) => {
+    finishLoadRun(db, RunId.parse(c.req.param("id")), FinishBody.parse(await c.req.json()));
+    return c.json({ ok: true });
+  });
+
   app.get("/api/sync/status", (c) => c.json(syncStatus(db)));
   app.get("/api/posts", (c) => c.json(listPosts(db, PostsQuerySchema.parse(c.req.query()))));
   app.get("/api/posts/:id/media", (c) => {
@@ -141,7 +190,16 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     const found = getReport(db, Id.parse(c.req.param("id")));
     return found ? c.json(found) : c.json({ error: "not_found" }, 404);
   });
-  app.get("/api/authors", (c) => c.json(listAuthors(db)));
+  app.get("/api/authors", (c) => c.json(listAuthors(db, AuthorsQuery.parse(c.req.query()).scope)));
+  app.get("/api/reports", (c) => c.json(listReports(db, ReportsQuerySchema.parse(c.req.query()))));
+  app.get("/api/profiles", (c) => c.json(listProfiles(db)));
+  app.post("/api/profiles/:id/remove", async (c) => {
+    if (fromExtension(c)) return c.json({ error: "forbidden" }, 403);
+    const ids = removeProfile(db, Id.parse(c.req.param("id")));
+    await media.removeThumbs(ids);
+    return c.json({ ok: true, removed: ids.length });
+  });
+  app.get("/api/following", (c) => c.json(listFollowing(db, FollowingQuery.parse(c.req.query()))));
   app.get("/api/collections", (c) => c.json(listCollections(db)));
   app.get("/api/settings", (c) => (fromExtension(c) ? c.json({ error: "forbidden" }, 403) : c.json(readSettings(db, keys))));
   app.post("/api/settings", async (c) => {

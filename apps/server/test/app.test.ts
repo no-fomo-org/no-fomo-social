@@ -29,6 +29,13 @@ const analyzerFor = (db: Db, keys: KeyStore) =>
 const EXT = "abcdefghijklmnopabcdefghijklmnop";
 const HOST = "localhost:4747";
 const CHOICE = { reportModel: "gpt-6-luna", transcribeModel: "gpt-transcribe", language: "English" };
+const profileInfo = { data: { user: { id: "77", username: "nasa", is_private: false, followed_by_viewer: false } } };
+const feedPage = {
+  items: [{ pk: "500", code: "P500", media_type: 1, taken_at: 5, user: { pk: "77", username: "nasa" },
+    image_versions2: { candidates: [{ width: 480, height: 600, url: "https://scontent.cdninstagram.com/500.jpg" }] } }],
+  more_available: false,
+};
+const APP = "http://localhost:4747";
 let app: ReturnType<typeof createApp>;
 
 beforeEach(() => {
@@ -230,5 +237,55 @@ describe("analyze routes", () => {
     expect([res.status, body.checked, body.report[0]!.id]).toEqual([200, false, "gpt-6-luna"]);
     const fromExt = await app.request("/api/models", { headers: { host: HOST, origin: `chrome-extension://${EXT}` } });
     expect(fromExt.status).toBe(403);
+  });
+});
+
+describe("profiles, following and reports API", () => {
+  it("adds a profile through the sync routes and lists its posts", async () => {
+    const start = await post("/api/sync/profiles/runs", { mode: "add", payload: profileInfo });
+    expect(start.status).toBe(201);
+    const { runId, authorId } = (await start.json()) as { runId: number; authorId: string };
+    expect(authorId).toBe("77");
+    expect(await (await post(`/api/sync/profiles/runs/${runId}/page`, { payload: feedPage })).json()).toEqual({ stop: false, newCount: 1 });
+    expect((await post(`/api/sync/loads/${runId}/finish`, { ok: true })).status).toBe(200);
+
+    const profiles = (await (await get("/api/profiles")).json()) as Array<{ id: string; loadedCount: number }>;
+    expect(profiles.map((p) => [p.id, p.loadedCount])).toEqual([["77", 1]]);
+    const page = (await (await get("/api/posts?profile=77")).json()) as PostsPage;
+    expect(page.items.map((p) => p.id)).toEqual(["500"]);
+    expect(((await (await get("/api/posts")).json()) as PostsPage).total).toBe(0);
+  });
+
+  it("answers load errors with their code", async () => {
+    const res = await post("/api/sync/profiles/runs", { mode: "add", payload: { data: { user: { ...profileInfo.data.user, is_private: true } } } });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: "private_profile" });
+    expect((await post("/api/sync/profiles/runs", { mode: "older", authorId: "404" })).status).toBe(404);
+    expect((await post("/api/sync/profiles/runs", { mode: "older", authorId: "../x" })).status).toBe(400);
+  });
+
+  it("removes a profile only from the app page", async () => {
+    const { runId } = (await (await post("/api/sync/profiles/runs", { mode: "add", payload: profileInfo })).json()) as { runId: number };
+    await post(`/api/sync/profiles/runs/${runId}/page`, { payload: feedPage });
+    expect((await post("/api/profiles/77/remove", {})).status).toBe(403);
+    const res = await post("/api/profiles/77/remove", {}, APP);
+    expect(await res.json()).toEqual({ ok: true, removed: 1 });
+    expect(await (await get("/api/profiles")).json()).toEqual([]);
+  });
+
+  it("updates and filters the following list", async () => {
+    const { runId } = (await (await post("/api/sync/following/runs", {})).json()) as { runId: number };
+    expect(await (await post(`/api/sync/following/runs/${runId}/page`, { payload: { users: [{ pk: "8", username: "maria" }] } })).json()).toEqual({ seen: 1 });
+    await post(`/api/sync/loads/${runId}/finish`, { ok: true });
+    const page = (await (await get("/api/following?q=mar")).json()) as { items: Array<{ id: string }>; total: number };
+    expect(page).toMatchObject({ total: 1, items: [{ id: "8" }] });
+  });
+
+  it("lists reports and report authors", async () => {
+    await syncFixtures();
+    const res = await get("/api/reports?source=saved&limit=10");
+    expect(await res.json()).toEqual({ items: [], nextCursor: null, total: 0 });
+    expect((await get("/api/reports?source=nope")).status).toBe(400);
+    expect((await get("/api/authors?scope=reports")).status).toBe(200);
   });
 });
