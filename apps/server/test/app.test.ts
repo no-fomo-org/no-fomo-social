@@ -43,9 +43,6 @@ async function syncFixtures() {
   await post(`/api/sync/runs/${runId}/saved`, { payload: page1 });
   await post(`/api/sync/runs/${runId}/saved`, { payload: page2 });
   await post(`/api/sync/runs/${runId}/collections`, { payload: collectionsList });
-  await post(`/api/sync/runs/${runId}/collections/17900000000000002`, {
-    payload: { items: [page1.items[0], page1.items[2]], more_available: false },
-  });
   await post(`/api/sync/runs/${runId}/finish`, { ok: true });
 }
 
@@ -108,7 +105,7 @@ describe("sync + read API", () => {
     expect(authors[0]).toMatchObject({ username: "devtips", count: 2, avatarUrl: "/media/avatars/111" });
     expect(await (await get("/api/collections")).json()).toEqual([
       { id: "17900000000000002", name: "AI tools", count: 2 },
-      { id: "17900000000000003", name: "Design", count: 0 },
+      { id: "17900000000000003", name: "Design", count: 1 },
     ]);
   });
 

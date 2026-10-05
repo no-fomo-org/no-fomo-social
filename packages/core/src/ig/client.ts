@@ -12,7 +12,6 @@ export class IgError extends Error {
 export interface IgClient {
   savedPage(cursor: string | null): Promise<unknown>;
   collectionsPage(cursor: string | null): Promise<unknown>;
-  collectionPage(collectionId: string, cursor: string | null): Promise<unknown>;
 }
 
 const LOGIN_MESSAGE = "Log in to Instagram in this browser, then sync again.";
@@ -68,7 +67,5 @@ export function createIgClient(opts: {
         include_public_only: "0",
         max_id: cursor ?? "",
       }),
-    collectionPage: (id, cursor) =>
-      get("collection posts", `/api/v1/feed/collection/${encodeURIComponent(id)}/posts/`, { max_id: cursor }),
   };
 }

@@ -107,6 +107,7 @@ export function parseMedia(raw: unknown): ParsedPost | null {
     width: num(m.original_width) ?? (video ?? thumb)?.width ?? null,
     height: num(m.original_height) ?? (video ?? thumb)?.height ?? null,
     parts,
+    collectionIds: [...new Set(arr(m.saved_collection_ids).map(str).filter((id): id is string => id !== null))],
   };
 }
 

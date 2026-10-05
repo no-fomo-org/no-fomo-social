@@ -29,6 +29,7 @@ describe("parseMediaPage", () => {
       width: 1080,
       height: 1920,
       parts: [],
+      collectionIds: ["17900000000000002"],
     });
   });
 
@@ -41,6 +42,7 @@ describe("parseMediaPage", () => {
       locationName: "Berlin, Germany",
       accessibilityCaption: "May be an image of text that says 'Grid systems'.",
       mentions: ["someone"],
+      collectionIds: [],
     });
   });
 
@@ -51,6 +53,7 @@ describe("parseMediaPage", () => {
     expect(car.parts[1]).toMatchObject({ index: 1, kind: "video", videoUrl: "https://scontent.cdninstagram.com/o1/v/car3b_720.mp4?oe=68C0A1B2" });
     expect(car.thumbnailUrl).toBe("https://scontent.cdninstagram.com/v/car3a_1080.jpg");
     expect(car.accessibilityCaption).toBe("May be an image of a laptop");
+    expect(car.collectionIds).toEqual(["17900000000000002", "17900000000000003"]);
   });
 
   it("reads paging info", () => {

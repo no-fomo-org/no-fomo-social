@@ -6,7 +6,7 @@ import { loadConfig } from "../src/config";
 import { openDb } from "../src/db/open";
 import { createMediaStore } from "../src/media/store";
 import {
-  finishRun, ingestCollectionPage, ingestCollections, ingestSavedPage, markMediaSaved, startRun,
+  finishRun, ingestCollections, ingestSavedPage, markMediaSaved, startRun,
 } from "../src/sync/ingest";
 
 const config = loadConfig();
@@ -42,6 +42,10 @@ function fakeMedia(i: number) {
     pk: String(9_000_000 + i), code: `SEED${i}`, taken_at: 1_756_000_000 - i * 86_400, media_type: type,
     product_type: type === 2 ? "clips" : "feed",
     caption: { text: CAPTIONS[i % CAPTIONS.length] },
+    saved_collection_ids: [
+      ...(CAPTIONS[i % CAPTIONS.length]!.includes("#ai") ? ["800001"] : []),
+      ...(CAPTIONS[i % CAPTIONS.length]!.includes("#design") ? ["800002"] : []),
+    ],
     user: { pk, username, full_name: fullName, profile_pic_url: `https://picsum.photos/seed/nf-avatar-${pk}/150/150` },
     image_versions2: img(`nf-post-${i}`),
     video_duration: type === 2 ? 15 + ((i * 7) % 80) : undefined,
@@ -66,9 +70,6 @@ ingestCollections(db, runId, {
   ],
   more_available: false,
 });
-const pick = (word: string) => all.filter((m) => m.caption.text?.includes(word)).map((media) => ({ media }));
-ingestCollectionPage(db, runId, "800001", { items: pick("#ai"), more_available: false });
-ingestCollectionPage(db, runId, "800002", { items: pick("#design"), more_available: false });
 finishRun(db, runId, { ok: true });
 await media.idle();
 console.log(`Seeded ${TOTAL} posts into ${config.dataDir}`);

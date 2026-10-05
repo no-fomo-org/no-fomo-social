@@ -7,7 +7,6 @@ export interface SyncSink {
   startRun(): Promise<{ runId: number }>;
   savedPage(runId: number, payload: unknown): Promise<{ stop: boolean; seen: number }>;
   collections(runId: number, payload: unknown): Promise<{ collections: { id: string; name: string }[] }>;
-  collectionPage(runId: number, collectionId: string, payload: unknown): Promise<{ stop: boolean; seen: number }>;
   finishRun(runId: number, result: SyncResult): Promise<void>;
 }
 
@@ -52,25 +51,19 @@ export async function runSync(deps: RunSyncDeps): Promise<{ ok: boolean; request
       cursor = info.nextCursor;
     }
 
-    const collections: { id: string; name: string }[] = [];
+    // Collection membership comes with each saved post (saved_collection_ids).
+    // This list only adds names. Instagram retired it on the web in 2026 (404), so a 404 is not a failure.
     cursor = null;
-    for (;;) {
-      const raw = await request(() => deps.ig.collectionsPage(cursor));
-      collections.push(...(await deps.sink.collections(runId, raw)).collections);
-      const info = readPageInfo(raw);
-      if (!info.moreAvailable) break;
-      cursor = info.nextCursor;
-    }
-
-    for (const c of collections) {
-      cursor = null;
+    try {
       for (;;) {
-        const raw = await request(() => deps.ig.collectionPage(c.id, cursor));
-        const { stop } = await deps.sink.collectionPage(runId, c.id, raw);
+        const raw = await request(() => deps.ig.collectionsPage(cursor));
+        await deps.sink.collections(runId, raw);
         const info = readPageInfo(raw);
-        if (stop || !info.moreAvailable) break;
+        if (!info.moreAvailable) break;
         cursor = info.nextCursor;
       }
+    } catch (e) {
+      if (!(e instanceof IgError && e.status === 404)) throw e;
     }
 
     await deps.sink.finishRun(runId, { ok: true });

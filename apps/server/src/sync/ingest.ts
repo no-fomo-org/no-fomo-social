@@ -5,6 +5,13 @@ import { authors, collections, postCollections, postParts, posts, settings, sync
 
 export const RUN_SPAN = 1_000_000_000;
 const SAVED_BACKFILL = "saved_backfill_complete";
+/**
+ * Bump when the parser starts reading a new field from saved posts.
+ * The next sync then walks the whole feed once, so old posts get the new data.
+ * 2: collection membership from saved_collection_ids.
+ */
+const FEED_VERSION = "2";
+const FEED_VERSION_KEY = "feed_version";
 
 export class RunNotActiveError extends Error {}
 export class NotFoundError extends Error {}
@@ -30,7 +37,8 @@ export function startRun(db: Db, now = Date.now()): { runId: number; mode: "incr
       .set({ status: "error", finishedAt: now, errorCode: "interrupted", errorMessage: "A new sync started before this one finished." })
       .where(eq(syncRuns.status, "running"))
       .run();
-    const mode = getSetting(tx, SAVED_BACKFILL) === "1" ? "incremental" : "full";
+    const upToDate = getSetting(tx, SAVED_BACKFILL) === "1" && getSetting(tx, FEED_VERSION_KEY) === FEED_VERSION;
+    const mode = upToDate ? "incremental" : "full";
     const max = tx.select({ max: sql<number | null>`max(${posts.sortKey})` }).from(posts).get()?.max ?? 0;
     const run = tx
       .insert(syncRuns)
@@ -86,10 +94,28 @@ function upsertPost(q: Q, p: ParsedPost, runId: number, keyIfNew: number, keyUpd
       })))
       .run();
   }
+  syncCollectionLinks(q, p, runId);
   if (!existing?.thumbPath && p.thumbnailUrl) jobs.push({ kind: "thumb", id: p.id, url: p.thumbnailUrl });
   // "Known" means first seen by an earlier run that finished walking the saved feed.
   // Posts from a run that was cut off may sit above a gap of posts nobody fetched yet.
   return { isNew: !existing, knownBefore: !!existing && existing.firstSeenRunId < runId && existing.firstRunComplete === true };
+}
+
+/** The saved feed lists every collection a post is in, so it replaces the post's links. */
+function syncCollectionLinks(q: Q, p: ParsedPost, runId: number) {
+  const wanted = new Set(p.collectionIds);
+  const current = q.select({ id: postCollections.collectionId }).from(postCollections).where(eq(postCollections.postId, p.id)).all();
+  for (const { id } of current) {
+    if (!wanted.has(id)) {
+      q.delete(postCollections).where(and(eq(postCollections.postId, p.id), eq(postCollections.collectionId, id))).run();
+    }
+  }
+  const have = new Set(current.map((c) => c.id));
+  for (const id of wanted) {
+    if (have.has(id)) continue;
+    q.insert(collections).values({ id, lastSeenRunId: runId }).onConflictDoNothing().run();
+    q.insert(postCollections).values({ postId: p.id, collectionId: id, firstSeenRunId: runId }).run();
+  }
 }
 
 export function ingestSavedPage(db: Db, runId: number, raw: unknown) {
@@ -118,7 +144,10 @@ export function ingestSavedPage(db: Db, runId: number, raw: unknown) {
       .where(eq(syncRuns.id, runId))
       .run();
     const stop = run.mode === "incremental" && sawKnown;
-    if (!page.moreAvailable) setSetting(tx, SAVED_BACKFILL, "1");
+    if (!page.moreAvailable) {
+      setSetting(tx, SAVED_BACKFILL, "1");
+      setSetting(tx, FEED_VERSION_KEY, FEED_VERSION);
+    }
     if (stop || !page.moreAvailable) tx.update(syncRuns).set({ savedComplete: true }).where(eq(syncRuns.id, runId)).run();
     return { stop, newCount, seen: page.items.length, skipped: page.skipped, jobs };
   });
@@ -135,33 +164,6 @@ export function ingestCollections(db: Db, runId: number, raw: unknown) {
         .run();
     }
     return { collections: page.items.map(({ id, name }) => ({ id, name })) };
-  });
-}
-
-export function ingestCollectionPage(db: Db, runId: number, collectionId: string, raw: unknown) {
-  const page = parseMediaPage(raw);
-  const jobs: MediaJob[] = [];
-  return db.transaction((tx) => {
-    activeRun(tx, runId);
-    const coll = tx.select().from(collections).where(eq(collections.id, collectionId)).get();
-    if (!coll) throw new NotFoundError(`Collection ${collectionId} not found`);
-    let sawKnownLink = false;
-    for (const p of page.items) {
-      const min = tx.select({ min: sql<number | null>`min(${posts.sortKey})` }).from(posts).get()?.min ?? RUN_SPAN;
-      upsertPost(tx, p, runId, min - 1, null, jobs);
-      const link = tx
-        .select({ firstSeenRunId: postCollections.firstSeenRunId })
-        .from(postCollections)
-        .where(and(eq(postCollections.postId, p.id), eq(postCollections.collectionId, collectionId)))
-        .get();
-      if (link) {
-        if (link.firstSeenRunId < runId) sawKnownLink = true;
-      } else {
-        tx.insert(postCollections).values({ postId: p.id, collectionId, firstSeenRunId: runId }).run();
-      }
-    }
-    if (!page.moreAvailable) tx.update(collections).set({ backfillComplete: true }).where(eq(collections.id, collectionId)).run();
-    return { stop: coll.backfillComplete && sawKnownLink, seen: page.items.length, jobs };
   });
 }
 

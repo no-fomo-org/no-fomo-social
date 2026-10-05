@@ -5,6 +5,7 @@
         "pk": "3500000000000000001",
         "id": "3500000000000000001_111",
         "code": "DAbcReel01",
+        "saved_collection_ids": ["17900000000000002"],
         "taken_at": 1756000000,
         "media_type": 2,
         "product_type": "clips",
@@ -56,6 +57,7 @@
       "media": {
         "pk": "3500000000000000003",
         "code": "DAbcCar003",
+        "saved_collection_ids": [17900000000000002, "17900000000000003"],
         "taken_at": 1755800000,
         "media_type": 8,
         "product_type": "carousel_container",

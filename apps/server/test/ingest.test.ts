@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import page1 from "@no-fomo/core/fixtures/saved-page-1.json";
 import page2 from "@no-fomo/core/fixtures/saved-page-2.json";
 import collectionsList from "@no-fomo/core/fixtures/collections-list.json";
 import { openDb, type Db } from "../src/db/open";
-import { posts, postCollections, syncRuns } from "../src/db/schema";
+import { posts, postCollections, settings, syncRuns } from "../src/db/schema";
 import {
-  finishRun, ingestCollectionPage, ingestCollections, ingestSavedPage, RunNotActiveError, startRun,
+  finishRun, ingestCollections, ingestSavedPage, RunNotActiveError, startRun,
 } from "../src/sync/ingest";
+import { listCollections } from "../src/queries";
 
 const media = (pk: string) => ({
   pk, code: `C${pk}`, media_type: 1, taken_at: 1, user: { pk: "9", username: "new_author" },
@@ -31,6 +32,18 @@ describe("saved feed ingest", () => {
     ingestSavedPage(db, runId, page2);
     finishRun(db, runId, { ok: true });
     expect(order(db)).toEqual(["3500000000000000001", "3500000000000000002", "3500000000000000003", "3500000000000000004"]);
+    expect(startRun(db).mode).toBe("incremental");
+  });
+
+  it("walks the whole feed once more after the app learns to read new fields", () => {
+    const r1 = startRun(db);
+    ingestSavedPage(db, r1.runId, page2);
+    finishRun(db, r1.runId, { ok: true });
+    db.delete(settings).where(eq(settings.key, "feed_version")).run(); // data stored by an older version
+    const r2 = startRun(db);
+    expect(r2.mode).toBe("full");
+    expect(ingestSavedPage(db, r2.runId, page2).stop).toBe(false);
+    finishRun(db, r2.runId, { ok: true });
     expect(startRun(db).mode).toBe("incremental");
   });
 
@@ -87,26 +100,37 @@ describe("saved feed ingest", () => {
 });
 
 describe("collections ingest", () => {
-  it("stores user collections and links posts; stops on a known link after backfill", () => {
+  const links = () =>
+    db.select().from(postCollections).all().map((l) => `${l.postId}>${l.collectionId}`).sort();
+
+  it("links posts to collections from saved_collection_ids, even without names", () => {
+    const r1 = startRun(db);
+    ingestSavedPage(db, r1.runId, page1);
+    expect(links()).toEqual([
+      "3500000000000000001>17900000000000002",
+      "3500000000000000003>17900000000000002",
+      "3500000000000000003>17900000000000003",
+    ]);
+    expect(listCollections(db)).toEqual([
+      { id: "17900000000000002", name: null, count: 2 },
+      { id: "17900000000000003", name: null, count: 1 },
+    ]);
+  });
+
+  it("adds names from the collections list when Instagram sends it", () => {
     const r1 = startRun(db);
     ingestSavedPage(db, r1.runId, page1);
     expect(ingestCollections(db, r1.runId, collectionsList).collections.map((c) => c.name)).toEqual(["AI tools", "Design"]);
-    const coll = "17900000000000002";
-    const first = ingestCollectionPage(db, r1.runId, coll, { items: [{ media: page1.items[0]!.media }], more_available: false });
-    expect(first.stop).toBe(false);
-    expect(db.select().from(postCollections).all()).toHaveLength(1);
-    finishRun(db, r1.runId, { ok: true });
-
-    const r2 = startRun(db);
-    const again = ingestCollectionPage(db, r2.runId, coll, { items: [{ media: page1.items[0]!.media }], more_available: true, next_max_id: "N" });
-    expect(again.stop).toBe(true);
+    expect(listCollections(db).map((c) => c.name)).toEqual(["AI tools", "Design"]);
   });
 
-  it("puts posts that only appear in a collection at the bottom", () => {
+  it("replaces a post's links when its collections change", () => {
     const r1 = startRun(db);
     ingestSavedPage(db, r1.runId, page1);
-    ingestCollections(db, r1.runId, collectionsList);
-    ingestCollectionPage(db, r1.runId, "17900000000000003", pageOf(["555"], false));
-    expect(order(db).at(-1)).toBe("555");
+    finishRun(db, r1.runId, { ok: true });
+    const moved = { ...page1.items[0]!.media, saved_collection_ids: ["17900000000000003"] };
+    const r2 = startRun(db);
+    ingestSavedPage(db, r2.runId, { items: [{ media: moved }], more_available: true, next_max_id: "N" });
+    expect(links().filter((l) => l.startsWith("3500000000000000001"))).toEqual(["3500000000000000001>17900000000000003"]);
   });
 });

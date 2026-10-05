@@ -12,7 +12,7 @@ import { authors, posts } from "../db/schema";
 import { imageType, type MediaStore } from "../media/store";
 import { listAuthors, listCollections, listPosts, syncStatus } from "../queries";
 import {
-  finishRun, ingestCollectionPage, ingestCollections, ingestSavedPage, NotFoundError, RunNotActiveError, startRun,
+  finishRun, ingestCollections, ingestSavedPage, NotFoundError, RunNotActiveError, startRun,
 } from "../sync/ingest";
 import { security } from "./security";
 
@@ -85,16 +85,6 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     const { payload } = PageBody.parse(await c.req.json());
     await dump(runId, "collections", payload);
     return c.json(ingestCollections(db, runId, payload));
-  });
-
-  app.post("/api/sync/runs/:id/collections/:cid", async (c) => {
-    const runId = RunId.parse(c.req.param("id"));
-    const cid = Id.parse(c.req.param("cid"));
-    const { payload } = PageBody.parse(await c.req.json());
-    await dump(runId, `collection-${cid}`, payload);
-    const r = ingestCollectionPage(db, runId, cid, payload);
-    media.enqueue(r.jobs);
-    return c.json({ stop: r.stop, seen: r.seen });
   });
 
   app.post("/api/sync/runs/:id/finish", async (c) => {

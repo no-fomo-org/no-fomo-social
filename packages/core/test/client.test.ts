@@ -32,15 +32,13 @@ describe("createIgClient", () => {
   });
 
   it("builds collection urls", async () => {
-    const f = fakeFetch(json({ status: "ok" }), json({ status: "ok" }));
+    const f = fakeFetch(json({ status: "ok" }));
     const ig = createIgClient({ fetch: f.fn, csrfToken: () => null });
     await ig.collectionsPage(null);
-    await ig.collectionPage("179", "C2");
     // Same query the instagram.com Saved page sends. A shorter query returned 404 in a real sync.
     expect(f.calls[0]!.url).toBe(
       "https://www.instagram.com/api/v1/collections/list/?collection_types=%5B%22ALL_MEDIA_AUTO_COLLECTION%22%2C%22MEDIA%22%2C%22AUDIO_AUTO_COLLECTION%22%5D&get_cover_media_lists=true&include_public_only=0&max_id=",
     );
-    expect(f.calls[1]!.url).toBe("https://www.instagram.com/api/v1/feed/collection/179/posts/?max_id=C2");
   });
 
   it("maps failures to clear error codes", async () => {

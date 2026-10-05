@@ -15,6 +15,13 @@
       "when": 1791193797837,
       "tag": "0001_unique_stryfe",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791196679993,
+      "tag": "0002_solid_ikaris",
+      "breakpoints": true
     }
   ]
 }

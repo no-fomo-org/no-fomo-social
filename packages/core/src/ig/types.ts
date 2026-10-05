@@ -41,6 +41,8 @@ export interface ParsedPost {
   width: number | null;
   height: number | null;
   parts: ParsedMediaPart[];
+  /** Ids of the user's collections this post is in (from `saved_collection_ids`). */
+  collectionIds: string[];
 }
 
 export interface ParsedCollection {

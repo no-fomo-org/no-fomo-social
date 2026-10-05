@@ -31,7 +31,12 @@ export function FilterBar({ filters, total, onChange }: { filters: Filters; tota
           allLabel="All collections"
           value={filters.collection}
           onChange={(collection) => onChange({ collection })}
-          options={(collections.data ?? []).map((c) => ({ id: c.id, label: c.name, count: c.count }))}
+          options={(collections.data ?? []).map((c) => ({
+            id: c.id,
+            label: c.name ?? "Unnamed collection",
+            sublabel: c.name ? null : `Number ending ${c.id.slice(-4)}`,
+            count: c.count,
+          }))}
         />
       )}
       <KindSwitch value={filters.kind} onChange={(kind) => onChange({ kind })} />

@@ -35,10 +35,10 @@ describe("createRelaySink", () => {
     const sent: unknown[] = [];
     const sink = createRelaySink("http://localhost:4747", async (m) => { sent.push(m); return { ok: true, data: { runId: 3, stop: false, seen: 1, collections: [] } }; });
     await sink.startRun();
-    await sink.collectionPage(3, "179", { x: 1 });
+    await sink.collections(3, { x: 1 });
     expect(sent).toEqual([
       { type: "relay", serverUrl: "http://localhost:4747", path: "/api/sync/runs", body: {} },
-      { type: "relay", serverUrl: "http://localhost:4747", path: "/api/sync/runs/3/collections/179", body: { payload: { x: 1 } } },
+      { type: "relay", serverUrl: "http://localhost:4747", path: "/api/sync/runs/3/collections", body: { payload: { x: 1 } } },
     ]);
   });
 

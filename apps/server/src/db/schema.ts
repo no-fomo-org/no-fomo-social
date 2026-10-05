@@ -64,7 +64,8 @@ export const postParts = sqliteTable(
 
 export const collections = sqliteTable("collections", {
   id: text("id").primaryKey(),
-  name: text("name").notNull(),
+  /** Null until Instagram tells us the name. Membership comes from the saved feed. */
+  name: text("name"),
   mediaCount: integer("media_count"),
   backfillComplete: integer("backfill_complete", { mode: "boolean" }).notNull().default(false),
   lastSeenRunId: integer("last_seen_run_id"),

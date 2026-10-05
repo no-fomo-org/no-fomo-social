@@ -11,7 +11,6 @@ export function createRelaySink(serverUrl: string, send: (m: RelayMessage) => Pr
     startRun: () => post("/api/sync/runs", {}),
     savedPage: (runId, payload) => post(`/api/sync/runs/${runId}/saved`, { payload }),
     collections: (runId, payload) => post(`/api/sync/runs/${runId}/collections`, { payload }),
-    collectionPage: (runId, cid, payload) => post(`/api/sync/runs/${runId}/collections/${encodeURIComponent(cid)}`, { payload }),
     finishRun: async (runId, result) => { await post(`/api/sync/runs/${runId}/finish`, result); },
   };
 }
