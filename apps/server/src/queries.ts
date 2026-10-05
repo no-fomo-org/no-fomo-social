@@ -2,10 +2,10 @@ import { and, asc, count, desc, eq, inArray, isNull, lt, sql, type SQL } from "d
 import { expiresAtFromUrl } from "@no-fomo/core";
 import type { AuthorFacet, CollectionFacet, MediaPart, PostListItem, PostMedia, PostsPage, PostsQuery, SyncStatus } from "@no-fomo/core";
 import type { Db } from "./db/open";
-import { authors, collections, postCollections, postParts, posts } from "./db/schema";
+import { authors, collections, postCollections, postParts, posts, savedPosts } from "./db/schema";
 import { lastFullAt, lastSuccessAt, latestRun } from "./sync/ingest";
 
-const visible = and(isNull(posts.removedAt), isNull(posts.removedRemotelyAt));
+const visible = and(isNull(savedPosts.removedAt), isNull(savedPosts.removedRemotelyAt));
 const hasReport = sql<number>`EXISTS (SELECT 1 FROM reports r WHERE r.post_id = ${posts.id} AND r.markdown IS NOT NULL)`;
 
 /**
@@ -32,18 +32,19 @@ export function listPosts(db: Db, q: PostsQuery): PostsPage {
       : undefined,
   ];
   const where = and(...filters);
-  const total = db.select({ n: count() }).from(posts).where(where).get()?.n ?? 0;
+  const total = db.select({ n: count() }).from(posts).innerJoin(savedPosts, eq(savedPosts.postId, posts.id)).where(where).get()?.n ?? 0;
   const rows = db
-    .select({ post: posts, username: authors.username, fullName: authors.fullName, hasReport })
+    .select({ post: posts, username: authors.username, fullName: authors.fullName, hasReport, key: savedPosts.sortKey })
     .from(posts)
+    .innerJoin(savedPosts, eq(savedPosts.postId, posts.id))
     .innerJoin(authors, eq(authors.id, posts.authorId))
-    .where(and(where, q.cursor !== undefined ? lt(posts.sortKey, q.cursor) : undefined))
-    .orderBy(desc(posts.sortKey))
+    .where(and(where, q.cursor !== undefined ? lt(savedPosts.sortKey, q.cursor) : undefined))
+    .orderBy(desc(savedPosts.sortKey))
     .limit(q.limit + 1)
     .all();
   const more = rows.length > q.limit;
   const page = rows.slice(0, q.limit);
-  return { items: page.map(toItem), nextCursor: more ? page.at(-1)!.post.sortKey : null, total };
+  return { items: page.map(toItem), nextCursor: more ? page.at(-1)!.key : null, total };
 }
 
 function toItem(r: { post: typeof posts.$inferSelect; username: string; fullName: string | null; hasReport: number }): PostListItem {
@@ -97,7 +98,8 @@ export function listAuthors(db: Db): AuthorFacet[] {
   return db
     .select({ id: authors.id, username: authors.username, fullName: authors.fullName, count: n })
     .from(authors)
-    .innerJoin(posts, and(eq(posts.authorId, authors.id), visible))
+    .innerJoin(posts, eq(posts.authorId, authors.id))
+    .innerJoin(savedPosts, and(eq(savedPosts.postId, posts.id), visible))
     .groupBy(authors.id)
     .orderBy(desc(n), asc(authors.username))
     .all()
@@ -105,12 +107,12 @@ export function listAuthors(db: Db): AuthorFacet[] {
 }
 
 export function listCollections(db: Db): CollectionFacet[] {
-  const n = count(posts.id);
+  const n = count(savedPosts.postId);
   return db
     .select({ id: collections.id, name: collections.name, count: n })
     .from(collections)
     .leftJoin(postCollections, eq(postCollections.collectionId, collections.id))
-    .leftJoin(posts, and(eq(posts.id, postCollections.postId), visible))
+    .leftJoin(savedPosts, and(eq(savedPosts.postId, postCollections.postId), visible))
     .groupBy(collections.id)
     .orderBy(asc(collections.name))
     .all();

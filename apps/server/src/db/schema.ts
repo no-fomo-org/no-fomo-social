@@ -34,16 +34,11 @@ export const posts = sqliteTable(
     musicArtist: text("music_artist"),
     width: integer("width"),
     height: integer("height"),
-    sortKey: integer("sort_key").notNull(),
-    firstSeenRunId: integer("first_seen_run_id").notNull(),
-    lastSeenRunId: integer("last_seen_run_id").notNull(),
-    removedAt: integer("removed_at"),
-    removedRemotelyAt: integer("removed_remotely_at"),
   },
   (t) => [
-    index("posts_sort_idx").on(t.sortKey),
     index("posts_author_idx").on(t.authorId),
     index("posts_kind_idx").on(t.kind),
+    index("posts_taken_idx").on(t.takenAt),
   ],
 );
 
@@ -125,4 +120,65 @@ export const reports = sqliteTable("reports", {
   errorMessage: text("error_message"),
   createdAt: integer("created_at").notNull(),
   finishedAt: integer("finished_at"),
+});
+
+/** A post's place in the saved feed. A post without a row here was never saved. */
+export const savedPosts = sqliteTable(
+  "saved_posts",
+  {
+    postId: text("post_id").primaryKey().references(() => posts.id, { onDelete: "cascade" }),
+    sortKey: integer("sort_key").notNull(),
+    firstSeenRunId: integer("first_seen_run_id").notNull(),
+    lastSeenRunId: integer("last_seen_run_id").notNull(),
+    removedAt: integer("removed_at"),
+    removedRemotelyAt: integer("removed_remotely_at"),
+  },
+  (t) => [index("saved_posts_sort_idx").on(t.sortKey)],
+);
+
+/** Instagram accounts the owner added to the library. */
+export const profiles = sqliteTable("profiles", {
+  authorId: text("author_id").primaryKey().references(() => authors.id),
+  addedAt: integer("added_at").notNull(),
+  refreshedAt: integer("refreshed_at"),
+  postCount: integer("post_count"),
+  /** Instagram's next_max_id for "Load older posts". Null when the end is reached. */
+  olderCursor: text("older_cursor"),
+  isPrivate: integer("is_private", { mode: "boolean" }).notNull().default(false),
+});
+
+export const profilePosts = sqliteTable(
+  "profile_posts",
+  {
+    authorId: text("author_id").notNull().references(() => profiles.authorId, { onDelete: "cascade" }),
+    postId: text("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.authorId, t.postId] }), index("profile_posts_post_idx").on(t.postId)],
+);
+
+/** Accounts the owner follows. Names and avatars live in `authors`. */
+export const following = sqliteTable("following", {
+  authorId: text("author_id").primaryKey().references(() => authors.id),
+  /** Instagram's order, most recent follow first. */
+  position: integer("position").notNull(),
+  lastSeenRunId: integer("last_seen_run_id").notNull(),
+});
+
+/** Profile loads and following updates, run by the extension. */
+export const loadRuns = sqliteTable("load_runs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  kind: text("kind", { enum: ["profile", "following"] }).notNull(),
+  authorId: text("author_id"),
+  mode: text("mode", { enum: ["add", "older", "refresh", "following"] }).notNull(),
+  status: text("status", { enum: ["running", "done", "error"] }).notNull(),
+  startedAt: integer("started_at").notNull(),
+  finishedAt: integer("finished_at"),
+  pages: integer("pages").notNull().default(0),
+  /** New posts for a profile run; accounts seen for a following run. */
+  items: integer("items").notNull().default(0),
+  nextPos: integer("next_pos").notNull().default(0),
+  /** A following run read the list to its end, so accounts it did not see were unfollowed. */
+  complete: integer("complete", { mode: "boolean" }).notNull().default(false),
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
 });
