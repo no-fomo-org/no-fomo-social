@@ -46,6 +46,9 @@ Running locally and being free are constraints of the project, not its main sell
 - An AI report on the whole library.
 - Packaging with `npx` and Docker.
 
+**Decided:**
+- Collection names: Instagram no longer serves them (October 2026). Users name each collection once inside the app. Membership still comes from the saved feed.
+
 **Constraints:**
 - **No cost for the author.** Users bring their own AI keys. There are no hosted services in v1.
 - **Unofficial Instagram API.** The app uses Instagram's private web API with the user's session. Requests are slowly throttled, and the user is warned about a small risk to their account. Instagram changes or retires endpoints without notice. For example, the web collections list and the per-collection feeds returned 404 in October 2026.
@@ -53,7 +56,6 @@ Running locally and being free are constraints of the project, not its main sell
 - **Open source.** The project's licence has not been chosen yet.
 
 **Open decisions:**
-- Collection names: Instagram no longer serves them through the old request. The options are naming collections in the app, or finding the new Instagram request.
 - A mobile app comes later. Its platform and backend (Cloudflare or another option) are not decided.
 
 ## Brand Commitments
