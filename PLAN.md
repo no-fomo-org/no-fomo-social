@@ -58,7 +58,7 @@ Web app (React Router v8 **SPA mode** + Vite + Tailwind v4 + shadcn/Base UI + Hu
 4. Analyze (video Mode A, image path, then video Mode B).
 5. Free graph + local embeddings + semantic search. Optional LLM enrichment.
 6. Knowledge graph view + AI report.
-7. Packaging (`npx`, Docker), README, security review.
+7. Packaging (`npx`, Docker), Chrome Web Store release of the extension (one-click install instead of unpacked developer mode), README, security review.
 
 ## Main risks
 - Instagram changes private endpoints → keep all IG calls in one module in `packages/core`, with tests on saved JSON samples.
