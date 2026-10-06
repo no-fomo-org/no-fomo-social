@@ -1,5 +1,7 @@
 # Instant Profiles Implementation Plan
 
+> **Superseded** by `docs/superpowers/plans/2026-10-06-home-tabs-instagram-safety.md` (three tabs, Instagram safety, account posts read from Instagram's own page). Kept as history.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the "add a profile and load 100 posts" flow with instant browsing: open any account, posts stream from Instagram page by page, play right away, and only analyzed posts are stored.

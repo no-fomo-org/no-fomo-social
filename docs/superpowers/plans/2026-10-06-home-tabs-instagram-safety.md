@@ -1785,3 +1785,29 @@ To force the banner for a quick look (optional): in the Instagram tab's DevTools
 - [ ] **Step 3: If the owner sees a refusal again**
 
 Read the log: `sqlite3 ~/.no-fomo/no-fomo.db "select datetime(at/1000,'unixepoch','localtime'), kind, status, result, ms from ig_calls order by id desc limit 50"` and report which calls came before the refusal.
+
+---
+
+## After the plan (what changed while building and testing)
+
+All 9 tasks were built as written. These changes came after, from the final review and from the owner's tests with real Instagram. The spec is updated to match.
+
+**From the final review**
+- Tabs change the shared gate state under one browser lock (Web Locks, `no-fomo-ig-gate`), and checking and counting a call is one locked step, so two tabs cannot overwrite each other's stop or both take the last call of the hour.
+- A call the owner waits for checks the stop and the hourly limit before it joins the queue, so it never waits behind a sync that sleeps for the limit.
+- **Update list** fails at once at the hourly limit instead of waiting (a waiting update looked stopped after 2 minutes).
+- Instagram's limit answers ("wait a few minutes", `spam`, `feedback_required`) start a stop even when they come with 400 or 401.
+
+**From the owner's tests**
+- An old failed **Update list** shows its date ("The last update, on Oct 5 at 21:15, did not finish."), so it does not look current.
+- `web_profile_info` is gone from the app: Instagram answers 429 to everyone since August 2026, which is what caused the stops.
+- `feed/user/{id}` is gone too: since about September 2026 it serves a web page instead of data. An account's posts are now read the way Instagram's own page reads them:
+  - `entrypoints/instagram-page.content.ts` runs in Instagram's page and only watches its profile posts query (`PolarisProfilePostsTabContentQuery_connection`), passing the request and the answer to the extension.
+  - Opening an account loads `instagram.com/<name>/` in a hidden, reused tab; the page's own answer is the first page. **Load more** repeats the query with the cursor, using the copied ids and tokens (`packages/core/src/ig/posts-query.ts`, `apps/extension/src/page-posts.ts`).
+  - The cursor is `<username>:<cursor>`; the account header has no post count.
+- `"Not authorized to view user"` is code `private` and starts no stop.
+
+**Known gaps**
+- "Private" and "no such account" are read from the page text, so they work only with Instagram in English.
+- Deferred review minors: clock jumps back can make waits long; corrupt gate storage makes calls fail; reloading a search or account calls Instagram again; two refusals at once in two tabs step the stop twice; the in-app Back arrow adds a history entry; the banner can stay up to 30 s after a stop ends.
+

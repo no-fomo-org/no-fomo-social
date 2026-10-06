@@ -1,5 +1,7 @@
 # Profiles and Reports Tabs Implementation Plan
 
+> **Superseded** by `docs/superpowers/plans/2026-10-06-home-tabs-instagram-safety.md` (three tabs, Instagram safety, account posts read from Instagram's own page). Kept as history.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a Profiles tab (add any Instagram account, browse/filter/analyze its posts, see and search the people you follow, search all of Instagram) and a Reports tab (every report in one list with its own filters), with one stored record per post so a report shows wherever the post appears.

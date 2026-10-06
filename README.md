@@ -55,7 +55,25 @@ Open a post and pick the **Report** tab. Press **Analyze** to get a short report
 - Videos are downloaded to a temp folder, analyzed, and deleted right after.
 - The key is stored encrypted in `~/.no-fomo/keys.enc`. The encryption secret is in `~/.no-fomo/secret`. This protects the key in a copied or backed-up `keys.enc`, not from other programs on your computer. The key is only sent to OpenAI.
 - Before each run, pick the report model, the speech to text model and the report language (about 45 languages). The app only lists models your key can use and remembers your last choice.
-- Search also finds words from reports. Use the "Has report" filter to see analyzed posts.
+- Search also finds words from reports. The **Reports** tab lists every report, with its own filters.
+
+## Home: open any account
+
+The app has three tabs: **Home**, **Saved** and **Reports**.
+
+- **Home** shows the accounts you follow. Press **Update list** to load them again (one Instagram call per 50 accounts).
+- Type in the search box to filter that list. Press Enter to search all of Instagram, or to open a profile link or an @username.
+- Pick an account to see its posts. The first 12 show at once, and **Load more** adds 12. Open a post to watch it, and press **Analyze** to make a report.
+- Nothing from an account is kept, except the posts you analyze. If you later save such a post, Saved shows its report too.
+- To read an account, the extension opens a hidden Instagram tab on that account. It is reused for the next accounts.
+
+## Instagram limits
+
+The extension protects your account. It sends one call at a time, with a 3 to 6 second pause, and at most 150 calls per hour. If Instagram refuses a call, all calls stop for 15 minutes, then 1 hour, then 6 hours if Instagram keeps refusing. A banner shows until when. Every call is logged on your computer:
+
+```
+sqlite3 ~/.no-fomo/no-fomo.db "select datetime(at/1000,'unixepoch','localtime'), kind, status, result from ig_calls order by id desc limit 50"
+```
 
 ## Development
 

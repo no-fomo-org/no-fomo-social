@@ -40,7 +40,7 @@ Running locally and being free are constraints of the project, not its main sell
 
 **Shipped (milestones 2 and 4):** video player and photo viewer with link refresh, full resync, and a per-post AI report with the user's own OpenAI key.
 
-**Shipped (profiles and reports):** a Profiles tab that opens any Instagram account instantly (posts stream from Instagram as you scroll; only posts you analyze are stored), with the list of people you follow and search across Instagram; a Reports tab with every report and its own filters. A post is stored once, so a report shows wherever the post appears.
+**Shipped (Home, Saved, Reports):** a Home tab with the list of people you follow and search across Instagram; picking an account shows its posts inside Home (12 at a time, **Load more**; only posts you analyze are stored). A Reports tab with every report and its own filters. A post is stored once, so a report shows wherever the post appears. All Instagram calls go through one gate (150 per hour, stops of 15 min, 1 h, 6 h after a refusal, a banner, a local call log).
 
 **Planned:** see `PLAN.md`.
 - Batch unsave.
@@ -54,7 +54,7 @@ Running locally and being free are constraints of the project, not its main sell
 
 **Constraints:**
 - **No cost for the author.** Users bring their own AI keys. There are no hosted services in v1.
-- **Unofficial Instagram API.** The app uses Instagram's private web API with the user's session. Requests are slowly throttled, and the user is warned about a small risk to their account. Instagram changes or retires endpoints without notice. For example, the web collections list and the per-collection feeds returned 404 in October 2026.
+- **Unofficial Instagram API.** The app uses Instagram's private web API with the user's session. Requests are slowly throttled, and the user is warned about a small risk to their account. Instagram changes or retires endpoints without notice. For example, the web collections list and the per-collection feeds returned 404 in October 2026, `web_profile_info` answers 429 to everyone since August 2026, and `feed/user` serves a web page instead of data since September 2026. Account posts are now read the way Instagram's own page reads them (its GraphQL query, watched and repeated by the extension).
 - **No stored videos.** Videos are only downloaded on demand and deleted after analysis. Only thumbnails and metadata are kept.
 - **Open source.** The project's licence has not been chosen yet.
 

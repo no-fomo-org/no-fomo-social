@@ -50,7 +50,7 @@ Web app (React Router v8 **SPA mode** + Vite + Tailwind v4 + shadcn/Base UI + Hu
    - Image / carousel: download the image(s) to temp dir → vision LLM gets metadata + images (no ffmpeg, no Whisper) → same report template.
    - Report saved in DB; temp files deleted. Buttons: **Copy as Markdown**, **Download .md** (to use in any AI). No chat.
 6. **AI provider layer:** Vercel AI SDK so one code path supports OpenAI, Gemini, Anthropic, Groq. Keys stored locally in an encrypted file (`~/.no-fomo/keys.enc`, AES-256-GCM, machine-bound secret; `keytar` is archived and not used), never sent anywhere except the chosen provider.
-7. **Profiles and Reports tabs:** open any account instantly: the extension reads its pages from Instagram and hands them to the app page, nothing stored; Analyze stores just that post. The following list is stored and updated on a button; search across Instagram finds others. Saved state lives in `saved_posts`, so a post is one row and has one report. Reports tab lists every report with text, author, source (saved / not saved) and type filters. Spec: `docs/superpowers/specs/2026-10-05-profiles-reports-design.md`.
+7. **Home, Saved and Reports tabs** (shipped): Home lists the accounts the owner follows (stored, updated on a button) and searches all of Instagram on Enter; picking an account shows its posts inside Home, 12 at a time with **Load more**, nothing stored; Analyze stores just that post. Account posts are read the way Instagram's own page reads them: a hidden Instagram tab opens the account and the extension watches and repeats the page's GraphQL query. Saved state lives in `saved_posts`, so a post is one row and has one report. Reports tab lists every report with text, author, source (saved / not saved) and type filters. Every Instagram call goes through one gate stored in the extension (150 per hour, stops of 15 min, 1 h, 6 h, a banner, a call log in `ig_calls`). Spec: `docs/superpowers/specs/2026-10-05-profiles-reports-design.md`. Plan: `docs/superpowers/plans/2026-10-06-home-tabs-instagram-safety.md`.
 
 ## Milestones
 1. Monorepo + extension sync (posts + collections) + SQLite + basic grid with author, collection and type filters.
@@ -62,7 +62,7 @@ Web app (React Router v8 **SPA mode** + Vite + Tailwind v4 + shadcn/Base UI + Hu
 7. Packaging (`npx`, Docker), Chrome Web Store release of the extension (one-click install instead of unpacked developer mode), README, security review.
 
 ## Main risks
-- Instagram changes private endpoints → keep all IG calls in one module in `packages/core`, with tests on saved JSON samples.
+- Instagram changes private endpoints → keep all IG calls in one module in `packages/core`, with tests on saved JSON samples. In 2026 Instagram retired `web_profile_info` (429 for everyone) and `feed/user` for the web; where the web API is gone, read what Instagram's own page asks for (see `packages/core/src/ig/posts-query.ts`).
 - Account flags from unsave/sync → strict throttle, user-visible limits, no background loops.
 - Instagram ToS: unofficial access; state clearly in README (user acts on own account).
 
