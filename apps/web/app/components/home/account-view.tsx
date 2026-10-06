@@ -117,7 +117,7 @@ export function AccountView({ username }: { username: string }) {
 
   return (
     <>
-      <TopBar search={null} />
+      <TopBar />
       <main className="mx-auto max-w-[1600px] px-4 pb-16 md:px-6">
         <div className="flex flex-wrap items-center gap-3 pt-4">
           <Link to={{ search: backSearch(params) }} aria-label="Back to Home" className={buttonClass("ghost", "", "icon")}><Icon icon={ArrowLeft01Icon} size={18} /></Link>

@@ -52,7 +52,7 @@ function HomeList() {
 
   return (
     <>
-      <TopBar search={null} />
+      <TopBar />
       <main className="mx-auto max-w-[1100px] px-4 pb-16 pt-6 md:px-6">
         <h1 className="sr-only">Home</h1>
         {ext.missing && (

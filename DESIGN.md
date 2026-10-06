@@ -236,7 +236,7 @@ Every text pair passes WCAG AA in both themes. The lowest pairs are Muted on Sur
 
 Content is centered with a 1600px maximum width and a 16px gutter on phone, 24px from 768px. Reports and Home use narrower columns (900px and 1100px) for reading.
 
-The top bar is 64px tall on desktop with a hairline at the bottom: logo on the left, then search (`/` focuses it), then the tabs Home, Saved and Reports, then Settings and Sync on the right. On a phone it wraps to three rows: logo and actions, tabs, search.
+The top bar is 64px tall on desktop with a hairline at the bottom: the logo on the left (it links to Home), the tabs Home, Saved and Reports centered, and Settings and Sync on the right. The tabs stay in the same spot on every page. On a phone the tabs take a second, centered row. Search lives in the filter row of Saved and Reports, first in the row (`/` focuses it, placeholder "Search keywords").
 
 The Saved grid uses large 3:4 tiles: 2 columns on phone, 3 from 640px, 4 from 1024px, 5 from 1280px and 6 from 1680px. Column gaps grow from 12px to 20px; row gaps from 24px to 32px. Under each tile: author and duration on one line, then the first line of the caption.
 
@@ -325,6 +325,7 @@ Danger text with a short sentence: what happened and what to do.
 - **Do** keep corners at 6px for controls, 4px for media and 8px for sheets; circles only for avatars.
 - **Do** keep tiles 3:4 with author, duration and caption below the image.
 - **Do** use the horizontal lockup (`<LogoLockup />`) in the top bar, and the small symbol below 24px.
+- **Do** keep the top bar the same on every page: logo left, tabs centered, actions right. Page tools like search go in the page's filter row.
 - **Do** keep every animation under 300ms (the photo fade is 400ms), on ease-out curves, from scale 0.97 or more, and still under reduced motion.
 - **Do** gate hover motion behind a real mouse (`hover: hover` and `pointer: fine`).
 - **Do** use Hugeicons only, stroke 1.5, 16px in controls and 14px in meta.

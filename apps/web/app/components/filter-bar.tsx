@@ -3,6 +3,7 @@ import { api } from "../lib/api";
 import { NO_FILTERS, type Filters } from "../lib/filters";
 import { FacetPicker } from "./facet-picker";
 import { KindSwitch } from "./kind-switch";
+import { SearchBox } from "./search-box";
 import { SourceSwitch } from "./source-switch";
 import { Button } from "./ui/button";
 
@@ -19,6 +20,14 @@ export function FilterBar({ scope, filters, total, onChange }: {
 
   return (
     <div className="flex flex-wrap items-center gap-2 py-3 md:py-4">
+      <div className="w-full sm:w-64 lg:w-72">
+        <SearchBox
+          value={filters.q}
+          onChange={(q) => onChange({ q })}
+          placeholder="Search keywords"
+          label={scope === "reports" ? "Search reports" : "Search saved posts"}
+        />
+      </div>
       <FacetPicker
         label="Author"
         allLabel="All authors"

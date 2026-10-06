@@ -1,31 +1,32 @@
+import { Link } from "react-router";
 import { Settings01Icon } from "@hugeicons/core-free-icons";
 import { IgLimitBanner } from "./ig-limit";
 import { LogoLockup } from "./logo";
 import { NavTabs } from "./nav-tabs";
-import { SearchBox } from "./search-box";
 import { useOpenSettings } from "./settings-dialog";
 import { SyncControl } from "./sync-control";
 import { buttonClass } from "./ui/button";
 import { Icon } from "./ui/icon";
 
-export type SearchConfig = { value: string | null; onChange: (q: string | null) => void; placeholder: string; label: string };
-
-/** `sync`: show saved-post syncing. Only the Saved tab has it; other tabs load their own way. */
-export function TopBar({ search, sync = false }: { search: SearchConfig | null; sync?: boolean }) {
+/**
+ * Logo (links Home), centered tabs, page actions. The tabs keep the same spot on every page:
+ * the two side columns share the rest of the width equally. On a phone the tabs take their own row.
+ * `sync`: show saved-post syncing. Only the Saved tab has it; other tabs load their own way.
+ */
+export function TopBar({ sync = false }: { sync?: boolean }) {
   const openSettings = useOpenSettings();
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-bg">
-      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 md:h-16 md:flex-nowrap md:py-0 md:px-6">
-        <span className="shrink-0">
+      <div className="mx-auto grid max-w-[1600px] grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2 px-4 py-3 md:h-16 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-x-6 md:py-0 md:px-6">
+        <Link
+          to="/"
+          aria-label="no-fomo, go to Home"
+          className="justify-self-start rounded-control focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        >
           <LogoLockup height={22} />
-        </span>
-        <NavTabs className="order-last basis-full md:order-2 md:basis-auto" />
-        {search && (
-          <div className="order-last basis-full md:order-1 md:max-w-[480px] md:flex-1 md:basis-auto">
-            <SearchBox {...search} />
-          </div>
-        )}
-        <div className="ms-auto flex min-w-0 items-center gap-1 md:order-3">
+        </Link>
+        <NavTabs className="col-span-2 row-start-2 justify-self-center md:col-span-1 md:col-start-2 md:row-start-1" />
+        <div className="flex min-w-0 items-center justify-end gap-1 md:col-start-3">
           <button type="button" onClick={openSettings} aria-label="Settings" title="Settings" className={buttonClass("ghost", "", "icon")}>
             <Icon icon={Settings01Icon} size={18} />
           </button>

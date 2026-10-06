@@ -32,7 +32,7 @@ export default function Reports() {
 
   return (
     <>
-      <TopBar search={{ value: filters.q, onChange: (q) => update({ q }), placeholder: "Search words in reports", label: "Search reports" }} />
+      <TopBar />
       <main className="mx-auto max-w-[900px] px-4 pb-16 md:px-6">
         <FilterBar scope="reports" filters={filters} total={list.total} onChange={update} />
         {query.isPending ? (
