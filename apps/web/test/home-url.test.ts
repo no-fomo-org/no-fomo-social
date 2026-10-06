@@ -6,8 +6,6 @@ describe("Home URL state", () => {
     const p = new URLSearchParams("q=nas&find=nas&post=9");
     expect(accountSearch(p, "nasa")).toBe("?q=nas&find=nas&account=nasa");
     expect(backSearch(new URLSearchParams("q=nas&find=nas&account=nasa&post=9"))).toBe("?q=nas&find=nas");
-    expect(accountSearch(p, "nasa", "77")).toBe("?q=nas&find=nas&account=nasa&id=77");
-    expect(backSearch(new URLSearchParams("q=nas&account=nasa&id=77"))).toBe("?q=nas");
   });
   it("sets and clears one parameter", () => {
     expect(withParam(new URLSearchParams("a=1"), "b", "2").toString()).toBe("a=1&b=2");

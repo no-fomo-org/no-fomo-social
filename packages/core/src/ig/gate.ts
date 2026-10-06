@@ -208,7 +208,7 @@ export function gateClient(ig: IgClient, gate: RequestGate, opts: { mode: GateMo
     savedPage: (cursor) => through("saved", () => ig.savedPage(cursor)),
     collectionsPage: (cursor) => through("collections", () => ig.collectionsPage(cursor)),
     mediaInfo: (id) => through("post", () => ig.mediaInfo(id)),
-    userFeed: (userId, cursor) => through("feed", () => ig.userFeed(userId, cursor)),
+    profilePosts: (username, cursor) => through("feed", () => ig.profilePosts(username, cursor)),
     searchUsers: (query) => through("search", () => ig.searchUsers(query)),
     followingPage: (viewerId, cursor) => through("following", () => ig.followingPage(viewerId, cursor)),
   };

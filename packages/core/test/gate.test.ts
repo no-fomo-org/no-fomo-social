@@ -165,7 +165,7 @@ describe("gateStatus", () => {
 describe("gateClient", () => {
   const unused = async () => { throw new Error("not used"); };
   const raw = (over: Partial<IgClient> = {}): IgClient => ({
-    savedPage: unused, collectionsPage: unused, mediaInfo: unused, userFeed: unused, searchUsers: unused, followingPage: unused, ...over,
+    savedPage: unused, collectionsPage: unused, mediaInfo: unused, profilePosts: unused, searchUsers: unused, followingPage: unused, ...over,
   });
 
   it("logs each call that reached Instagram with its kind, result and time", async () => {
@@ -189,9 +189,9 @@ describe("gateClient", () => {
     const c = clock();
     const logs: IgCallLog[] = [];
     const gate = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0 });
-    const ig = gateClient(raw({ userFeed: async () => { throw new IgError("refused", "no"); } }), gate, { mode: "fail", log: (e) => logs.push(e), now: c.now });
-    await expect(ig.userFeed("1", null)).rejects.toThrow();
-    await expect(ig.userFeed("1", null)).rejects.toMatchObject({ code: "paused" });
+    const ig = gateClient(raw({ profilePosts: async () => { throw new IgError("refused", "no"); } }), gate, { mode: "fail", log: (e) => logs.push(e), now: c.now });
+    await expect(ig.profilePosts("nasa", null)).rejects.toThrow();
+    await expect(ig.profilePosts("nasa", null)).rejects.toMatchObject({ code: "paused" });
     expect(logs.map((l) => l.result)).toEqual(["refused"]);
   });
 
@@ -206,10 +206,10 @@ describe("gateClient", () => {
     const c = clock();
     const gate = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0, limit: 1 });
     const page = async () => ({});
-    const owner = gateClient(raw({ userFeed: page }), gate, { mode: "fail", now: c.now });
+    const owner = gateClient(raw({ profilePosts: page }), gate, { mode: "fail", now: c.now });
     const background = gateClient(raw({ followingPage: page }), gate, { mode: "wait", now: c.now });
-    await owner.userFeed("1", null);
-    await expect(owner.userFeed("1", null)).rejects.toMatchObject({ code: "budget" });
+    await owner.profilePosts("nasa", null);
+    await expect(owner.profilePosts("nasa", null)).rejects.toMatchObject({ code: "budget" });
     await expect(background.followingPage("1", null)).resolves.toEqual({});
   });
 });

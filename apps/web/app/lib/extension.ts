@@ -41,9 +41,8 @@ export const refreshExtensionMedia = (extId: string, postId: string, store = fal
   send(extId, { type: "media:refresh", id: postId, store }, 45_000);
 
 export const searchInstagram = (id: string, query: string) => send(id, { type: "profile:search", query }, 20_000);
-/** `userId`: known from the following list or search, so the extension needs no search to find it. */
-export const openProfile = (id: string, username: string, userId?: string | null) =>
-  send(id, userId ? { type: "profile:open", username, id: userId } : { type: "profile:open", username }, 45_000);
+/** Opens a hidden Instagram tab on the account, so it can take a while. */
+export const openProfile = (id: string, username: string) => send(id, { type: "profile:open", username }, 45_000);
 /** `cursor` comes from the previous page. */
 export const profilePage = (id: string, cursor: string) => send(id, { type: "profile:page", cursor }, 45_000);
 export const updateFollowing = (id: string) => send(id, { type: "following:update" }, 45_000);
@@ -63,6 +62,7 @@ export function loadErrorText(code: string, detail?: string, until?: number): st
       return "Your no-fomo extension is out of date. Run pnpm ext:build, then press Reload on the chrome://extensions page.";
     case "not_found":
     case "profile_not_found": return "No Instagram account has this name.";
+    case "private":
     case "private_profile": return "This account is private and you do not follow it, so its posts cannot be loaded.";
     case "busy": return "An update is already running. Wait for it to finish.";
     case "login_required": return "Log in to Instagram in this browser, then try again.";

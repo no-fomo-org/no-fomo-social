@@ -1,11 +1,11 @@
 import {
   IgError, parseFeedOwner, parseMediaPage, parseUserSearch, runFollowingUpdate, toLivePost,
-  type IgClient, type LivePage, type LiveProfile, type LoadStart, type ParsedAuthor, type UserSuggestion,
+  type IgClient, type LivePage, type LiveProfile, type LoadStart, type ParsedAuthor,
 } from "@no-fomo/core";
 import { createFollowingSink } from "./relay-sink";
 import type { RelayMessage, RelayResponse } from "./relay";
 
-type Msg = { type?: unknown; query?: unknown; serverUrl?: unknown; username?: unknown; id?: unknown; cursor?: unknown };
+type Msg = { type?: unknown; query?: unknown; serverUrl?: unknown; username?: unknown; cursor?: unknown };
 type Reply = { ok: true; [k: string]: unknown } | { ok: false; error: string; detail?: string; until?: number };
 
 /** The code picks the app's text; the detail says what Instagram answered; `until` says when calls are allowed again. */
@@ -14,12 +14,12 @@ const failure = (e: unknown): Reply =>
     ? { ok: false, error: e.code, detail: e.message, ...(e.until ? { until: e.until } : {}) }
     : { ok: false, error: "internal", detail: (e as Error).message };
 
-/** One page of an account, ready to show. The cursor carries the user id, so the next call needs nothing else. */
-function livePage(userId: string, raw: unknown): LivePage {
+/** One page of an account, ready to show. */
+function livePage(username: string, raw: unknown): LivePage {
   const page = parseMediaPage(raw);
   return {
     posts: page.items.map(toLivePost),
-    nextCursor: page.moreAvailable && page.nextCursor ? `${userId}:${page.nextCursor}` : null,
+    nextCursor: page.moreAvailable && page.nextCursor ? `${username}:${page.nextCursor}` : null,
   };
 }
 
@@ -33,44 +33,35 @@ export function createTabJobs(deps: { ig: IgClient; send: (m: RelayMessage) => P
   let updating = false;
 
   /**
-   * Opens an account by its id: the following list and search results carry it. A typed name needs one search first.
-   * Instagram refuses web_profile_info for everyone since August 2026, so the account's names come from its posts.
+   * Opens an account: Instagram's own page loads its first posts and the extension reads them (see page-posts.ts).
+   * The account's names and avatar come from its first post.
    */
-  async function open(username: string, knownId: string | null): Promise<Reply> {
-    let found: UserSuggestion | null = null;
-    if (!knownId) {
-      const name = username.toLowerCase();
-      found = parseUserSearch(await deps.ig.searchUsers(username)).find((u) => u.username.toLowerCase() === name) ?? null;
-      if (!found) return { ok: false, error: "profile_not_found" };
-    }
-    const id = knownId ?? found!.id;
-    /** `followed`: known only when the posts of a private account could be read. */
-    const profile = (owner: ParsedAuthor | null, isPrivate: boolean, followed: boolean): LiveProfile => ({
-      id,
-      username: owner?.username ?? found?.username ?? username,
-      fullName: owner?.fullName ?? found?.fullName ?? null,
-      avatarUrl: owner?.avatarUrl ?? found?.avatarUrl ?? null,
+  async function open(username: string): Promise<Reply> {
+    const profile = (owner: ParsedAuthor | null, isPrivate: boolean): LiveProfile => ({
+      id: owner?.id ?? "",
+      username: owner?.username ?? username,
+      fullName: owner?.fullName ?? null,
+      avatarUrl: owner?.avatarUrl ?? null,
       postCount: null,
       isPrivate,
-      followedByViewer: followed,
+      followedByViewer: false,
     });
     let raw: unknown;
     try {
-      raw = await deps.ig.userFeed(id, null);
+      raw = await deps.ig.profilePosts(username, null);
     } catch (e) {
       // Instagram shows nothing of a private account to people who do not follow it.
-      if (e instanceof IgError && e.code === "private") return { ok: true, profile: profile(null, true, false), page: null };
+      if (e instanceof IgError && e.code === "private") return { ok: true, profile: profile(null, true), page: null };
       throw e;
     }
-    const isPrivate = found?.isPrivate ?? false;
-    // A private account whose posts came back is one the owner follows.
-    return { ok: true, profile: profile(parseFeedOwner(raw), isPrivate, isPrivate), page: livePage(id, raw) };
+    return { ok: true, profile: profile(parseFeedOwner(raw), false), page: livePage(username, raw) };
   }
 
+  /** The cursor is "<username>:<Instagram cursor>", so the next call needs nothing else. */
   async function nextPage(cursor: string): Promise<Reply> {
     const at = cursor.indexOf(":");
-    const userId = cursor.slice(0, at);
-    return { ok: true, page: livePage(userId, await deps.ig.userFeed(userId, cursor.slice(at + 1))) };
+    const username = cursor.slice(0, at);
+    return { ok: true, page: livePage(username, await deps.ig.profilePosts(username, cursor.slice(at + 1))) };
   }
 
   const safely = (run: () => Promise<Reply>): Promise<Reply> => run().catch(failure);
@@ -95,8 +86,7 @@ export function createTabJobs(deps: { ig: IgClient; send: (m: RelayMessage) => P
       }
       if (m.type === "profile:open" && typeof m.username === "string") {
         const username = m.username;
-        const id = typeof m.id === "string" && /^\d{1,30}$/.test(m.id) ? m.id : null;
-        return safely(() => open(username, id));
+        return safely(() => open(username));
       }
       if (m.type === "profile:page" && typeof m.cursor === "string" && m.cursor.includes(":")) {
         const cursor = m.cursor;

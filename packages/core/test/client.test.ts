@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createIgClient, IG_APP_ID, IgError } from "../src/ig/client";
+import { createIgClient, IG_APP_ID, IgError, readIgResponse } from "../src/ig/client";
 
 function fakeFetch(...responses: Array<() => Response>) {
   const calls: Array<{ url: string; init?: RequestInit }> = [];
@@ -20,14 +20,12 @@ async function codeOf(p: Promise<unknown>) {
 }
 
 describe("createIgClient", () => {
-  it("calls the user feed, search and following endpoints", async () => {
-    const f = fakeFetch(json({ status: "ok" }), json({ status: "ok" }), json({ status: "ok" }));
+  it("calls the search and following endpoints", async () => {
+    const f = fakeFetch(json({ status: "ok" }), json({ status: "ok" }));
     const ig = createIgClient({ fetch: f.fn, csrfToken: () => null });
-    await ig.userFeed("528817151", "CUR");
     await ig.searchUsers("na sa");
     await ig.followingPage("42", null);
     expect(f.calls.map((c) => c.url)).toEqual([
-      "https://www.instagram.com/api/v1/feed/user/528817151/?count=12&max_id=CUR",
       "https://www.instagram.com/api/v1/web/search/topsearch/?context=blended&query=na+sa",
       "https://www.instagram.com/api/v1/friendships/42/following/?count=50&order=date_followed_latest",
     ]);
@@ -39,15 +37,15 @@ describe("createIgClient", () => {
   });
 
   it("says when an account is private and may not be read, without counting it as a refusal", async () => {
-    const f = fakeFetch(json({ message: "Not authorized to view user", status: "fail" }), json({ message: "Not authorized to view user", status: "fail" }, 400));
-    const ig = createIgClient({ fetch: f.fn, csrfToken: () => null });
-    expect(await codeOf(ig.userFeed("77", null))).toBe("private");
-    expect(await codeOf(ig.userFeed("77", null))).toBe("private");
+    const fail = (status: number) => new Response(JSON.stringify({ message: "Not authorized to view user", status: "fail" }), { status });
+    for (const res of [fail(200), fail(400)]) {
+      try { await readIgResponse(res, "profile posts"); } catch (e) { expect((e as IgError).code).toBe("private"); continue; }
+      throw new Error("no error");
+    }
   });
 
   it("refuses non-numeric ids", async () => {
     const ig = createIgClient({ fetch: fakeFetch().fn, csrfToken: () => null });
-    expect(await codeOf(ig.userFeed("../x", null))).toBe("bad_response");
     expect(await codeOf(ig.followingPage("x", null))).toBe("bad_response");
   });
 

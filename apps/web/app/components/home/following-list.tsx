@@ -11,7 +11,7 @@ export function FollowingList(props: {
   error: string | null;
   onUpdate: () => void;
   limited: boolean;
-  accountHref: (username: string, id?: string) => string;
+  accountHref: (username: string) => string;
 }) {
   const page = props.page;
   const running = page?.run?.status === "running";
@@ -40,7 +40,7 @@ export function FollowingList(props: {
           {page.items.map((f) => (
             <li key={f.id}>
               <Link
-                to={props.accountHref(f.username, f.id)}
+                to={props.accountHref(f.username)}
                 className="flex items-center gap-3 rounded-[6px] px-2 py-1.5 hover:bg-surface focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <Avatar src={f.avatarUrl} name={f.username} size={32} />

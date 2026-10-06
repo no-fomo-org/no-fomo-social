@@ -34,7 +34,7 @@ async function knownStates(ids: string[]) {
  * An Instagram account inside Home, shown straight from Instagram. Nothing is stored unless a post is analyzed.
  * Every page is an Instagram request, so the next 12 posts load only when the owner presses Load more.
  */
-export function AccountView({ username, id }: { username: string; id: string | null }) {
+export function AccountView({ username }: { username: string }) {
   const [params] = useSearchParams();
   const ext = useExtension();
   const limit = useIgLimit();
@@ -47,7 +47,7 @@ export function AccountView({ username, id }: { username: string; id: string | n
     cache: LIVE_LIST_OPTIONS,
     autoLoad: false,
     fetchPage: async (cursor): Promise<AccountPage> => {
-      const reply = cursor ? await profilePage(ext.extensionId!, cursor) : await openProfile(ext.extensionId!, username, id);
+      const reply = cursor ? await profilePage(ext.extensionId!, cursor) : await openProfile(ext.extensionId!, username);
       if (!reply) throw new Error(loadErrorText("no_extension"));
       if (!reply.ok) {
         if (isLimitCode(reply.error)) refreshIgLimit(qc);

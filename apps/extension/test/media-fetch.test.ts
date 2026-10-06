@@ -6,7 +6,7 @@ const ig = (mediaInfo: IgClient["mediaInfo"]): IgClient => ({
   savedPage: async () => { throw new Error("unused"); },
   collectionsPage: async () => { throw new Error("unused"); },
   mediaInfo,
-  userFeed: async () => { throw new Error("unused"); },
+  profilePosts: async () => { throw new Error("unused"); },
   searchUsers: async () => { throw new Error("unused"); },
   followingPage: async () => { throw new Error("unused"); },
 });

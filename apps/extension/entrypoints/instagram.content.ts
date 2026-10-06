@@ -1,4 +1,5 @@
-import { createIgClient, createRequestGate, gateClient, runSync, type IgCallLog, type SyncMode } from "@no-fomo/core";
+import { createIgClient, createRequestGate, gateClient, runSync, type IgCallLog, type IgClient, type PostsTemplate, type SyncMode } from "@no-fomo/core";
+import { createPagePosts } from "../src/page-posts";
 import { storageGateStore } from "../src/gate-store";
 import { createRelaySink } from "../src/relay-sink";
 import { fetchMedia } from "../src/media-fetch";
@@ -25,7 +26,18 @@ export default defineContentScript({
     };
     // One gate for every Instagram job. Its state is in browser storage, shared by all Instagram tabs.
     const gate = createRequestGate({ sleep, store: storageGateStore(browser.storage.local) });
-    const raw = createIgClient({ fetch: window.fetch.bind(window), csrfToken: readCsrf });
+    const pagePosts = createPagePosts({
+      fetch: window.fetch.bind(window),
+      sleep,
+      now: Date.now,
+      page: () => ({ path: location.pathname, text: document.body?.innerText ?? "" }),
+    });
+    // Instagram's page tells us (from its own script) which posts query it asks and what it answers.
+    window.addEventListener("message", (e) => {
+      const d = e.data as { source?: string; template?: PostsTemplate; response?: unknown } | null;
+      if (e.source === window && d?.source === "no-fomo-ig" && d.template) pagePosts.capture(d.template, d.response);
+    });
+    const raw: IgClient = { ...createIgClient({ fetch: window.fetch.bind(window), csrfToken: readCsrf }), profilePosts: pagePosts.profilePosts };
     /** Calls the owner waits for: fail at once when calls are limited. */
     const ig = gateClient(raw, gate, { mode: "fail", log });
     /** Saved sync: waits for the hourly limit and goes on. */

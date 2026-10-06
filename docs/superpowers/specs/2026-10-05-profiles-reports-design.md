@@ -73,8 +73,12 @@ All Instagram calls stay in the extension and in `packages/core/src/ig`, and eve
 
 **Calls**
 - `savedPage`, `collectionsPage`, `mediaInfo`: as today.
-- No `web_profile_info`: Instagram refuses it for everyone since August 2026 (429 on the first call). An account opens by its id (from the following list or search results); a typed name needs one `searchUsers` call for the exact name first. The account's names and avatar come from its first post. "Not authorized to view user" is code `private`, which starts no stop.
-- `userFeed(userId, cursor)`: `GET /api/v1/feed/user/{userId}/?count=12&max_id=…`.
+- No `web_profile_info` and no `feed/user/{id}`: Instagram refuses the first for everyone since August 2026 and serves a web page instead of data for the second since about September 2026. An account's posts are read the way Instagram's own page reads them:
+  - A small script in Instagram's page (`instagram-page.content.ts`, runs before Instagram's code) only watches. When the page asks its profile posts query (`PolarisProfilePostsTabContentQuery_connection`, a GraphQL POST to `/graphql/query`), it passes the request (query id, tokens, headers) and the answer to the extension.
+  - **Open account:** the background script opens a hidden Instagram tab on `instagram.com/<name>/` (reused for the next accounts, opened again if closed). The page loads the first 12 posts; the answer is the first page. Counted as one call in the gate and the log (kind `feed`). A limit is checked before the page loads.
+  - **Load more:** the same query is repeated with the cursor, using the ids and tokens copied from the page, so a rotated query id needs no code change. The answer is read like every other call (refusals start a stop).
+  - The page shows login, a private account or a missing account in its text; those become `login_required`, `private`, `not_found`. No answer in 20 s is `bad_response` with a plain message.
+  - The account's names and avatar come from its first post. The cursor is `<username>:<Instagram cursor>`.
 - `searchUsers(query)`: `GET /api/v1/web/search/topsearch/?context=blended&query=…`.
 - `followingPage(viewerId, cursor)`: `GET /api/v1/friendships/{viewerId}/following/?count=50&order=date_followed_latest&max_id=…` (50 per page instead of 100; the page cap goes from 50 to 100, still about 5,000 accounts).
 

@@ -24,10 +24,17 @@ export interface IgClient {
   savedPage(cursor: string | null): Promise<unknown>;
   collectionsPage(cursor: string | null): Promise<unknown>;
   mediaInfo(id: string): Promise<unknown>;
-  userFeed(userId: string, cursor: string | null): Promise<unknown>;
+  /**
+   * One page of an account's posts as `{ items, more_available, next_max_id }`; `cursor` null is the first page.
+   * Not a plain Instagram call any more: the extension reads Instagram's own page for it (see posts-query.ts).
+   */
+  profilePosts(username: string, cursor: string | null): Promise<unknown>;
   searchUsers(query: string): Promise<unknown>;
   followingPage(viewerId: string, cursor: string | null): Promise<unknown>;
 }
+
+/** What `createIgClient` can do by itself: every call except an account's posts. */
+export type RestIgClient = Omit<IgClient, "profilePosts">;
 
 const LOGIN_MESSAGE = "Log in to Instagram in this browser, then try again.";
 const NOT_FOUND_MESSAGE = "This post was deleted on Instagram.";
@@ -35,11 +42,50 @@ const isPrivate = (message: unknown) => typeof message === "string" && /not auth
 const PRIVATE_MESSAGE = "This account is private and you do not follow it.";
 const isNotFound = (message: unknown) => typeof message === "string" && /not found|unavailable|deleted/i.test(message);
 
+/**
+ * Turns Instagram's answer into its JSON or an `IgError` with the right code. `notFound`: the call reads one post,
+ * so "not found" means the post was deleted.
+ */
+export async function readIgResponse(res: Response, label: string, notFound = false): Promise<unknown> {
+  if (res.status === 429) throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.", 429);
+  if (!res.ok) {
+    // Instagram often says "wait a few minutes" with 401 and require_login, or blocks with 400 and spam/feedback_required.
+    // These are limits, not a logged-out browser, so they must start a stop.
+    const b = (await res.clone().json().catch(() => null)) as { message?: unknown; spam?: unknown } | null;
+    if (b?.spam === true || (typeof b?.message === "string" && /wait a few minutes/i.test(b.message))) {
+      throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.", res.status);
+    }
+    if (b?.message === "feedback_required") throw new IgError("refused", "Instagram refused the request (feedback_required).", res.status);
+    if (isPrivate(b?.message)) throw new IgError("private", PRIVATE_MESSAGE, res.status);
+  }
+  if (res.status === 401 || res.status === 403) throw new IgError("login_required", LOGIN_MESSAGE, res.status);
+  if (notFound && res.status === 404) throw new IgError("not_found", NOT_FOUND_MESSAGE, 404);
+  if (notFound && res.status === 400) {
+    const b = (await res.clone().json().catch(() => null)) as { message?: unknown } | null;
+    if (isNotFound(b?.message)) throw new IgError("not_found", NOT_FOUND_MESSAGE, 400);
+  }
+  if (!res.ok) throw new IgError("http_error", `Instagram returned error ${res.status} (${label}).`, res.status);
+
+  let body: unknown;
+  try {
+    body = await res.json();
+  } catch {
+    throw new IgError("login_required", LOGIN_MESSAGE);
+  }
+  const b = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
+  if (b.require_login === true || b.message === "login_required") throw new IgError("login_required", LOGIN_MESSAGE);
+  if (b.spam === true) throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.");
+  if (notFound && b.status === "fail" && isNotFound(b.message)) throw new IgError("not_found", NOT_FOUND_MESSAGE);
+  if (b.status === "fail" && isPrivate(b.message)) throw new IgError("private", PRIVATE_MESSAGE);
+  if (b.status === "fail") throw new IgError("refused", `Instagram refused the request (${String(b.message ?? "unknown")}).`);
+  return body;
+}
+
 export function createIgClient(opts: {
   fetch: typeof fetch;
   csrfToken: () => string | null;
   origin?: string;
-}): IgClient {
+}): RestIgClient {
   const origin = opts.origin ?? "https://www.instagram.com";
 
   /** `notFound`: this call reads one post, so "not found" means the post was deleted. */
@@ -60,38 +106,7 @@ export function createIgClient(opts: {
     } catch (e) {
       throw new IgError("http_error", `Could not reach Instagram: ${(e as Error).message}`);
     }
-    if (res.status === 429) throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.", 429);
-    if (!res.ok) {
-      // Instagram often says "wait a few minutes" with 401 and require_login, or blocks with 400 and spam/feedback_required.
-      // These are limits, not a logged-out browser, so they must start a stop.
-      const b = (await res.clone().json().catch(() => null)) as { message?: unknown; spam?: unknown } | null;
-      if (b?.spam === true || (typeof b?.message === "string" && /wait a few minutes/i.test(b.message))) {
-        throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.", res.status);
-      }
-      if (b?.message === "feedback_required") throw new IgError("refused", "Instagram refused the request (feedback_required).", res.status);
-      if (isPrivate(b?.message)) throw new IgError("private", PRIVATE_MESSAGE, res.status);
-    }
-    if (res.status === 401 || res.status === 403) throw new IgError("login_required", LOGIN_MESSAGE, res.status);
-    if (notFound && res.status === 404) throw new IgError("not_found", NOT_FOUND_MESSAGE, 404);
-    if (notFound && res.status === 400) {
-      const b = (await res.clone().json().catch(() => null)) as { message?: unknown } | null;
-      if (isNotFound(b?.message)) throw new IgError("not_found", NOT_FOUND_MESSAGE, 400);
-    }
-    if (!res.ok) throw new IgError("http_error", `Instagram returned error ${res.status} (${label}).`, res.status);
-
-    let body: unknown;
-    try {
-      body = await res.json();
-    } catch {
-      throw new IgError("login_required", LOGIN_MESSAGE);
-    }
-    const b = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
-    if (b.require_login === true || b.message === "login_required") throw new IgError("login_required", LOGIN_MESSAGE);
-    if (b.spam === true) throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.");
-    if (notFound && b.status === "fail" && isNotFound(b.message)) throw new IgError("not_found", NOT_FOUND_MESSAGE);
-    if (b.status === "fail" && isPrivate(b.message)) throw new IgError("private", PRIVATE_MESSAGE);
-    if (b.status === "fail") throw new IgError("refused", `Instagram refused the request (${String(b.message ?? "unknown")}).`);
-    return body;
+    return readIgResponse(res, label, notFound);
   }
 
   /** Ids go into the URL path, so only digits may pass. */
@@ -111,7 +126,6 @@ export function createIgClient(opts: {
         max_id: cursor ?? "",
       }),
     mediaInfo: (id) => get("post", `/api/v1/media/${id}/info/`, {}, true),
-    userFeed: async (userId, cursor) => get("profile posts", userPath(userId, "feed/user/{id}/"), { count: "12", max_id: cursor }),
     searchUsers: (query) => get("search", "/api/v1/web/search/topsearch/", { context: "blended", query }),
     // The default order is a ranking that changes between pages, so pages overlap and miss accounts.
     // Ordered by follow date, the owner's own list stays put while it is read.

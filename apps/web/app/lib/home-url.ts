@@ -2,7 +2,7 @@ import { parseProfileInput } from "./profile-input";
 
 /**
  * Home keeps its state in the URL, so Back and reloads show the same thing without asking Instagram again:
- * `q` the search text, `find` the Instagram search sent with Enter, `account` and `id` the open account, `post` the open post.
+ * `q` the search text, `find` the Instagram search sent with Enter, `account` the open account, `post` the open post.
  */
 export function withParam(params: URLSearchParams, key: string, value: string | null): URLSearchParams {
   const next = new URLSearchParams(params);
@@ -11,10 +11,8 @@ export function withParam(params: URLSearchParams, key: string, value: string | 
   return next;
 }
 
-/** `id`: the account's Instagram id when known, so opening it needs no search. */
-export const accountSearch = (params: URLSearchParams, username: string, id?: string | null) =>
-  `?${withParam(withParam(withParam(params, "post", null), "account", username), "id", id ?? null)}`;
-export const backSearch = (params: URLSearchParams) => `?${withParam(withParam(withParam(params, "post", null), "account", null), "id", null)}`;
+export const accountSearch = (params: URLSearchParams, username: string) => `?${withParam(withParam(params, "post", null), "account", username)}`;
+export const backSearch = (params: URLSearchParams) => `?${withParam(withParam(params, "post", null), "account", null)}`;
 
 export type SearchAction = { open: string } | { find: string } | null;
 

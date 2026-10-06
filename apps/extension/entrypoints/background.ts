@@ -35,6 +35,33 @@ async function sendToTab(tabId: number, msg: unknown): Promise<unknown> {
   return { ok: false, error: "instagram_tab_failed" };
 }
 
+const WORKER_KEY = "workerTab";
+
+/** The hidden tab that reads accounts: reused, and opened again if the owner closed it. */
+async function openWorkerTab(url: string, navigate: boolean): Promise<number> {
+  const saved = (await browser.storage.local.get(WORKER_KEY))[WORKER_KEY] as number | undefined;
+  let tabId: number | null = null;
+  if (saved !== undefined) {
+    try {
+      const tab = await browser.tabs.get(saved);
+      if (tab.url?.startsWith(IG_URL)) tabId = saved;
+    } catch {
+      // The tab is gone.
+    }
+  }
+  if (tabId === null) {
+    const tab = await browser.tabs.create({ url, active: false });
+    await browser.storage.local.set({ [WORKER_KEY]: tab.id! });
+    await waitForComplete(tab.id!);
+    return tab.id!;
+  }
+  if (navigate) {
+    await browser.tabs.update(tabId, { url });
+    await waitForComplete(tabId);
+  }
+  return tabId;
+}
+
 export default defineBackground(() => {
   browser.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
     handleExternalMessage(msg, sender.url, {
@@ -46,6 +73,7 @@ export default defineBackground(() => {
         return tab.id!;
       },
       sendToTab,
+      openWorkerTab,
       igStatus: async () => gateStatus(await readGateState(browser.storage.local), Date.now()),
     }).then(sendResponse, (e: Error) => sendResponse({ ok: false, error: e.message }));
     return true;
