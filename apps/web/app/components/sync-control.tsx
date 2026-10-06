@@ -7,12 +7,36 @@ import type { SyncMode } from "@no-fomo/core";
 import { api } from "../lib/api";
 import { pingExtension, startExtensionSync, syncErrorText } from "../lib/extension";
 import { formatAgo, fullCheckDue, runResultNote } from "../lib/format";
+import { useExtension } from "./home/use-extension";
 import { refreshIgLimit, useIgLimit } from "./ig-limit";
 import { LogoSymbol } from "./logo";
 import { SetupSteps } from "./setup-steps";
 import { Button, buttonClass } from "./ui/button";
 import { Icon } from "./ui/icon";
 import { POPUP } from "./ui/popup";
+
+/** Asks the top bar's Sync control to start, so progress and errors show in one place. */
+const SYNC_REQUEST = "no-fomo:sync-request";
+
+/** A Sync button for the first-run photo. It hides until the extension answers. */
+export function SyncNowButton() {
+  const ext = useExtension();
+  const limit = useIgLimit();
+  const status = useQuery({ queryKey: ["sync-status"], queryFn: api.syncStatus });
+  const running = status.data?.run?.status === "running";
+  if (!ext.ready) return null;
+  return (
+    <Button
+      variant="primary"
+      className={`mt-6 min-w-24 ${running ? "disabled:opacity-100" : ""}`}
+      disabled={running || !!limit}
+      onClick={() => window.dispatchEvent(new Event(SYNC_REQUEST))}
+    >
+      {running && <LogoSymbol size={16} loading title="" />}
+      Sync
+    </Button>
+  );
+}
 
 export function SyncControl() {
   const qc = useQueryClient();
@@ -46,6 +70,13 @@ export function SyncControl() {
     }
     wasRunning.current = running;
   }, [running, qc]);
+
+  const startRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    const onRequest = () => startRef.current();
+    window.addEventListener(SYNC_REQUEST, onRequest);
+    return () => window.removeEventListener(SYNC_REQUEST, onRequest);
+  }, []);
 
   async function start(mode: SyncMode = "incremental") {
     if (!extensionId) return;
@@ -86,6 +117,7 @@ export function SyncControl() {
   const disabled = running || starting || !ext.data?.ok || !!limit;
   // While syncing, the button carries the loading mark, so it stays at full strength.
   const busy = running || starting ? "disabled:opacity-100" : "";
+  startRef.current = () => { if (!disabled) void start(); };
 
   return (
     <div className="flex min-w-0 items-center gap-3">

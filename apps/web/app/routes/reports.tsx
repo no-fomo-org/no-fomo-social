@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router";
 import { api } from "../lib/api";
 import { hasFilters, NO_FILTERS, readFilters, reportsQueryString, writeFilters, type Filters } from "../lib/filters";
 import { usePostList } from "../lib/use-post-list";
+import { EmptyHero } from "../components/empty-hero";
 import { FilterBar } from "../components/filter-bar";
 import { ReportRow } from "../components/reports/report-row";
 import { TopBar } from "../components/top-bar";
@@ -41,13 +42,16 @@ export default function Reports() {
             <h2 className="text-[17px] font-semibold">Could not load reports</h2>
             <Button className="mt-4" onClick={() => void query.refetch()}>Try again</Button>
           </section>
-        ) : list.items.length === 0 ? (
+        ) : list.items.length === 0 && hasFilters(filters) ? (
           <section className="py-16">
-            <h2 className="text-[17px] font-semibold">{hasFilters(filters) ? "No reports match these filters" : "No reports yet"}</h2>
-            <p className="mt-1 max-w-[60ch] text-muted">
-              {hasFilters(filters) ? "Try removing a filter." : "Open any post, go to its Report tab and press Analyze. Every report shows up here."}
-            </p>
-            {hasFilters(filters) && <Button className="mt-4" onClick={() => update(NO_FILTERS)}>Clear search and filters</Button>}
+            <h2 className="text-[17px] font-semibold">No reports match these filters</h2>
+            <p className="mt-1 max-w-[60ch] text-muted">Try removing a filter.</p>
+            <Button className="mt-4" onClick={() => update(NO_FILTERS)}>Clear search and filters</Button>
+          </section>
+        ) : list.items.length === 0 ? (
+          <section>
+            <EmptyHero variant="banner" title={<h2>No reports yet</h2>} />
+            <p className="mt-4 max-w-[60ch] text-muted">Open any post, go to its Report tab and press Analyze. Every report shows up here.</p>
           </section>
         ) : (
           <ul className="grid gap-1">
