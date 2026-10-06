@@ -9,7 +9,7 @@ import { buttonClass } from "./ui/button";
 import { Icon } from "./ui/icon";
 
 /**
- * Logo (links Home), centered tabs, page actions. The tabs keep the same spot on every page:
+ * Logo (links to Search, the first tab), centered tabs, page actions. The tabs keep the same spot on every page:
  * the two side columns share the rest of the width equally. On a phone the tabs take their own row.
  * `sync`: show saved-post syncing. Only the Saved tab has it; other tabs load their own way.
  */
@@ -20,7 +20,7 @@ export function TopBar({ sync = false }: { sync?: boolean }) {
       <div className="mx-auto grid max-w-[1600px] grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2 px-4 py-3 md:h-16 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-x-6 md:py-0 md:px-6">
         <Link
           to="/"
-          aria-label="no-fomo, go to Home"
+          aria-label="no-fomo, go to Search"
           className="justify-self-start rounded-control focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
           <LogoLockup height={22} />

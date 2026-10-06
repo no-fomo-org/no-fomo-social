@@ -120,7 +120,7 @@ export function AccountView({ username }: { username: string }) {
       <TopBar />
       <main className="mx-auto max-w-[1600px] px-4 pb-16 md:px-6">
         <div className="flex flex-wrap items-center gap-3 pt-4">
-          <Link to={{ search: backSearch(params) }} aria-label="Back to Home" className={buttonClass("ghost", "", "icon")}><Icon icon={ArrowLeft01Icon} size={18} /></Link>
+          <Link to={{ search: backSearch(params) }} aria-label="Back to Search" className={buttonClass("ghost", "", "icon")}><Icon icon={ArrowLeft01Icon} size={18} /></Link>
           <Avatar src={profile?.avatarUrl ?? null} name={username} size={40} />
           <div className="min-w-0">
             <h1 className="truncate text-[17px] font-semibold">@{profile?.username ?? username}</h1>

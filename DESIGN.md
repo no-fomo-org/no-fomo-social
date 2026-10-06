@@ -234,9 +234,9 @@ Every text pair passes WCAG AA in both themes. The lowest pairs are Muted on Sur
 
 ## Layout
 
-Content is centered with a 1600px maximum width and a 16px gutter on phone, 24px from 768px. Reports and Home use narrower columns (900px and 1100px) for reading.
+Content is centered with a 1600px maximum width and a 16px gutter on phone, 24px from 768px. Reports and Search use narrower columns (900px and 1100px) for reading.
 
-The top bar is 64px tall on desktop with a hairline at the bottom: the logo on the left (it links to Home), the tabs Home, Saved and Reports centered, and Settings and Sync on the right. The tabs stay in the same spot on every page. On a phone the tabs take a second, centered row. Search lives in the filter row of Saved and Reports, first in the row (`/` focuses it, placeholder "Search keywords").
+The top bar is 64px tall on desktop with a hairline at the bottom: the logo on the left (it links to Search), the tabs Search, Saved and Reports centered, and Settings and Sync on the right. The tabs stay in the same spot on every page. On a phone the tabs take a second, centered row. Search lives in the filter row of Saved and Reports, first in the row (`/` focuses it, placeholder "Search keywords").
 
 The Saved grid uses large 3:4 tiles: 2 columns on phone, 3 from 640px, 4 from 1024px, 5 from 1280px and 6 from 1680px. Column gaps grow from 12px to 20px; row gaps from 24px to 32px. Under each tile: author and duration on one line, then the first line of the caption.
 
@@ -273,14 +273,14 @@ Quiet and responsive; they press back.
 ### Tabs
 - **Style:** Muted text, 6px corners, 36px tall. Hover gives a Surface fill.
 - **Active:** Soft Fern fill, Forest text, weight 600. The bold width is reserved, so neighbours never shift. Color and fill change in 150ms; nothing slides.
-- **Used in:** the top bar (Home, Saved, Reports) and the viewer sheet (Details, Report).
+- **Used in:** the top bar (Search, Saved, Reports) and the viewer sheet (Details, Report).
 
 ### Chips and Filters
 - **Filter picker:** a secondary button that opens a searchable popover. When a value is chosen it turns into an active chip: Soft Fern fill, Fern Edge border, Forest text, with its own remove control joined to its right side.
 - **Segment switch** (post type, report source): a Line-bordered group. "All" is the quiet default with a Surface fill when chosen; any other chosen value uses the active-chip look.
 
 ### Inputs / Fields
-- **Style:** Surface fill, Line border, 6px corners, 36px tall (44px for the Home account search), Muted placeholder.
+- **Style:** Surface fill, Line border, 6px corners, 36px tall (44px for the account search on the Search tab), Muted placeholder.
 - **Focus:** the fill turns Paper, the border turns Fern Edge, plus the 2px Fern focus ring.
 - **Search:** a `/` key hint sits at the right until the field has focus; Esc clears or leaves it.
 
@@ -307,7 +307,7 @@ The logo symbol with the star rising over the arc and resting (`<LogoSymbol load
 
 ### Empty States and the Photograph
 - **First run** (Saved with nothing synced): the full photograph of misty ridges with the word and star in it. The title in Outfit 800 and the setup steps sit bottom-left on the dark ridges in Cream, with the Fern Sync button. Below 768px the portrait version is used: it keeps its 3:4 shape with the title on it, and the steps follow below it on the page.
-- **Banner** (Home with no accounts, Reports with no reports): the clean photograph as a 240 to 288px banner with the heading in Cream on it, then one Muted line and one Fern button below when there is an action.
+- **Banner** (Search with no accounts, Reports with no reports): the clean photograph as a 240 to 288px banner with the heading in Cream on it, then one Muted line and one Fern button below when there is an action.
 - **Loading:** a Sage color sits behind the photo, and it fades in once over 400ms. A photo already in the cache is simply there.
 - **Never** behind the grid, inside sheets, menus or the player.
 

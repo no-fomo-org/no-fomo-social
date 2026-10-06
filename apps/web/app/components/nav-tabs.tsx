@@ -3,7 +3,7 @@ import { TAB } from "./ui/tab";
 import { TabLabel } from "./ui/tab-label";
 
 const TABS = [
-  { to: "/", label: "Home", end: true },
+  { to: "/", label: "Search", end: true },
   { to: "/saved", label: "Saved", end: false },
   { to: "/reports", label: "Reports", end: false },
 ] as const;
