@@ -14,7 +14,7 @@ Their job: find a saved post again, watch it properly, understand what it contai
 
 ## Product Purpose
 
-no-fomo turns an Instagram saved list into a library the user can actually use. It syncs saved posts into a local app, lets the user filter, watch and clean them up, and helps them understand saved videos without rewatching them.
+no-fomo turns an Instagram saved list into a learning and productivity platform the user can actually use. It syncs saved posts into a local app, lets the user filter, watch and clean them up, and helps them understand saved videos without rewatching them.
 
 Success means the user stops losing saves. They can find any post in seconds, get the substance of a video without rewatching it, and keep the saved list small enough to stay useful.
 
