@@ -1,10 +1,19 @@
 export const IG_APP_ID = "936619743392459";
 
-/** `paused`: the app itself holds Instagram calls back for a while after a refusal or a rate limit. */
-export type IgErrorCode = "login_required" | "rate_limited" | "refused" | "http_error" | "bad_response" | "not_found" | "paused";
+/**
+ * `paused`: the app holds Instagram calls back after Instagram refused one.
+ * `budget`: the app made its hourly number of calls. Both carry `until`.
+ */
+export type IgErrorCode = "login_required" | "rate_limited" | "refused" | "http_error" | "bad_response" | "not_found" | "paused" | "budget";
 
 export class IgError extends Error {
-  constructor(public readonly code: IgErrorCode, message: string, public readonly status?: number) {
+  constructor(
+    public readonly code: IgErrorCode,
+    message: string,
+    public readonly status?: number,
+    /** For `paused` and `budget`: when calls are allowed again (ms). */
+    public readonly until?: number,
+  ) {
     super(message);
     this.name = "IgError";
   }
