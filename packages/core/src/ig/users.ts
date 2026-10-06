@@ -1,17 +1,14 @@
-import { arr, num, obj, str } from "./json";
+import { arr, obj, str } from "./json";
 import { parseAuthor } from "./parse";
-import type { ParsedAuthor, ParsedProfile, ParsedUserPage, UserSuggestion } from "./types";
+import type { ParsedAuthor, ParsedUserPage, UserSuggestion } from "./types";
 
-export function parseProfileInfo(raw: unknown): ParsedProfile | null {
-  const u = obj(obj(obj(raw).data).user);
-  const a = parseAuthor(u);
-  if (!a) return null;
-  return {
-    ...a,
-    postCount: num(obj(u.edge_owner_to_timeline_media).count) ?? num(u.media_count),
-    isPrivate: u.is_private === true,
-    followedByViewer: u.followed_by_viewer === true,
-  };
+/**
+ * The account a feed page belongs to, from its first post. Opening an account reads it from here:
+ * Instagram refuses web_profile_info for everyone since August 2026.
+ */
+export function parseFeedOwner(raw: unknown): ParsedAuthor | null {
+  const first = arr(obj(raw).items)[0];
+  return first === undefined ? null : parseAuthor(obj(obj(first).user));
 }
 
 /** At most 20 accounts, in Instagram's order. */

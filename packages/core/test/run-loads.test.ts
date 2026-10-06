@@ -6,7 +6,7 @@ import type { SyncResult } from "../src/sync/run-sync";
 const unused = async () => { throw new Error("not used"); };
 
 function fakeIg(over: Partial<IgClient>): IgClient {
-  return { savedPage: unused, collectionsPage: unused, mediaInfo: unused, profileInfo: unused, userFeed: unused, searchUsers: unused, followingPage: unused, ...over };
+  return { savedPage: unused, collectionsPage: unused, mediaInfo: unused, userFeed: unused, searchUsers: unused, followingPage: unused, ...over };
 }
 
 describe("runFollowingUpdate", () => {

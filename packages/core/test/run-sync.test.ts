@@ -16,7 +16,6 @@ function setup(opts: { saved: Array<unknown | Error>; collections?: Array<unknow
       return next;
     },
     async mediaInfo() { throw new Error("not used by sync"); },
-    async profileInfo() { throw new Error("not used by sync"); },
     async userFeed() { throw new Error("not used by sync"); },
     async searchUsers() { throw new Error("not used by sync"); },
     async followingPage() { throw new Error("not used by sync"); },

@@ -17,11 +17,13 @@ describe("handleExternalMessage", () => {
     const d = deps({ sendToTab: vi.fn(async () => ({ ok: true })) });
     await handleExternalMessage({ type: "profile:search", query: " nasa " }, "http://localhost:4747/profiles", d);
     await handleExternalMessage({ type: "profile:open", username: "nasa" }, "http://localhost:4747/", d);
+    await handleExternalMessage({ type: "profile:open", username: "nasa", id: "77" }, "http://localhost:4747/", d);
     await handleExternalMessage({ type: "profile:page", cursor: "528817151:QVFB_x-1=" }, "http://localhost:4747/", d);
     await handleExternalMessage({ type: "following:update" }, "http://localhost:4747/", d);
     expect((d.sendToTab as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[1])).toEqual([
       { type: "profile:search", serverUrl: "http://localhost:4747", query: "nasa" },
       { type: "profile:open", serverUrl: "http://localhost:4747", username: "nasa" },
+      { type: "profile:open", serverUrl: "http://localhost:4747", username: "nasa", id: "77" },
       { type: "profile:page", serverUrl: "http://localhost:4747", cursor: "528817151:QVFB_x-1=" },
       { type: "following:update", serverUrl: "http://localhost:4747" },
     ]);
@@ -33,6 +35,7 @@ describe("handleExternalMessage", () => {
       { type: "profile:search", query: "x" },
       { type: "profile:search", query: "a".repeat(61) },
       { type: "profile:open", username: "../etc" },
+      { type: "profile:open", username: "nasa", id: "x7" },
       { type: "profile:page", cursor: "abc:1" },
       { type: "profile:page", cursor: "1:a/b" },
       { type: "profile:page", cursor: "1" },

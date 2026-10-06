@@ -58,13 +58,6 @@ export interface PageInfo {
   endOfFeed: boolean;
 }
 
-export interface ParsedProfile extends ParsedAuthor {
-  postCount: number | null;
-  isPrivate: boolean;
-  /** False for a private account the owner does not follow: its posts cannot be read. */
-  followedByViewer: boolean;
-}
-
 export interface UserSuggestion extends ParsedAuthor {
   isPrivate: boolean;
   isVerified: boolean;

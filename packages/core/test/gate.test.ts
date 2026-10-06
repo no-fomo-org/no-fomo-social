@@ -74,6 +74,13 @@ describe("request gate", () => {
     expect(await stopFor()).toBe(STOP_STEPS_MS[0]);
   });
 
+  it("starts no stop for a private account", async () => {
+    const c = clock();
+    const gate = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0 });
+    await expect(gate.run(async () => { throw new IgError("private", "Not authorized to view user"); })).rejects.toMatchObject({ code: "private" });
+    await expect(gate.run(async () => "ok")).resolves.toBe("ok");
+  });
+
   it("starts no stop for login errors or other failures", async () => {
     const c = clock();
     const gate = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0 });
@@ -158,7 +165,7 @@ describe("gateStatus", () => {
 describe("gateClient", () => {
   const unused = async () => { throw new Error("not used"); };
   const raw = (over: Partial<IgClient> = {}): IgClient => ({
-    savedPage: unused, collectionsPage: unused, mediaInfo: unused, profileInfo: unused, userFeed: unused, searchUsers: unused, followingPage: unused, ...over,
+    savedPage: unused, collectionsPage: unused, mediaInfo: unused, userFeed: unused, searchUsers: unused, followingPage: unused, ...over,
   });
 
   it("logs each call that reached Instagram with its kind, result and time", async () => {
@@ -182,9 +189,9 @@ describe("gateClient", () => {
     const c = clock();
     const logs: IgCallLog[] = [];
     const gate = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0 });
-    const ig = gateClient(raw({ profileInfo: async () => { throw new IgError("refused", "no"); } }), gate, { mode: "fail", log: (e) => logs.push(e), now: c.now });
-    await expect(ig.profileInfo("nasa")).rejects.toThrow();
-    await expect(ig.profileInfo("nasa")).rejects.toMatchObject({ code: "paused" });
+    const ig = gateClient(raw({ userFeed: async () => { throw new IgError("refused", "no"); } }), gate, { mode: "fail", log: (e) => logs.push(e), now: c.now });
+    await expect(ig.userFeed("1", null)).rejects.toThrow();
+    await expect(ig.userFeed("1", null)).rejects.toMatchObject({ code: "paused" });
     expect(logs.map((l) => l.result)).toEqual(["refused"]);
   });
 

@@ -73,7 +73,7 @@ All Instagram calls stay in the extension and in `packages/core/src/ig`, and eve
 
 **Calls**
 - `savedPage`, `collectionsPage`, `mediaInfo`: as today.
-- `profileInfo(username)`: `GET /api/v1/users/web_profile_info/?username=…`.
+- No `web_profile_info`: Instagram refuses it for everyone since August 2026 (429 on the first call). An account opens by its id (from the following list or search results); a typed name needs one `searchUsers` call for the exact name first. The account's names and avatar come from its first post. "Not authorized to view user" is code `private`, which starts no stop.
 - `userFeed(userId, cursor)`: `GET /api/v1/feed/user/{userId}/?count=12&max_id=…`.
 - `searchUsers(query)`: `GET /api/v1/web/search/topsearch/?context=blended&query=…`.
 - `followingPage(viewerId, cursor)`: `GET /api/v1/friendships/{viewerId}/following/?count=50&order=date_followed_latest&max_id=…` (50 per page instead of 100; the page cap goes from 50 to 100, still about 5,000 accounts).

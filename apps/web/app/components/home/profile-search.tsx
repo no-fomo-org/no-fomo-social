@@ -20,7 +20,7 @@ export function ProfileSearch(props: {
   /** The Instagram search sent with Enter, from the URL. */
   find: string | null;
   onAction: (a: NonNullable<SearchAction>) => void;
-  accountHref: (username: string) => string;
+  accountHref: (username: string, id?: string) => string;
   extensionId: string | undefined;
   ready: boolean;
   limited: boolean;
@@ -83,7 +83,7 @@ export function ProfileSearch(props: {
               {ig.data.slice(0, 8).map((u) => (
                 <li key={u.id}>
                   <Link
-                    to={props.accountHref(u.username)}
+                    to={props.accountHref(u.username, u.id)}
                     className="flex items-center gap-3 rounded-[6px] px-2.5 py-2 hover:bg-surface focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
                   >
                     <Avatar src={u.avatarUrl} name={u.username} size={32} />

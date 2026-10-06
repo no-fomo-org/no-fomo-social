@@ -9,7 +9,7 @@ export type TabMessage =
   | { type: "sync:run"; serverUrl: string; mode: SyncMode }
   | { type: "media:fetch"; serverUrl: string; id: string; store: boolean }
   | { type: "profile:search"; serverUrl: string; query: string }
-  | { type: "profile:open"; serverUrl: string; username: string }
+  | { type: "profile:open"; serverUrl: string; username: string; id?: string }
   | { type: "profile:page"; serverUrl: string; cursor: string }
   | { type: "following:update"; serverUrl: string };
 
@@ -42,7 +42,9 @@ function toTabMessage(m: Record<string, unknown>, serverUrl: string): TabMessage
       return query.length >= 2 && query.length <= 60 ? { type: "profile:search", serverUrl, query } : null;
     }
     case "profile:open":
-      return typeof m.username === "string" && USERNAME.test(m.username) ? { type: "profile:open", serverUrl, username: m.username } : null;
+      if (typeof m.username !== "string" || !USERNAME.test(m.username)) return null;
+      if (m.id === undefined) return { type: "profile:open", serverUrl, username: m.username };
+      return typeof m.id === "string" && ID.test(m.id) ? { type: "profile:open", serverUrl, username: m.username, id: m.id } : null;
     case "profile:page":
       return typeof m.cursor === "string" && CURSOR.test(m.cursor) ? { type: "profile:page", serverUrl, cursor: m.cursor } : null;
     case "following:update":

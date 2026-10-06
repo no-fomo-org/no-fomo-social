@@ -18,7 +18,8 @@ export default function Home() {
   const [params] = useSearchParams();
   const raw = params.get("account");
   const username = raw ? parseProfileInput(raw) : null;
-  return username ? <AccountView key={username} username={username} /> : <HomeList />;
+  const id = params.get("id");
+  return username ? <AccountView key={username} username={username} id={id && /^\d{1,30}$/.test(id) ? id : null} /> : <HomeList />;
 }
 
 /** Search and the people you follow. */
@@ -37,7 +38,7 @@ function HomeList() {
     placeholderData: (prev) => prev,
     refetchInterval: (q) => (q.state.data?.run?.status === "running" ? 1000 : false),
   });
-  const href = (username: string) => accountSearch(params, username);
+  const href = (username: string, id?: string) => accountSearch(params, username, id);
 
   async function updateList() {
     setListError(null);

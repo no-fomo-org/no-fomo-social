@@ -28,8 +28,9 @@ describe("extension messages", () => {
     const sent: unknown[] = [];
     (globalThis as { chrome?: unknown }).chrome = { runtime: { sendMessage: (_id: string, msg: unknown, cb: (r: unknown) => void) => { sent.push(msg); cb({ ok: true }); } } };
     await openProfile("ext", "nasa");
+    await openProfile("ext", "nasa", "77");
     await profilePage("ext", "77:N");
-    expect(sent).toEqual([{ type: "profile:open", username: "nasa" }, { type: "profile:page", cursor: "77:N" }]);
+    expect(sent).toEqual([{ type: "profile:open", username: "nasa" }, { type: "profile:open", username: "nasa", id: "77" }, { type: "profile:page", cursor: "77:N" }]);
   });
 
   it("still reports a missing extension as null", async () => {

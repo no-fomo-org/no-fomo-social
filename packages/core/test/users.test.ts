@@ -1,21 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { parseFollowingPage, parseProfileInfo, parseUserSearch } from "../src/ig/users";
+import { parseFeedOwner, parseFollowingPage, parseUserSearch } from "../src/ig/users";
 
-describe("parseProfileInfo", () => {
-  it("reads id, names, avatar, post count and privacy", () => {
-    const raw = { data: { user: {
-      id: "528817151", username: "nasa", full_name: "NASA", profile_pic_url: "https://scontent.cdninstagram.com/a.jpg",
-      is_private: false, followed_by_viewer: true, edge_owner_to_timeline_media: { count: 4321 },
-    } }, status: "ok" };
-    expect(parseProfileInfo(raw)).toEqual({
-      id: "528817151", username: "nasa", fullName: "NASA", avatarUrl: "https://scontent.cdninstagram.com/a.jpg",
-      postCount: 4321, isPrivate: false, followedByViewer: true,
-    });
+describe("parseFeedOwner", () => {
+  it("reads the account from the first post of a feed page", () => {
+    const raw = { items: [{ pk: "1", user: { pk: "77", username: "nasa", full_name: "NASA", profile_pic_url: "https://scontent.cdninstagram.com/a.jpg" } }] };
+    expect(parseFeedOwner(raw)).toEqual({ id: "77", username: "nasa", fullName: "NASA", avatarUrl: "https://scontent.cdninstagram.com/a.jpg" });
   });
-
-  it("returns null without a user", () => {
-    expect(parseProfileInfo({ data: { user: null }, status: "ok" })).toBeNull();
-    expect(parseProfileInfo(null)).toBeNull();
+  it("is null for an empty page", () => {
+    expect(parseFeedOwner({ items: [] })).toBeNull();
+    expect(parseFeedOwner(null)).toBeNull();
   });
 });
 

@@ -41,7 +41,9 @@ export const refreshExtensionMedia = (extId: string, postId: string, store = fal
   send(extId, { type: "media:refresh", id: postId, store }, 45_000);
 
 export const searchInstagram = (id: string, query: string) => send(id, { type: "profile:search", query }, 20_000);
-export const openProfile = (id: string, username: string) => send(id, { type: "profile:open", username }, 45_000);
+/** `userId`: known from the following list or search, so the extension needs no search to find it. */
+export const openProfile = (id: string, username: string, userId?: string | null) =>
+  send(id, userId ? { type: "profile:open", username, id: userId } : { type: "profile:open", username }, 45_000);
 /** `cursor` comes from the previous page. */
 export const profilePage = (id: string, cursor: string) => send(id, { type: "profile:page", cursor }, 45_000);
 export const updateFollowing = (id: string) => send(id, { type: "following:update" }, 45_000);

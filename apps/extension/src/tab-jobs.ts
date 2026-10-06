@@ -1,11 +1,11 @@
 import {
-  IgError, parseMediaPage, parseProfileInfo, parseUserSearch, runFollowingUpdate, toLivePost,
-  type IgClient, type LivePage, type LiveProfile, type LoadStart,
+  IgError, parseFeedOwner, parseMediaPage, parseUserSearch, runFollowingUpdate, toLivePost,
+  type IgClient, type LivePage, type LiveProfile, type LoadStart, type ParsedAuthor, type UserSuggestion,
 } from "@no-fomo/core";
 import { createFollowingSink } from "./relay-sink";
 import type { RelayMessage, RelayResponse } from "./relay";
 
-type Msg = { type?: unknown; query?: unknown; serverUrl?: unknown; username?: unknown; cursor?: unknown };
+type Msg = { type?: unknown; query?: unknown; serverUrl?: unknown; username?: unknown; id?: unknown; cursor?: unknown };
 type Reply = { ok: true; [k: string]: unknown } | { ok: false; error: string; detail?: string; until?: number };
 
 /** The code picks the app's text; the detail says what Instagram answered; `until` says when calls are allowed again. */
@@ -32,16 +32,39 @@ function livePage(userId: string, raw: unknown): LivePage {
 export function createTabJobs(deps: { ig: IgClient; send: (m: RelayMessage) => Promise<RelayResponse>; viewerId: () => string | null }) {
   let updating = false;
 
-  async function open(username: string): Promise<Reply> {
-    const info = parseProfileInfo(await deps.ig.profileInfo(username));
-    if (!info) return { ok: false, error: "profile_not_found" };
-    const profile: LiveProfile = {
-      id: info.id, username: info.username, fullName: info.fullName, avatarUrl: info.avatarUrl,
-      postCount: info.postCount, isPrivate: info.isPrivate, followedByViewer: info.followedByViewer,
-    };
-    // Instagram shows nothing of a private account to people who do not follow it.
-    if (info.isPrivate && !info.followedByViewer) return { ok: true, profile, page: null };
-    return { ok: true, profile, page: livePage(info.id, await deps.ig.userFeed(info.id, null)) };
+  /**
+   * Opens an account by its id: the following list and search results carry it. A typed name needs one search first.
+   * Instagram refuses web_profile_info for everyone since August 2026, so the account's names come from its posts.
+   */
+  async function open(username: string, knownId: string | null): Promise<Reply> {
+    let found: UserSuggestion | null = null;
+    if (!knownId) {
+      const name = username.toLowerCase();
+      found = parseUserSearch(await deps.ig.searchUsers(username)).find((u) => u.username.toLowerCase() === name) ?? null;
+      if (!found) return { ok: false, error: "profile_not_found" };
+    }
+    const id = knownId ?? found!.id;
+    /** `followed`: known only when the posts of a private account could be read. */
+    const profile = (owner: ParsedAuthor | null, isPrivate: boolean, followed: boolean): LiveProfile => ({
+      id,
+      username: owner?.username ?? found?.username ?? username,
+      fullName: owner?.fullName ?? found?.fullName ?? null,
+      avatarUrl: owner?.avatarUrl ?? found?.avatarUrl ?? null,
+      postCount: null,
+      isPrivate,
+      followedByViewer: followed,
+    });
+    let raw: unknown;
+    try {
+      raw = await deps.ig.userFeed(id, null);
+    } catch (e) {
+      // Instagram shows nothing of a private account to people who do not follow it.
+      if (e instanceof IgError && e.code === "private") return { ok: true, profile: profile(null, true, false), page: null };
+      throw e;
+    }
+    const isPrivate = found?.isPrivate ?? false;
+    // A private account whose posts came back is one the owner follows.
+    return { ok: true, profile: profile(parseFeedOwner(raw), isPrivate, isPrivate), page: livePage(id, raw) };
   }
 
   async function nextPage(cursor: string): Promise<Reply> {
@@ -72,7 +95,8 @@ export function createTabJobs(deps: { ig: IgClient; send: (m: RelayMessage) => P
       }
       if (m.type === "profile:open" && typeof m.username === "string") {
         const username = m.username;
-        return safely(() => open(username));
+        const id = typeof m.id === "string" && /^\d{1,30}$/.test(m.id) ? m.id : null;
+        return safely(() => open(username, id));
       }
       if (m.type === "profile:page" && typeof m.cursor === "string" && m.cursor.includes(":")) {
         const cursor = m.cursor;

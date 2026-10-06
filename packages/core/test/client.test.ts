@@ -20,25 +20,33 @@ async function codeOf(p: Promise<unknown>) {
 }
 
 describe("createIgClient", () => {
-  it("calls the profile, user feed, search and following endpoints", async () => {
-    const f = fakeFetch(json({ status: "ok" }), json({ status: "ok" }), json({ status: "ok" }), json({ status: "ok" }));
+  it("calls the user feed, search and following endpoints", async () => {
+    const f = fakeFetch(json({ status: "ok" }), json({ status: "ok" }), json({ status: "ok" }));
     const ig = createIgClient({ fetch: f.fn, csrfToken: () => null });
-    await ig.profileInfo("nasa");
     await ig.userFeed("528817151", "CUR");
     await ig.searchUsers("na sa");
     await ig.followingPage("42", null);
     expect(f.calls.map((c) => c.url)).toEqual([
-      "https://www.instagram.com/api/v1/users/web_profile_info/?username=nasa",
       "https://www.instagram.com/api/v1/feed/user/528817151/?count=12&max_id=CUR",
       "https://www.instagram.com/api/v1/web/search/topsearch/?context=blended&query=na+sa",
       "https://www.instagram.com/api/v1/friendships/42/following/?count=50&order=date_followed_latest",
     ]);
   });
 
-  it("treats a missing profile as not_found and refuses non-numeric ids", async () => {
-    const f = fakeFetch(json({ message: "User not found", status: "fail" }, 404));
+  it("never calls web_profile_info, which Instagram refuses for everyone since August 2026", () => {
+    const ig = createIgClient({ fetch: fakeFetch().fn, csrfToken: () => null });
+    expect("profileInfo" in ig).toBe(false);
+  });
+
+  it("says when an account is private and may not be read, without counting it as a refusal", async () => {
+    const f = fakeFetch(json({ message: "Not authorized to view user", status: "fail" }), json({ message: "Not authorized to view user", status: "fail" }, 400));
     const ig = createIgClient({ fetch: f.fn, csrfToken: () => null });
-    expect(await codeOf(ig.profileInfo("ghost"))).toBe("not_found");
+    expect(await codeOf(ig.userFeed("77", null))).toBe("private");
+    expect(await codeOf(ig.userFeed("77", null))).toBe("private");
+  });
+
+  it("refuses non-numeric ids", async () => {
+    const ig = createIgClient({ fetch: fakeFetch().fn, csrfToken: () => null });
     expect(await codeOf(ig.userFeed("../x", null))).toBe("bad_response");
     expect(await codeOf(ig.followingPage("x", null))).toBe("bad_response");
   });

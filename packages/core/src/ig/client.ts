@@ -3,8 +3,9 @@ export const IG_APP_ID = "936619743392459";
 /**
  * `paused`: the app holds Instagram calls back after Instagram refused one.
  * `budget`: the app made its hourly number of calls. Both carry `until`.
+ * `private`: a private account the owner does not follow. Not a refusal: it starts no stop.
  */
-export type IgErrorCode = "login_required" | "rate_limited" | "refused" | "http_error" | "bad_response" | "not_found" | "paused" | "budget";
+export type IgErrorCode = "login_required" | "rate_limited" | "refused" | "http_error" | "bad_response" | "not_found" | "paused" | "budget" | "private";
 
 export class IgError extends Error {
   constructor(
@@ -23,7 +24,6 @@ export interface IgClient {
   savedPage(cursor: string | null): Promise<unknown>;
   collectionsPage(cursor: string | null): Promise<unknown>;
   mediaInfo(id: string): Promise<unknown>;
-  profileInfo(username: string): Promise<unknown>;
   userFeed(userId: string, cursor: string | null): Promise<unknown>;
   searchUsers(query: string): Promise<unknown>;
   followingPage(viewerId: string, cursor: string | null): Promise<unknown>;
@@ -31,6 +31,8 @@ export interface IgClient {
 
 const LOGIN_MESSAGE = "Log in to Instagram in this browser, then try again.";
 const NOT_FOUND_MESSAGE = "This post was deleted on Instagram.";
+const isPrivate = (message: unknown) => typeof message === "string" && /not authorized to view/i.test(message);
+const PRIVATE_MESSAGE = "This account is private and you do not follow it.";
 const isNotFound = (message: unknown) => typeof message === "string" && /not found|unavailable|deleted/i.test(message);
 
 export function createIgClient(opts: {
@@ -67,6 +69,7 @@ export function createIgClient(opts: {
         throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.", res.status);
       }
       if (b?.message === "feedback_required") throw new IgError("refused", "Instagram refused the request (feedback_required).", res.status);
+      if (isPrivate(b?.message)) throw new IgError("private", PRIVATE_MESSAGE, res.status);
     }
     if (res.status === 401 || res.status === 403) throw new IgError("login_required", LOGIN_MESSAGE, res.status);
     if (notFound && res.status === 404) throw new IgError("not_found", NOT_FOUND_MESSAGE, 404);
@@ -86,6 +89,7 @@ export function createIgClient(opts: {
     if (b.require_login === true || b.message === "login_required") throw new IgError("login_required", LOGIN_MESSAGE);
     if (b.spam === true) throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.");
     if (notFound && b.status === "fail" && isNotFound(b.message)) throw new IgError("not_found", NOT_FOUND_MESSAGE);
+    if (b.status === "fail" && isPrivate(b.message)) throw new IgError("private", PRIVATE_MESSAGE);
     if (b.status === "fail") throw new IgError("refused", `Instagram refused the request (${String(b.message ?? "unknown")}).`);
     return body;
   }
@@ -107,7 +111,6 @@ export function createIgClient(opts: {
         max_id: cursor ?? "",
       }),
     mediaInfo: (id) => get("post", `/api/v1/media/${id}/info/`, {}, true),
-    profileInfo: (username) => get("profile", "/api/v1/users/web_profile_info/", { username }, true),
     userFeed: async (userId, cursor) => get("profile posts", userPath(userId, "feed/user/{id}/"), { count: "12", max_id: cursor }),
     searchUsers: (query) => get("search", "/api/v1/web/search/topsearch/", { context: "blended", query }),
     // The default order is a ranking that changes between pages, so pages overlap and miss accounts.
