@@ -29,7 +29,7 @@ export function ReportRow({ r, onOpen }: { r: ReportListItem; onOpen: (id: strin
             <span className="text-muted">Report {formatDate(Math.floor(r.reportedAt / 1000))}</span>
           </p>
           <p className="mt-1 line-clamp-3 text-[15px] leading-relaxed">{r.summary || "No summary."}</p>
-          {source && <p className="mt-1 truncate text-[12px] text-muted">{source}</p>}
+          {source && <p className="mt-1 truncate text-[13px] text-muted">{source}</p>}
         </div>
       </button>
       {/* Outside the row button: a button inside a button is not allowed. */}

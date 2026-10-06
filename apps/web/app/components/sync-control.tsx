@@ -18,7 +18,7 @@ import { POPUP } from "./ui/popup";
 /** Asks the top bar's Sync control to start, so progress and errors show in one place. */
 const SYNC_REQUEST = "no-fomo:sync-request";
 
-/** A Sync button for the first-run photo. It hides until the extension answers. */
+/** A Sync button for the first-run photo. It hides until the extension answers. On the photo (md+) the focus ring is Cream: Fern is lost on the dark ridges. */
 export function SyncNowButton() {
   const ext = useExtension();
   const limit = useIgLimit();
@@ -28,7 +28,7 @@ export function SyncNowButton() {
   return (
     <Button
       variant="primary"
-      className={`mt-6 min-w-24 ${running ? "disabled:opacity-100" : ""}`}
+      className={`mt-6 min-w-24 md:focus-visible:outline-cream ${running ? "disabled:opacity-100" : ""}`}
       disabled={running || !!limit}
       onClick={() => window.dispatchEvent(new Event(SYNC_REQUEST))}
     >
@@ -147,7 +147,7 @@ export function SyncControl() {
               <Menu.Popup className={`w-[min(300px,calc(100vw-32px))] p-1 ${POPUP}`}>
                 <Menu.Item onClick={() => start("full")} className="flex cursor-default flex-col gap-0.5 rounded-tile px-3 py-2 outline-none data-[highlighted]:bg-surface">
                   <span className="text-[14px] font-medium">Full resync</span>
-                  <span className="text-[12px] text-muted">Checks every saved post and hides the ones you unsaved on Instagram. Takes about 2 minutes per 1,000 posts.</span>
+                  <span className="text-[13px] text-muted">Checks every saved post and hides the ones you unsaved on Instagram. Takes about 2 minutes per 1,000 posts.</span>
                 </Menu.Item>
               </Menu.Popup>
             </Menu.Positioner>

@@ -1,4 +1,4 @@
-const code = "font-mono";
+const code = "font-mono [overflow-wrap:anywhere]";
 
 const STEPS = [
   <>Build the extension with <code className={code}>pnpm ext:build</code>.</>,

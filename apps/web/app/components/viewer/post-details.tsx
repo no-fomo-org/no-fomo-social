@@ -42,7 +42,7 @@ export function PostDetails({
           <Dialog.Title className="truncate text-[15px] font-semibold">@{p.author.username}</Dialog.Title>
           {p.author.fullName && <p className="truncate text-[13px] text-muted">{p.author.fullName}</p>}
           {p.saved && (
-            <p className="mt-1"><span className="rounded-tile bg-surface-2 px-2 py-0.5 text-[12px] text-muted">Saved</span></p>
+            <p className="mt-1"><span className="rounded-tile bg-surface-2 px-2 py-0.5 text-[13px] text-muted">Saved</span></p>
           )}
         </div>
         <div className="flex items-center">
@@ -96,7 +96,7 @@ export function PostDetails({
             {p.accessibilityCaption && <p>Image description: {p.accessibilityCaption}</p>}
           </div>
 
-          <p className="mt-auto hidden border-t border-line px-5 py-3 text-[12px] text-muted md:block">
+          <p className="mt-auto hidden border-t border-line px-5 py-3 text-[13px] text-muted md:block">
             <Kbd>Up</Kbd> and <Kbd>Down</Kbd> move between posts. {seekHint} <Kbd>Esc</Kbd> closes.
           </p>
         </Tabs.Panel>
@@ -118,5 +118,5 @@ function Detail({ label, value, mono }: { label: string; value: string; mono?: b
 }
 
 function Kbd({ children }: { children: string }) {
-  return <kbd className="rounded-tile border border-line px-1 font-mono text-[11px] text-text">{children}</kbd>;
+  return <kbd className="rounded-tile border border-line px-1 font-mono text-[12px] text-text">{children}</kbd>;
 }

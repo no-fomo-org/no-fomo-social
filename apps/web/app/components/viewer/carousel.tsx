@@ -52,8 +52,9 @@ export function Carousel({
 
   return (
     <div
-      className="relative flex size-full items-center justify-center"
+      className="relative flex size-full touch-pan-y items-center justify-center"
       onPointerDown={(e) => { if (e.pointerType === "touch") startX.current = e.clientX; }}
+      onPointerCancel={() => { startX.current = null; }}
       onPointerUp={(e) => {
         if (startX.current === null) return;
         const dx = e.clientX - startX.current;
@@ -90,7 +91,8 @@ export function Carousel({
           {index + 1} of {parts.length}
         </p>
       </div>
-      <div className={`absolute inset-x-0 z-10 flex justify-center gap-1.5 ${current.kind === "video" ? "top-10" : "bottom-3"}`}>
+      {/* The dot is 6px; the button around it is a 24px tap target. */}
+      <div className={`absolute inset-x-0 z-10 flex flex-wrap justify-center px-4 ${current.kind === "video" ? "top-8" : "bottom-1"}`}>
         {parts.map((part, i) => (
           <button
             key={part.index}
@@ -98,8 +100,10 @@ export function Carousel({
             onClick={() => go(i)}
             aria-label={`Item ${i + 1}`}
             aria-current={i === index}
-            className={`size-1.5 rounded-full transition-colors duration-200 ${i === index ? "bg-white" : "bg-white/40 hover:bg-white/70"}`}
-          />
+            className="group flex size-6 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            <span className={`size-1.5 rounded-full transition-colors duration-200 ${i === index ? "bg-white" : "bg-white/40 group-hover:bg-white/70"}`} />
+          </button>
         ))}
       </div>
     </div>

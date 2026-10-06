@@ -71,7 +71,7 @@ export function ProfileSearch(props: {
       )}
       {props.find && (
         <section aria-label="All Instagram" className="mt-3 rounded-control border border-line p-2">
-          <h3 className="px-2.5 pb-1 text-[12px] font-medium uppercase tracking-wide text-muted">All Instagram</h3>
+          <h3 className="px-2.5 pb-1 text-[13px] font-medium uppercase tracking-wide text-muted">All Instagram</h3>
           {!props.ready ? (
             <p className="px-2.5 py-2 text-[13px] text-muted">Needs the no-fomo extension.</p>
           ) : ig.isFetching ? (
@@ -93,7 +93,7 @@ export function ProfileSearch(props: {
                         {u.isVerified && <Icon icon={CheckmarkBadge01Icon} size={14} className="text-accent" />}
                         {u.isPrivate && <Icon icon={SquareLock02Icon} size={14} className="text-muted" />}
                       </span>
-                      {u.fullName && <span className="block truncate text-[12px] text-muted">{u.fullName}</span>}
+                      {u.fullName && <span className="block truncate text-[13px] text-muted">{u.fullName}</span>}
                     </span>
                   </Link>
                 </li>

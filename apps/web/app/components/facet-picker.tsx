@@ -96,9 +96,9 @@ function Row(p: { active: boolean; onClick: () => void; label: string; sublabel?
         {p.leading}
         <span className="min-w-0 flex-1">
           <span className="block truncate">{p.label}</span>
-          {p.sublabel && <span className="block truncate text-[12px] text-muted">{p.sublabel}</span>}
+          {p.sublabel && <span className="block truncate text-[13px] text-muted">{p.sublabel}</span>}
         </span>
-        {p.count !== undefined && <span className="font-mono text-[12px] tabular-nums text-muted">{p.count}</span>}
+        {p.count !== undefined && <span className="font-mono text-[13px] tabular-nums text-muted">{p.count}</span>}
         <Icon icon={Tick02Icon} size={14} className={p.active ? "text-accent" : "invisible"} />
       </button>
     </li>

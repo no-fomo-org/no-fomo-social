@@ -8,7 +8,7 @@ import { PostGrid } from "../components/post-grid";
 import { SetupSteps } from "../components/setup-steps";
 import { SyncNowButton } from "../components/sync-control";
 import { TopBar } from "../components/top-bar";
-import { Viewer } from "../components/viewer/viewer";
+import { LazyViewer } from "../components/viewer/lazy-viewer";
 
 export default function Saved() {
   const [params, setParams] = useSearchParams();
@@ -23,6 +23,7 @@ export default function Saved() {
     <>
       <TopBar sync />
       <main className="mx-auto max-w-[1600px] px-4 pb-16 md:px-6">
+        <h1 className="sr-only">Saved</h1>
         <FilterBar scope="saved" filters={filters} total={list.total} onChange={update} />
         <PostGrid
           query={list.query}
@@ -38,7 +39,7 @@ export default function Saved() {
           }
         />
       </main>
-      <Viewer
+      <LazyViewer
         post={list.open}
         onClose={() => list.setPost(null)}
         onPrev={list.prev ? () => list.setPost(list.prev!.id, true) : null}

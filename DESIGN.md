@@ -46,24 +46,24 @@ typography:
     lineHeight: 1.1
     letterSpacing: "-0.01em"
   title:
-    fontFamily: "Figtree Variable, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Figtree Variable, Onest Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "20px"
     fontWeight: 600
   section:
-    fontFamily: "Figtree Variable, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Figtree Variable, Onest Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "17px"
     fontWeight: 600
   body:
-    fontFamily: "Figtree Variable, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Figtree Variable, Onest Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.6
   label:
-    fontFamily: "Figtree Variable, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Figtree Variable, Onest Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "14px"
     fontWeight: 500
   meta:
-    fontFamily: "Figtree Variable, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Figtree Variable, Onest Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "13px"
     fontWeight: 400
   numeric:
@@ -211,10 +211,10 @@ Every text pair passes WCAG AA in both themes. The lowest pairs are Muted on Sur
 ## Typography
 
 **Display Font:** Outfit (with ui-sans-serif, system-ui)
-**Body Font:** Figtree (with ui-sans-serif, system-ui)
+**Body Font:** Figtree (with Onest for Cyrillic, then ui-sans-serif, system-ui)
 **Numeric Font:** Geist Mono
 
-**Character:** Outfit at weight 800 to 900 is round, heavy and friendly, the voice of the logo and the photograph. Figtree is its quiet, geometric working partner. Geist Mono keeps every number in a calm, aligned column.
+**Character:** Outfit at weight 800 to 900 is round, heavy and friendly, the voice of the logo and the photograph. Figtree is its quiet, geometric working partner. Geist Mono keeps every number in a calm, aligned column. Figtree has no Cyrillic, so Onest, a close geometric sans, draws Russian captions; it loads only when a page has Cyrillic letters.
 
 ### Hierarchy
 - **Wordmark** (900, 22px in the top bar, -2% tracking): the `no-fomo.` logo only, always lowercase with the period.
@@ -326,7 +326,7 @@ Danger text with a short sentence: what happened and what to do.
 - **Do** keep tiles 3:4 with author, duration and caption below the image.
 - **Do** use the horizontal lockup (`<LogoLockup />`) in the top bar, and the small symbol below 24px.
 - **Do** keep the top bar the same on every page: logo left, tabs centered, actions right. Page tools like search go in the page's filter row.
-- **Do** keep every animation under 300ms (the photo fade is 400ms), on ease-out curves, from scale 0.97 or more, and still under reduced motion.
+- **Do** keep every animation under 300ms (the photo fade is 400ms), on ease-out curves, from scale 0.97 or more. Under reduced motion, nothing moves or scales, but short fades and color changes stay.
 - **Do** gate hover motion behind a real mouse (`hover: hover` and `pointer: fine`).
 - **Do** use Hugeicons only, stroke 1.5, 16px in controls and 14px in meta.
 - **Do** give every state text: skeletons while loading, how to fill it when empty, what happened and what to do on error.

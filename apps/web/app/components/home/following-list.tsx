@@ -60,7 +60,7 @@ export function FollowingList(props: {
                 <Avatar src={f.avatarUrl} name={f.username} size={32} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px]">@{f.username}</span>
-                  {f.fullName && <span className="block truncate text-[12px] text-muted">{f.fullName}</span>}
+                  {f.fullName && <span className="block truncate text-[13px] text-muted">{f.fullName}</span>}
                 </span>
               </Link>
             </li>

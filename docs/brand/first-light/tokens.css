@@ -96,7 +96,7 @@
 
   /* Type */
   --font-display: "Outfit Variable", ui-sans-serif, system-ui, sans-serif; /* NEW: logo, hero, big titles, weight 800-900 */
-  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, sans-serif;   /* UI and body */
+  --font-sans: "Figtree Variable", "Onest Variable", ui-sans-serif, system-ui, sans-serif; /* UI and body; Onest draws Cyrillic */
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;             /* numbers, durations, dates */
 
   /* Shape: small and crisp */

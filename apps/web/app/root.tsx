@@ -3,6 +3,7 @@ import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration }
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@fontsource-variable/outfit";
 import "@fontsource-variable/figtree";
+import "@fontsource-variable/onest"; // Cyrillic for Figtree: each subset loads only when the page has its letters
 import "@fontsource-variable/geist-mono";
 import "./app.css";
 

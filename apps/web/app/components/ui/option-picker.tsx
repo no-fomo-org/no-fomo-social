@@ -62,7 +62,7 @@ export function OptionPicker(props: { label: string; options: PickerOption[]; va
                     >
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">{o.label}</span>
-                        {o.sublabel && <span className="block truncate text-[12px] text-muted">{o.sublabel}</span>}
+                        {o.sublabel && <span className="block truncate text-[13px] text-muted">{o.sublabel}</span>}
                       </span>
                       <Icon icon={Tick02Icon} size={14} className={o.id === props.value ? "text-accent" : "invisible"} />
                     </button>
