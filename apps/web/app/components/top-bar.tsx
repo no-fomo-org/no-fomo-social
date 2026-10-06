@@ -1,4 +1,5 @@
 import { Settings01Icon } from "@hugeicons/core-free-icons";
+import { IgLimitBanner } from "./ig-limit";
 import { NavTabs } from "./nav-tabs";
 import { SearchBox } from "./search-box";
 import { useOpenSettings } from "./settings-dialog";
@@ -28,6 +29,7 @@ export function TopBar({ search, sync = false }: { search: SearchConfig | null; 
           {sync && <SyncControl />}
         </div>
       </div>
+      <IgLimitBanner />
     </header>
   );
 }

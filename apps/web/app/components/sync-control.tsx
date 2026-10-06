@@ -7,6 +7,7 @@ import type { SyncMode } from "@no-fomo/core";
 import { api } from "../lib/api";
 import { pingExtension, startExtensionSync, syncErrorText } from "../lib/extension";
 import { formatAgo, fullCheckDue, runResultNote } from "../lib/format";
+import { refreshIgLimit, useIgLimit } from "./ig-limit";
 import { SetupSteps } from "./setup-steps";
 import { Button, buttonClass } from "./ui/button";
 import { Icon } from "./ui/icon";
@@ -21,6 +22,7 @@ export function SyncControl() {
     enabled: !!extensionId,
     refetchInterval: (q) => (q.state.data?.ok ? false : 5000),
   });
+  const limit = useIgLimit();
   const [pollUntil, setPollUntil] = useState(0);
   const status = useQuery({
     queryKey: ["sync-status"],
@@ -38,6 +40,7 @@ export function SyncControl() {
       void qc.invalidateQueries({ queryKey: ["posts"] });
       void qc.invalidateQueries({ queryKey: ["authors"] });
       void qc.invalidateQueries({ queryKey: ["collections"] });
+      refreshIgLimit(qc);
     }
     wasRunning.current = running;
   }, [running, qc]);
@@ -78,7 +81,7 @@ export function SyncControl() {
     : startError ?? lastError ?? warning ??
       (status.data?.lastSuccessAt ? `Synced ${formatAgo(status.data.lastSuccessAt)}${runResultNote(run)}` : "Not synced yet");
   const errorTone = !!(startError || lastError || warning);
-  const disabled = running || starting || !ext.data?.ok;
+  const disabled = running || starting || !ext.data?.ok || !!limit;
 
   return (
     <div className="flex min-w-0 items-center gap-3">
