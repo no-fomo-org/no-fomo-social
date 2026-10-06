@@ -8,7 +8,7 @@ function setup(over: Partial<IgClient> = {}, relay?: (m: RelayMessage) => RelayR
   const ig: IgClient = { savedPage: unused, collectionsPage: unused, mediaInfo: unused, profileInfo: unused, userFeed: unused, searchUsers: unused, followingPage: unused, ...over };
   const sent: RelayMessage[] = [];
   const send = vi.fn(async (m: RelayMessage) => { sent.push(m); return relay ? relay(m) : ({ ok: true, data: {} } as RelayResponse); });
-  return { jobs: createTabJobs({ ig, backgroundIg: ig, send, viewerId: () => "42" }), sent };
+  return { jobs: createTabJobs({ ig, send, viewerId: () => "42" }), sent };
 }
 const info = (over: Record<string, unknown> = {}) => ({
   data: { user: { id: "77", username: "nasa", full_name: "NASA", profile_pic_url: "https://scontent.cdninstagram.com/n.jpg",
@@ -95,14 +95,16 @@ describe("tab jobs", () => {
     expect(await jobs.handle({ type: "profile:search", query: "one" })).toEqual({ ok: false, error: "paused", detail: "Instagram is limiting calls.", until: 1234 });
   });
 
-  it("reads the following list with the background client", async () => {
-    const owner = vi.fn();
-    const ig: IgClient = { savedPage: unused, collectionsPage: unused, mediaInfo: unused, profileInfo: unused, userFeed: unused, searchUsers: unused, followingPage: owner };
-    const followingPage = vi.fn(async () => ({ users: [], next_max_id: null }));
-    const send = vi.fn(async (m: RelayMessage) => ({ ok: true, data: m.path.endsWith("/runs") ? { runId: 1 } : { seen: 0 } }) as RelayResponse);
-    const jobs = createTabJobs({ ig, backgroundIg: { ...ig, followingPage }, send, viewerId: () => "42" });
+  it("a following update fails at once at the hourly limit instead of waiting", async () => {
+    const ig: IgClient = {
+      savedPage: unused, collectionsPage: unused, mediaInfo: unused, profileInfo: unused, userFeed: unused, searchUsers: unused,
+      followingPage: async () => { throw new IgError("budget", "The app made many Instagram calls this hour.", undefined, 99); },
+    };
+    const sent: RelayMessage[] = [];
+    const send = vi.fn(async (m: RelayMessage) => { sent.push(m); return { ok: true, data: m.path.endsWith("/runs") ? { runId: 1 } : {} } as RelayResponse; });
+    const jobs = createTabJobs({ ig, send, viewerId: () => "42" });
     expect(await jobs.handle({ type: "following:update", serverUrl: "http://localhost:4747" })).toEqual({ ok: true });
-    await vi.waitFor(() => expect(followingPage).toHaveBeenCalled());
-    expect(owner).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(sent.at(-1)?.path).toBe("/api/sync/following/runs/1/finish"));
+    expect(sent.at(-1)?.body).toMatchObject({ ok: false, code: "budget" });
   });
 });

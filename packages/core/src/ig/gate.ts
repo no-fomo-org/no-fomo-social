@@ -21,6 +21,8 @@ export interface GateState {
 export interface GateStore {
   load(): Promise<GateState | null>;
   save(state: GateState): Promise<void>;
+  /** Runs `fn` alone across every tab that shares the store, so one tab never overwrites another's change. */
+  lock?<T>(fn: () => Promise<T>): Promise<T>;
 }
 
 export interface GateStatus {
@@ -38,9 +40,15 @@ const EMPTY: GateState = { calls: [], stopUntil: 0, stopReason: "", refusals: 0 
 
 export function memoryGateStore(): GateStore {
   let state: GateState | null = null;
+  let held: Promise<unknown> = Promise.resolve();
   return {
     load: async () => state,
     save: async (next) => { state = next; },
+    lock(fn) {
+      const run = held.then(fn);
+      held = run.catch(() => {});
+      return run;
+    },
   };
 }
 
@@ -75,56 +83,83 @@ export function createRequestGate(opts: {
   const store = opts.store ?? memoryGateStore();
   const limit = opts.limit ?? HOURLY_LIMIT;
   const load = async (): Promise<GateState> => ({ ...EMPTY, ...(await store.load()) });
+  const locked = <T>(fn: () => Promise<T>): Promise<T> => (store.lock ? store.lock(fn) : fn());
+  /** Read, change and write the shared state as one step. `change` returns null to write nothing. */
+  const update = (change: (s: GateState) => GateState | null) =>
+    locked(async () => {
+      const next = change(await load());
+      if (next) await store.save(next);
+    });
   let tail: Promise<unknown> = Promise.resolve();
 
-  /** Waits until a call may go out. Throws `paused`, or `budget` in "fail" mode. */
+  const pausedError = (status: GateStatus) =>
+    new IgError("paused", `Instagram is limiting calls. Its answer: ${status.reason}`, undefined, status.pausedUntil!);
+  const budgetError = (status: GateStatus) =>
+    new IgError("budget", "The app made many Instagram calls this hour.", undefined, status.budgetUntil!);
+
+  type Decision = { go: true } | { go: false; status: GateStatus; waitMs: number };
+
+  /** Waits until a call may go out, then counts it. Throws `paused`, or `budget` in "fail" mode. */
   async function admit(mode: GateMode): Promise<void> {
     const pause = gap();
     for (;;) {
-      const s = await load();
-      const status = gateStatus(s, now(), limit);
-      if (status.pausedUntil !== null) {
-        throw new IgError("paused", `Instagram is limiting calls. Its answer: ${status.reason}`, undefined, status.pausedUntil);
-      }
-      if (status.budgetUntil !== null) {
-        if (mode === "fail") throw new IgError("budget", "The app made many Instagram calls this hour.", undefined, status.budgetUntil);
+      // Checking and counting happen in one locked step, so two tabs cannot both take the last call of the hour.
+      const d = await locked(async (): Promise<Decision> => {
+        const s = await load();
+        const at = now();
+        const status = gateStatus(s, at, limit);
+        if (status.pausedUntil !== null || status.budgetUntil !== null) return { go: false, status, waitMs: 0 };
+        const last = s.calls.at(-1);
+        const wait = last === undefined ? 0 : last + pause - at;
+        if (wait > 0) return { go: false, status, waitMs: wait };
+        await store.save({ ...s, calls: [...s.calls.filter((t) => t > at - HOUR), at] });
+        return { go: true };
+      });
+      if (d.go) return;
+      if (d.status.pausedUntil !== null) throw pausedError(d.status);
+      if (d.status.budgetUntil !== null) {
+        if (mode === "fail") throw budgetError(d.status);
         // +1 ms: at exactly `budgetUntil` the oldest call still counts, so wake just after it.
-        await opts.sleep(Math.max(1, status.budgetUntil - now() + 1));
+        await opts.sleep(Math.max(1, d.status.budgetUntil - now() + 1));
         continue;
       }
-      const last = s.calls.at(-1);
-      const wait = last === undefined ? 0 : last + pause - now();
-      if (wait <= 0) return;
-      await opts.sleep(wait);
+      await opts.sleep(d.waitMs);
     }
   }
 
   async function runOne<T>(call: () => Promise<T>, mode: GateMode): Promise<T> {
     await admit(mode);
-    const at = now();
-    const before = await load();
-    await store.save({ ...before, calls: [...before.calls.filter((t) => t > at - HOUR), at] });
     try {
       const result = await call();
-      const s = await load();
-      if (s.refusals > 0) await store.save({ ...s, refusals: 0 });
+      await update((s) => (s.refusals > 0 ? { ...s, refusals: 0 } : null));
       return result;
     } catch (e) {
       if (e instanceof IgError && (e.code === "rate_limited" || e.code === "refused")) {
-        const s = await load();
-        const refusals = s.refusals + 1;
-        const stepMs = STOP_STEPS_MS[Math.min(refusals, STOP_STEPS_MS.length) - 1]!;
-        await store.save({ ...s, refusals, stopUntil: now() + stepMs, stopReason: e.message });
+        const reason = e.message;
+        await update((s) => {
+          const refusals = s.refusals + 1;
+          const stepMs = STOP_STEPS_MS[Math.min(refusals, STOP_STEPS_MS.length) - 1]!;
+          return { ...s, refusals, stopUntil: now() + stepMs, stopReason: reason };
+        });
       }
       throw e;
     }
   }
 
+  /** A call the owner waits for never queues behind a background job that sleeps for the hourly limit. */
+  async function failFast(): Promise<void> {
+    const status = gateStatus(await load(), now(), limit);
+    if (status.pausedUntil !== null) throw pausedError(status);
+    if (status.budgetUntil !== null) throw budgetError(status);
+  }
+
   return {
     run(call, mode = "fail") {
-      const result = tail.then(() => runOne(call, mode));
-      tail = result.catch(() => {});
-      return result;
+      return (mode === "fail" ? failFast() : Promise.resolve()).then(() => {
+        const result = tail.then(() => runOne(call, mode));
+        tail = result.catch(() => {});
+        return result;
+      });
     },
   };
 }

@@ -92,4 +92,16 @@ describe("createIgClient", () => {
     expect(await codeOf(ig(json({ message: "Media not found or unavailable", status: "fail" })).mediaInfo("1"))).toBe("not_found");
     expect(await codeOf(ig(json({ message: "checkpoint", status: "fail" }, 400)).mediaInfo("1"))).toBe("http_error");
   });
+
+  it("treats Instagram's limit answers as limits, whatever the status code", async () => {
+    const wait = { message: "Please wait a few minutes before you try again.", require_login: true, status: "fail" };
+    const ig = createIgClient({
+      fetch: fakeFetch(json(wait, 401), json({ spam: true, status: "fail" }, 400), json({ message: "feedback_required", status: "fail" }, 400), json({}, 401)).fn,
+      csrfToken: () => null,
+    });
+    expect(await codeOf(ig.savedPage(null))).toBe("rate_limited");
+    expect(await codeOf(ig.savedPage(null))).toBe("rate_limited");
+    expect(await codeOf(ig.savedPage(null))).toBe("refused");
+    expect(await codeOf(ig.savedPage(null))).toBe("login_required");
+  });
 });

@@ -59,6 +59,15 @@ export function createIgClient(opts: {
       throw new IgError("http_error", `Could not reach Instagram: ${(e as Error).message}`);
     }
     if (res.status === 429) throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.", 429);
+    if (!res.ok) {
+      // Instagram often says "wait a few minutes" with 401 and require_login, or blocks with 400 and spam/feedback_required.
+      // These are limits, not a logged-out browser, so they must start a stop.
+      const b = (await res.clone().json().catch(() => null)) as { message?: unknown; spam?: unknown } | null;
+      if (b?.spam === true || (typeof b?.message === "string" && /wait a few minutes/i.test(b.message))) {
+        throw new IgError("rate_limited", "Instagram asked to slow down. Try again later.", res.status);
+      }
+      if (b?.message === "feedback_required") throw new IgError("refused", "Instagram refused the request (feedback_required).", res.status);
+    }
     if (res.status === 401 || res.status === 403) throw new IgError("login_required", LOGIN_MESSAGE, res.status);
     if (notFound && res.status === 404) throw new IgError("not_found", NOT_FOUND_MESSAGE, 404);
     if (notFound && res.status === 400) {

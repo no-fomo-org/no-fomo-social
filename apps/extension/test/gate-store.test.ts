@@ -21,4 +21,12 @@ describe("gate store in browser storage", () => {
     expect(area.data.get(GATE_STORAGE_KEY)).toEqual(state);
     expect(await readGateState(area)).toEqual(state);
   });
+
+  it("runs changes under one browser lock shared by all Instagram tabs", async () => {
+    const names: string[] = [];
+    const locks = { request: async <T>(name: string, fn: () => Promise<T>) => { names.push(name); return fn(); } };
+    const store = storageGateStore(fakeArea(), locks);
+    expect(await store.lock!(async () => 7)).toBe(7);
+    expect(names).toEqual(["no-fomo-ig-gate"]);
+  });
 });

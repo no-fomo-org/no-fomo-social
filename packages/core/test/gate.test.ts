@@ -217,3 +217,29 @@ describe("callLogEntry", () => {
     expect(callLogEntry("post", 1, 2, new Error("x"))).toMatchObject({ status: 0, result: "error" });
   });
 });
+
+describe("request gate between tabs and jobs", () => {
+  it("an owner call fails at once while a background call waits for the hourly limit", async () => {
+    let t = 0;
+    let wake: (() => void) | null = null;
+    const sleep = (ms: number) => new Promise<void>((r) => { wake = () => { t += ms; r(); }; });
+    const gate = createRequestGate({ sleep, now: () => t, gapMs: () => 0, limit: 1 });
+    await gate.run(async () => 1, "wait");
+    const background = gate.run(async () => 2, "wait");
+    await new Promise((r) => setTimeout(r, 0));
+    await expect(gate.run(async () => 3, "fail")).rejects.toMatchObject({ code: "budget" });
+    wake!();
+    await expect(background).resolves.toBe(2);
+  });
+
+  it("two tabs calling at the same moment both count, and neither erases the other", async () => {
+    const c = clock();
+    const base = memoryGateStore();
+    // Storage answers later, as browser storage does, so the two tabs interleave.
+    const slow: GateStore = { ...base, load: async () => { const s = await base.load(); await new Promise((r) => setTimeout(r, 1)); return s; } };
+    const tabA = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0, store: slow });
+    const tabB = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0, store: slow });
+    await Promise.all([tabA.run(async () => 1), tabB.run(async () => 2)]);
+    expect((await base.load())!.calls).toHaveLength(2);
+  });
+});

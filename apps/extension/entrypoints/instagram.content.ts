@@ -28,9 +28,9 @@ export default defineContentScript({
     const raw = createIgClient({ fetch: window.fetch.bind(window), csrfToken: readCsrf });
     /** Calls the owner waits for: fail at once when calls are limited. */
     const ig = gateClient(raw, gate, { mode: "fail", log });
-    /** Sync and following updates: wait for the hourly limit and go on. */
+    /** Saved sync: waits for the hourly limit and goes on. */
     const backgroundIg = gateClient(raw, gate, { mode: "wait", log });
-    const jobs = createTabJobs({ ig, backgroundIg, send, viewerId: () => readCookie("ds_user_id") });
+    const jobs = createTabJobs({ ig, send, viewerId: () => readCookie("ds_user_id") });
     let running = false;
 
     browser.runtime.onMessage.addListener((msg: TabMsg, _sender, sendResponse) => {

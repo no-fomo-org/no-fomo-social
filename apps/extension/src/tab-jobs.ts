@@ -26,10 +26,10 @@ function livePage(userId: string, raw: unknown): LivePage {
 /**
  * Account pages, profile search and following updates in the Instagram tab.
  * Account pages go straight back to the app page: nothing is stored.
- * The request gate keeps every Instagram call apart. Account pages and search use `ig` (fails at once when calls are limited);
- * the following update uses `backgroundIg` (waits).
+ * The request gate keeps every Instagram call apart. Every job here fails at once when calls are limited: a following update
+ * that waited for the hourly limit would look stopped to the app after 2 minutes, so it ends with a clear error instead.
  */
-export function createTabJobs(deps: { ig: IgClient; backgroundIg: IgClient; send: (m: RelayMessage) => Promise<RelayResponse>; viewerId: () => string | null }) {
+export function createTabJobs(deps: { ig: IgClient; send: (m: RelayMessage) => Promise<RelayResponse>; viewerId: () => string | null }) {
   let updating = false;
 
   async function open(username: string): Promise<Reply> {
@@ -57,7 +57,7 @@ export function createTabJobs(deps: { ig: IgClient; backgroundIg: IgClient; send
     if (updating) return Promise.resolve({ ok: false, error: "busy" });
     updating = true;
     return new Promise<LoadStart>((resolve) => {
-      void runFollowingUpdate({ ig: deps.backgroundIg, sink: createFollowingSink(serverUrl, deps.send), viewerId: deps.viewerId(), onStart: resolve })
+      void runFollowingUpdate({ ig: deps.ig, sink: createFollowingSink(serverUrl, deps.send), viewerId: deps.viewerId(), onStart: resolve })
         .then((r) => console.info("[no-fomo] following update finished", r))
         .finally(() => { updating = false; });
     });
