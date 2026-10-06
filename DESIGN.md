@@ -292,13 +292,15 @@ Quiet and responsive; they press back.
 - **Shape:** 3:4, 4px corners, Surface 2 behind the image while it loads.
 - **Hover:** the image zooms to 1.03 over 250ms, only on devices with a real mouse.
 - **Caption:** author (13px) and duration (Geist Mono) on one line, the caption's first line below in Muted. Never text on top of the image.
+- **Report tick:** a post with a report shows a small solid Fern circle with a check at the far right of the author line. Its tooltip says it has a report. Tooltips share one delay, so after the first one the next open at once.
 - **Loading:** Surface skeletons with a gentle pulse. No spinners.
 - **First appearance:** the first 12 tiles rise in once (8px, 300ms, 40ms apart). Later pages, searches and filters appear at once.
 
 ### Sheet (post viewer)
 - **Style:** Paper with 8px corners on the open side, `shadow-pop`, a hairline on its edge. Video controls sit on the dark media stage.
 - **Motion:** the sheet slides in from the right (from below on a phone) in 300ms on the drawer curve (`cubic-bezier(0.32, 0.72, 0, 1)`) and leaves in 200ms. Esc closes it at once, with no animation. Arrow keys move between posts with no animation.
-- **Report text:** Figtree 15px, headings Figtree 600, links in Lake. Copy is a secondary button, Download is the primary.
+- **Report actions:** one row above the report: Download .md (primary), Copy (secondary), and a More menu on the far right with Analyze again and Delete report. Delete asks once, in a row under the actions. A hairline separates the actions from the report.
+- **Report text:** Figtree 15px, headings Figtree 600, links in Lake.
 
 ### Brand Loading Mark
 The logo symbol with the star rising over the arc and resting (`<LogoSymbol loading />`). Used while a sync runs and while a report is being made. It is still under reduced motion.

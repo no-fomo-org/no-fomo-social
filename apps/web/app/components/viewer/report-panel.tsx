@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert02Icon, Copy01Icon, Download04Icon } from "@hugeicons/core-free-icons";
+import { Menu } from "@base-ui/react/menu";
+import { Alert02Icon, Copy01Icon, Delete02Icon, Download04Icon, MoreHorizontalIcon, RefreshIcon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { REPORT_LANGUAGES, REPORT_MODELS, TRANSCRIBE_MODELS, type AnalyzeChoice, type ModelsInfo, type PostListItem, type PostMedia } from "@no-fomo/core";
 import { api } from "../../lib/api";
 import { startAnalysis } from "../../lib/analyze";
@@ -9,11 +10,12 @@ import {
   analyzeErrorText, isWorking, reportFileName, reportView, safeMarkdownUrl, startingChoice, stepText, usableModels,
 } from "../../lib/report";
 import { LogoSymbol } from "../logo";
-import { DeleteReport } from "../reports/delete-report";
+import { DeleteConfirm } from "../reports/delete-report";
 import { useOpenSettings } from "../settings-dialog";
-import { Button } from "../ui/button";
+import { Button, buttonClass } from "../ui/button";
 import { Icon } from "../ui/icon";
 import { OptionPicker } from "../ui/option-picker";
+import { POPUP } from "../ui/popup";
 
 /** Shown until OpenAI answers which models the key can use. */
 const ALL_MODELS: ModelsInfo = {
@@ -38,6 +40,7 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
   const [copied, setCopied] = useState(false);
   const [picked, setPicked] = useState<AnalyzeChoice | null>(null);
   const [choosing, setChoosing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const hasKey = !!settings.data?.openai.set;
   const models = useQuery({ queryKey: ["models"], queryFn: api.models, enabled: hasKey, staleTime: 10 * 60_000 });
@@ -156,19 +159,23 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
 
       {view.kind === "report" && (
         <>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={copy}>
-              <Icon icon={Copy01Icon} />
-              {copied ? "Copied" : "Copy as Markdown"}
-            </Button>
-            <Button variant="primary" onClick={download}>
-              <Icon icon={Download04Icon} />
-              Download .md
-            </Button>
-            {!choosing && (
-              <Button variant="ghost" onClick={hasKey ? () => setChoosing(true) : openSettings}>Analyze again</Button>
-            )}
-            {!choosing && <DeleteReport postId={post.id} />}
+          {/* Take the report with you first; rarer actions wait in the menu. */}
+          <div className="grid gap-3 border-b border-line pb-4">
+            <div className="flex items-center gap-2">
+              <Button variant="primary" onClick={download}>
+                <Icon icon={Download04Icon} />
+                Download .md
+              </Button>
+              <Button onClick={copy} title="Copy as Markdown">
+                <Icon icon={copied ? Tick02Icon : Copy01Icon} />
+                {copied ? "Copied" : "Copy"}
+              </Button>
+              <ReportMenu
+                onAnalyzeAgain={hasKey ? () => { setDeleting(false); setChoosing(true); } : openSettings}
+                onDelete={() => { setChoosing(false); setDeleting(true); }}
+              />
+            </div>
+            {deleting && <DeleteConfirm postId={post.id} onClose={() => setDeleting(false)} />}
           </div>
           <article className="report-md">
             <Markdown
@@ -205,5 +212,31 @@ function ChoiceForm({ value, onChange, models }: { value: AnalyzeChoice; onChang
       />
       <OptionPicker label="Report language" options={LANGUAGE_OPTIONS} value={value.language} onChange={(language) => onChange({ ...value, language })} />
     </div>
+  );
+}
+
+/** Analyze again and Delete: needed now and then, so they stay out of the way. */
+function ReportMenu({ onAnalyzeAgain, onDelete }: { onAnalyzeAgain: () => void; onDelete: () => void }) {
+  const row = "flex cursor-default items-center gap-2.5 rounded-tile px-2.5 py-2 text-[14px] outline-none data-[highlighted]:bg-surface";
+  return (
+    <Menu.Root>
+      <Menu.Trigger className={buttonClass("ghost", "ms-auto", "icon")} aria-label="More report actions" title="More">
+        <Icon icon={MoreHorizontalIcon} size={18} />
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Positioner sideOffset={6} align="end" className="z-[60]">
+          <Menu.Popup className={`min-w-48 p-1 ${POPUP}`}>
+            <Menu.Item onClick={onAnalyzeAgain} className={row}>
+              <Icon icon={RefreshIcon} className="text-muted" />
+              Analyze again
+            </Menu.Item>
+            <Menu.Item onClick={onDelete} className={`${row} text-danger`}>
+              <Icon icon={Delete02Icon} />
+              Delete report
+            </Menu.Item>
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
   );
 }

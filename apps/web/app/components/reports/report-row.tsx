@@ -34,7 +34,7 @@ export function ReportRow({ r, onOpen }: { r: ReportListItem; onOpen: (id: strin
       </button>
       {/* Outside the row button: a button inside a button is not allowed. */}
       <div className="absolute right-1 top-1">
-        <DeleteReport postId={r.id} compact />
+        <DeleteReport postId={r.id} />
       </div>
     </li>
   );
