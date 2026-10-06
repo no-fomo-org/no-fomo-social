@@ -1,5 +1,6 @@
 import { Settings01Icon } from "@hugeicons/core-free-icons";
 import { IgLimitBanner } from "./ig-limit";
+import { LogoLockup } from "./logo";
 import { NavTabs } from "./nav-tabs";
 import { SearchBox } from "./search-box";
 import { useOpenSettings } from "./settings-dialog";
@@ -14,15 +15,17 @@ export function TopBar({ search, sync = false }: { search: SearchConfig | null; 
   const openSettings = useOpenSettings();
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-bg">
-      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 md:flex-nowrap md:px-6">
-        <span className="text-[15px] font-semibold tracking-tight">no-fomo</span>
-        <NavTabs className="order-last basis-full md:order-none md:basis-auto" />
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 md:h-16 md:flex-nowrap md:py-0 md:px-6">
+        <span className="shrink-0">
+          <LogoLockup height={22} />
+        </span>
+        <NavTabs className="order-last basis-full md:order-2 md:basis-auto" />
         {search && (
-          <div className="order-last basis-full md:order-none md:max-w-[480px] md:flex-1 md:basis-auto">
+          <div className="order-last basis-full md:order-1 md:max-w-[480px] md:flex-1 md:basis-auto">
             <SearchBox {...search} />
           </div>
         )}
-        <div className="ms-auto flex min-w-0 items-center gap-1">
+        <div className="ms-auto flex min-w-0 items-center gap-1 md:order-3">
           <button type="button" onClick={openSettings} aria-label="Settings" title="Settings" className={buttonClass("ghost", "", "icon")}>
             <Icon icon={Settings01Icon} size={18} />
           </button>

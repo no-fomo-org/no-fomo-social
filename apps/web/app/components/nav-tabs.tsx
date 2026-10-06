@@ -1,4 +1,6 @@
 import { NavLink } from "react-router";
+import { TAB } from "./ui/tab";
+import { TabLabel } from "./ui/tab-label";
 
 const TABS = [
   { to: "/", label: "Home", end: true },
@@ -12,16 +14,8 @@ export function NavTabs({ className = "" }: { className?: string }) {
       <ul className="flex gap-1">
         {TABS.map((t) => (
           <li key={t.to}>
-            <NavLink
-              to={t.to}
-              end={t.end}
-              className={({ isActive }) =>
-                `inline-flex h-9 items-center rounded-control px-3 text-[14px] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-accent ${
-                  isActive ? "bg-accent-soft font-medium text-text" : "text-muted hover:bg-surface hover:text-text"
-                }`
-              }
-            >
-              {t.label}
+            <NavLink to={t.to} end={t.end} className={TAB}>
+              <TabLabel>{t.label}</TabLabel>
             </NavLink>
           </li>
         ))}
