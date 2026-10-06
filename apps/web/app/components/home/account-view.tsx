@@ -102,7 +102,7 @@ export function AccountView({ username }: { username: string }) {
           onClearFilters={() => {}}
           autoLoad={false}
           nextErrorText={list.query.isFetchNextPageError ? (list.query.error as Error).message : undefined}
-          empty={<h2 className="text-[17px] font-semibold">This account has no posts.</h2>}
+          empty={<section className="py-16"><h2 className="text-[17px] font-semibold">This account has no posts.</h2></section>}
         />
         {list.query.hasNextPage && !list.query.isFetchNextPageError && (
           <div className="mt-6 flex justify-center">

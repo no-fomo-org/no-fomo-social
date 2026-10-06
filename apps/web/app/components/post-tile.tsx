@@ -11,7 +11,7 @@ export function PostTile({ post, onOpen }: { post: PostListItem; onOpen: (id: st
       type="button"
       onClick={() => onOpen(post.id)}
       aria-label={tileLabel(post)}
-      className="group block w-full rounded-tile text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="group block w-full rounded-tile text-left transition-[scale] duration-160 ease-out-soft active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <div className="relative aspect-[3/4] overflow-hidden rounded-tile bg-surface-2">
         {failed ? (
@@ -25,12 +25,12 @@ export function PostTile({ post, onOpen }: { post: PostListItem; onOpen: (id: st
             loading="lazy"
             decoding="async"
             onError={() => setFailed(true)}
-            className="size-full object-cover transition-transform duration-300 ease-out-soft group-hover:scale-[1.03]"
+            className="size-full object-cover transition-[scale] duration-250 ease-out-soft can-hover:group-hover:scale-[1.03]"
           />
         )}
       </div>
-      <div className="mt-1.5 flex items-center justify-between gap-2 text-[13px]">
-        <span className="truncate">@{post.author.username}</span>
+      <div className="mt-2 flex items-center gap-2 text-[13px]">
+        <span className="min-w-0 truncate">@{post.author.username}</span>
         <span className="flex shrink-0 items-center gap-1 font-mono text-[12px] tabular-nums text-muted">
           {post.kind === "video" && <><Icon icon={Video01Icon} size={14} />{post.durationSec ? formatDuration(post.durationSec) : null}</>}
           {post.kind === "carousel" && <Icon icon={Album02Icon} size={14} />}
