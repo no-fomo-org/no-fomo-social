@@ -7,7 +7,7 @@ import { EmptyHero } from "../components/empty-hero";
 import { FilterBar } from "../components/filter-bar";
 import { ReportRow } from "../components/reports/report-row";
 import { TopBar } from "../components/top-bar";
-import { Viewer } from "../components/viewer/viewer";
+import { LazyViewer } from "../components/viewer/lazy-viewer";
 import { Button } from "../components/ui/button";
 
 export default function Reports() {
@@ -34,6 +34,7 @@ export default function Reports() {
     <>
       <TopBar />
       <main className="mx-auto max-w-[900px] px-4 pb-16 md:px-6">
+        <h1 className="sr-only">Reports</h1>
         <FilterBar scope="reports" filters={filters} total={list.total} onChange={update} />
         {query.isPending ? (
           <p className="py-16 text-muted">Loading reports…</p>
@@ -60,7 +61,7 @@ export default function Reports() {
         )}
         <div ref={sentinel} aria-hidden="true" />
       </main>
-      <Viewer
+      <LazyViewer
         post={list.open}
         initialTab="report"
         onClose={() => list.setPost(null)}

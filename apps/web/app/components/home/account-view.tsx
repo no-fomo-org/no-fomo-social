@@ -15,7 +15,7 @@ import { refreshIgLimit, useIgLimit } from "../ig-limit";
 import { PostGrid } from "../post-grid";
 import { SetupSteps } from "../setup-steps";
 import { TopBar } from "../top-bar";
-import { Viewer } from "../viewer/viewer";
+import { LazyViewer } from "../viewer/lazy-viewer";
 import { useExtension } from "./use-extension";
 import { Button, buttonClass } from "../ui/button";
 import { Icon } from "../ui/icon";
@@ -134,7 +134,7 @@ export function AccountView({ username }: { username: string }) {
         </div>
         {body}
       </main>
-      <Viewer
+      <LazyViewer
         post={list.open && mark(list.open)}
         onClose={() => list.setPost(null)}
         onPrev={list.prev ? () => list.setPost(list.prev!.id, true) : null}

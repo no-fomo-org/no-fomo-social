@@ -79,7 +79,7 @@
 
   /* Type */
   --font-display: "Outfit Variable", ui-sans-serif, system-ui, sans-serif; /* NEW: logo, hero, big titles, weight 800-900 */
-  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, sans-serif;   /* UI and body */
+  --font-sans: "Figtree Variable", "Onest Variable", ui-sans-serif, system-ui, sans-serif; /* UI and body; Onest draws Cyrillic, which Figtree lacks */
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;             /* numbers, durations, dates */
 
   /* Shape: small and crisp */
@@ -129,8 +129,14 @@ body { font-family: var(--font-sans); }
 /* While the post viewer is open, the scroll lock keeps a scrollbar gutter: paint it like the sheet next to it. */
 :root:has([data-post-viewer]) { background-color: var(--paper); }
 
+/* Reduced motion means less movement, not no feedback: drop scale, translate and keyframes, keep short fades and color changes. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  *, *::before, *::after {
+    transition-property: opacity, color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, filter !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .report-md { font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
