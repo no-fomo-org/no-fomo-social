@@ -3,6 +3,7 @@ import { Popover } from "@base-ui/react/popover";
 import { ArrowDown01Icon, Cancel01Icon, Search01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { buttonClass } from "./ui/button";
 import { Icon } from "./ui/icon";
+import { POPUP, POPUP_ROW } from "./ui/popup";
 
 export interface FacetOption { id: string; label: string; sublabel?: string | null; count: number; leading?: ReactNode }
 
@@ -44,7 +45,7 @@ export function FacetPicker(props: {
         </Popover.Trigger>
         <Popover.Portal>
           <Popover.Positioner sideOffset={6} align="start" className="z-30">
-            <Popover.Popup className="w-[min(320px,calc(100vw-32px))] origin-[var(--transform-origin)] rounded-control border border-line bg-bg shadow-pop transition-[transform,opacity] duration-200 ease-out-soft data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+            <Popover.Popup className={`w-[min(320px,calc(100vw-32px))] ${POPUP}`}>
               {props.options.length > 8 && (
                 <label className="flex items-center gap-2 border-b border-line px-3">
                   <Icon icon={Search01Icon} size={14} className="text-muted" />
@@ -90,7 +91,7 @@ function Row(p: { active: boolean; onClick: () => void; label: string; sublabel?
         type="button"
         onClick={p.onClick}
         aria-pressed={p.active}
-        className="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-[14px] hover:bg-surface focus-visible:bg-surface focus-visible:outline-none"
+        className={`flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-[14px] ${POPUP_ROW}`}
       >
         {p.leading}
         <span className="min-w-0 flex-1">

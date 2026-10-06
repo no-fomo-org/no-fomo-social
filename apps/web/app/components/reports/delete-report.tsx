@@ -44,7 +44,7 @@ export function DeleteReport({ postId, compact = false }: { postId: string; comp
     <div
       role="group"
       aria-label="Delete this report?"
-      className={compact ? "flex w-max max-w-[min(20rem,calc(100vw-2rem))] flex-wrap items-center gap-2 rounded-control border border-line bg-bg p-2 shadow-sm" : "flex flex-wrap items-center gap-2"}
+      className={compact ? "flex w-max max-w-[min(20rem,calc(100vw-2rem))] flex-wrap items-center gap-2 rounded-control border border-line bg-paper p-2 shadow-pop" : "flex flex-wrap items-center gap-2"}
     >
       <span className="text-[14px]">Delete this report?</span>
       <Button className="text-danger" disabled={busy} onClick={remove} autoFocus>{busy ? "Deleting" : "Delete"}</Button>

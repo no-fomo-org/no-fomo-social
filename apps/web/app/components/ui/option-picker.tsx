@@ -3,6 +3,7 @@ import { Popover } from "@base-ui/react/popover";
 import { ArrowDown01Icon, Search01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { buttonClass } from "./button";
 import { Icon } from "./icon";
+import { POPUP, POPUP_ROW } from "./popup";
 
 export interface PickerOption { id: string; label: string; sublabel?: string }
 
@@ -36,7 +37,7 @@ export function OptionPicker(props: { label: string; options: PickerOption[]; va
         </Popover.Trigger>
         <Popover.Portal>
           <Popover.Positioner sideOffset={6} align="start" className="z-[60]">
-            <Popover.Popup className="w-[min(340px,calc(100vw-32px))] origin-[var(--transform-origin)] rounded-control border border-line bg-bg shadow-pop transition-[transform,opacity] duration-200 ease-out-soft data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+            <Popover.Popup className={`w-[min(340px,calc(100vw-32px))] ${POPUP}`}>
               {props.options.length > 8 && (
                 <label className="flex items-center gap-2 border-b border-line px-3">
                   <Icon icon={Search01Icon} size={14} className="text-muted" />
@@ -57,7 +58,7 @@ export function OptionPicker(props: { label: string; options: PickerOption[]; va
                       type="button"
                       onClick={() => choose(o.id)}
                       aria-pressed={o.id === props.value}
-                      className="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-left text-[14px] hover:bg-surface focus-visible:bg-surface focus-visible:outline-none"
+                      className={`flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-[14px] ${POPUP_ROW}`}
                     >
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">{o.label}</span>

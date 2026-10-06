@@ -111,6 +111,20 @@
   .fl-loading-star { animation: none; }
 }
 
+/* Hover effects only for a real mouse: touch screens fire hover on tap. */
+@custom-variant can-hover (@media (hover: hover) and (pointer: fine));
+
+/* One-time entrances. Only when motion is welcome: with reduced motion the page is simply there. */
+@keyframes fl-rise {
+  from { opacity: 0; transform: translateY(8px); }
+}
+@keyframes fl-fade {
+  from { opacity: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fl-rise { animation: fl-rise 300ms var(--ease-out-soft) both; animation-delay: calc(var(--i, 0) * 40ms); }
+}
+
 html { color-scheme: light dark; }
 ::selection { background: var(--accent-soft); color: var(--text); }
 :focus-visible { outline-color: var(--accent); }

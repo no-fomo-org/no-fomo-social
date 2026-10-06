@@ -61,7 +61,7 @@ export function ProfileSearch(props: {
           aria-label="Find an Instagram account"
           autoComplete="off"
           spellCheck={false}
-          className="h-11 w-full rounded-control border border-line bg-surface ps-11 pe-3 text-[15px] text-text placeholder:text-muted focus-visible:border-accent-line focus-visible:bg-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent [&::-webkit-search-cancel-button]:hidden"
+          className="h-11 w-full rounded-control border border-line bg-surface ps-11 pe-3 text-[15px] text-text placeholder:text-muted focus-visible:border-accent-line focus-visible:bg-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent [&::-webkit-search-cancel-button]:hidden"
         />
       </form>
       {props.text.trim() && !props.find && action && (
@@ -84,7 +84,7 @@ export function ProfileSearch(props: {
                 <li key={u.id}>
                   <Link
                     to={props.accountHref(u.username)}
-                    className="flex items-center gap-3 rounded-[6px] px-2.5 py-2 hover:bg-surface focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
+                    className="flex items-center gap-3 rounded-tile px-2.5 py-2 hover:bg-surface focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
                   >
                     <Avatar src={u.avatarUrl} name={u.username} size={32} />
                     <span className="min-w-0 flex-1">

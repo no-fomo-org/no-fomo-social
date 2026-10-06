@@ -41,7 +41,7 @@ export function FollowingList(props: {
             <li key={f.id}>
               <Link
                 to={props.accountHref(f.username)}
-                className="flex items-center gap-3 rounded-[6px] px-2 py-1.5 hover:bg-surface focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
+                className="flex items-center gap-3 rounded-control px-2 py-1.5 hover:bg-surface focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
               >
                 <Avatar src={f.avatarUrl} name={f.username} size={32} />
                 <span className="min-w-0 flex-1">

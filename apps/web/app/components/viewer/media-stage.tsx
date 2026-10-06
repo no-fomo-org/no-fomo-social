@@ -24,7 +24,7 @@ export function MediaStage({ post, extensionId, configReady }: { post: PostListI
           <Icon icon={Alert02Icon} size={28} className="mx-auto text-white/70" />
           <p className="mt-3 text-[15px]" role="alert">{mediaErrorText(error)}</p>
           {error === "no_extension" && (
-            <div className="mt-4 rounded-control bg-bg p-4 pt-0 text-left text-text"><SetupSteps /></div>
+            <div className="mt-4 rounded-sheet bg-paper p-4 pt-0 text-left text-text"><SetupSteps /></div>
           )}
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             {error !== "not_found" && error !== "no_extension" && <Button onClick={retry}>Try again</Button>}

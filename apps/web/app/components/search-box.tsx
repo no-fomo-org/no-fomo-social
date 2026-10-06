@@ -66,21 +66,21 @@ export function SearchBox({ value, onChange, placeholder, label }: { value: stri
         aria-label={label}
         autoComplete="off"
         spellCheck={false}
-        className="h-9 w-full rounded-control border border-line bg-surface ps-9 pe-10 text-[14px] text-text transition-colors duration-200 placeholder:text-muted hover:border-accent-line/60 focus-visible:border-accent-line focus-visible:bg-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent [&::-webkit-search-cancel-button]:hidden"
+        className="h-9 w-full rounded-control border border-line bg-surface ps-9 pe-10 text-[14px] text-text transition-colors duration-150 placeholder:text-muted hover:border-accent-line/60 focus-visible:border-accent-line focus-visible:bg-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent [&::-webkit-search-cancel-button]:hidden"
       />
       {text ? (
         <button
           type="button"
           onClick={clear}
           aria-label="Clear search"
-          className="absolute end-1 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-[6px] text-muted hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-accent"
+          className="absolute end-1 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-tile text-muted hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-accent"
         >
           <Icon icon={Cancel01Icon} size={14} />
         </button>
       ) : (
         <kbd
           aria-hidden="true"
-          className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 rounded-[5px] border border-line px-1.5 font-mono text-[12px] leading-5 text-muted group-focus-within:hidden"
+          className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 rounded-tile border border-line px-1.5 font-mono text-[12px] leading-5 text-muted group-focus-within:hidden"
         >
           /
         </kbd>
