@@ -11,12 +11,12 @@ export interface RequestGate {
 export function createRequestGate(opts: {
   sleep: (ms: number) => Promise<void>;
   now?: () => number;
-  /** Pause between two requests. Default 2000-3000 ms. */
+  /** Pause between two requests. Default 6000-12000 ms, close to how a person browses. */
   gapMs?: () => number;
   cooldownMs?: number;
 }): RequestGate {
   const now = opts.now ?? Date.now;
-  const gap = opts.gapMs ?? (() => 2000 + Math.floor(Math.random() * 1000));
+  const gap = opts.gapMs ?? (() => 6000 + Math.floor(Math.random() * 6000));
   const cooldown = opts.cooldownMs ?? 10 * 60_000;
   let lastAt: number | null = null;
   let blockedUntil = 0;

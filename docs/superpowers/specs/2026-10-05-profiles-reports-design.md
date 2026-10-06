@@ -16,7 +16,7 @@ A post is stored once. If the owner analyzes a post from an account page and the
 ## Decisions (agreed with the owner)
 
 - **Instant browsing, nothing kept.** Opening an account shows its posts straight from Instagram, page by page as the owner scrolls. Nothing is stored, except posts the owner analyzes.
-- **Speed:** the request gate's 2–3 s pause stays. The first 12 posts appear in about 2–4 s, each next 12 in about 3 s.
+- **Speed:** the request gate's 6–12 s pause, close to how a person browses. The first 12 posts appear in about 6–12 s, each next 12 in about 6–12 s.
 - **Account page filters:** type (video, photo, carousel) and search text, applied to the posts loaded so far. While a filter is on, the page does not load more pages by itself.
 - **Saved tab:** the **Has report** filter is removed. Everything else stays.
 - **Reports tab:** a list. Each row: thumbnail, author, post date, report date, first lines of the summary, and "Saved" when the post is saved. Filters: report text, author, source (**Saved / Not saved**), type. A click opens the usual viewer on the **Report** tab.
