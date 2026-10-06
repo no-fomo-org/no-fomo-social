@@ -4,7 +4,7 @@
 
 **Read:** a calm personal library for professionals. A star rising over a horizon at first light. Light first, nature in the colors, logo and one photograph. The posts are the color, and the interface stays quiet and crisp.
 
-**Dials:** variance 3, motion 3, density 5.
+**Dials:** variance 3, motion 4, density 5.
 
 ## Color
 - Tokens live in `apps/web/app/app.css` (source: `docs/brand/first-light/tokens.css`). Never use raw hex in components.

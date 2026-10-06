@@ -189,6 +189,7 @@ Brand lines: "Every save, in its place." and "Saved posts, kept calm." Use them 
 
 Do it in this order and check each step in the running app (`pnpm start`, http://localhost:4747), in light and dark mode, at phone and desktop width.
 
+0. **Design rules first.** Replace the root `DESIGN.md` with `design-rules.md` before any UI work. Impeccable and other design skills read `DESIGN.md`, so the old rules (dark-first, burnt orange) must be gone first.
 1. **Fonts.** Add `@fontsource-variable/outfit` and `@fontsource-variable/figtree` to `apps/web`, import them in `root.tsx`, and remove Geist Sans. Keep Geist Mono.
 2. **Tokens.** Replace the token part of `apps/web/app/app.css` with `tokens.css`. Keep the rest of that file (`html`, `::selection`, `body`, reduced motion, `.report-md`) and change `.report-md a` to use `lake`.
 3. **Radii.** Every `rounded-control` becomes 6px and every `rounded-tile` 4px through the tokens. Check `components/ui/button.tsx` and anything that uses `rounded-md`, `rounded-lg` or `rounded-full` directly.
@@ -199,5 +200,5 @@ Do it in this order and check each step in the running app (`pnpm start`, http:/
 8. **Loading.** Use `<LogoSymbol loading />` in `sync-control.tsx` while a sync runs.
 9. **Favicon and title.** Copy `logo/svg/favicon.svg`, `logo/png/favicon-32.png` and `logo/png/app-icon-fern-180.png` (as `apple-touch-icon.png`) into `apps/web/public/`, and add the `<link>` tags in `root.tsx`.
 10. **Extension icons.** Copy `logo/png/extension-icon-{16,32,48,128}.png` to `apps/extension/public/icon/{16,32,48,128}.png`. WXT adds them to the manifest automatically. Rebuild with `pnpm ext:build`.
-11. **Design rules.** Replace the root `DESIGN.md` with `design-rules.md`.
+11. **Regenerate DESIGN.md.** Run `/impeccable document` so `DESIGN.md` is rebuilt in Impeccable's format (YAML tokens plus sections) from the shipped code. Check that it keeps every rule from `design-rules.md`.
 12. **Polish pass.** Press states, hover states (hover devices only), focus rings, reduced motion, and contrast in both themes.
