@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import "@fontsource-variable/geist";
+import "@fontsource-variable/outfit";
+import "@fontsource-variable/figtree";
 import "@fontsource-variable/geist-mono";
 import "./app.css";
 
@@ -12,6 +13,11 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>no-fomo</title>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="theme-color" content="#f6f7f3" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#141a16" media="(prefers-color-scheme: dark)" />
         <Meta />
         <Links />
       </head>

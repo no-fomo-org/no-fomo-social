@@ -14,9 +14,9 @@ const FRAME_SEC = 1 / 30;
 const SEEK_SEC = 5;
 
 const ctl =
-  "inline-flex h-9 min-w-9 items-center justify-center rounded-control px-2 text-white/90 transition-colors duration-200 ease-out-soft " +
+  "inline-flex h-9 min-w-9 items-center justify-center rounded-control px-2 text-white/90 transition-[scale,background-color,color] duration-160 ease-out-soft active:scale-[0.97] " +
   "hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
-  "aria-pressed:text-accent data-[disabled]:opacity-40";
+  "aria-pressed:text-sage data-[disabled]:opacity-40";
 
 export function PlayerControls({
   loop,
@@ -150,13 +150,13 @@ function SpeedMenu({ container }: { container: RefObject<HTMLDivElement | null> 
       </Menu.Trigger>
       <Menu.Portal container={container}>
         <Menu.Positioner side="top" align="end" sideOffset={8} className="z-10">
-          <Menu.Popup className="min-w-24 origin-[var(--transform-origin)] rounded-control border border-white/10 bg-black/85 p-1 text-white shadow-pop backdrop-blur transition-[transform,opacity] duration-200 ease-out-soft data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+          <Menu.Popup className="min-w-24 origin-[var(--transform-origin)] rounded-control border border-white/10 bg-black/85 p-1 text-white shadow-pop backdrop-blur transition-[scale,opacity] duration-150 ease-out-soft data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0">
             <Menu.RadioGroup value={rate} onValueChange={(v) => store.setPlaybackRate(Number(v))}>
               {RATES.map((r) => (
                 <Menu.RadioItem
                   key={r}
                   value={r}
-                  className="flex cursor-default items-center justify-between gap-3 rounded-[6px] px-2.5 py-1.5 font-mono text-[13px] tabular-nums outline-none data-[highlighted]:bg-white/10 data-[checked]:text-accent"
+                  className="flex cursor-default items-center justify-between gap-3 rounded-tile px-2.5 py-1.5 font-mono text-[13px] tabular-nums outline-none data-[highlighted]:bg-white/10 data-[checked]:text-sage"
                 >
                   {r}x
                 </Menu.RadioItem>

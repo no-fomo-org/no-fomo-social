@@ -80,7 +80,7 @@ const fromExtension = (c: Context) => (c.req.header("origin") ?? "").startsWith(
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json",
-  ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".webmanifest": "application/manifest+json",
+  ".svg": "image/svg+xml", ".png": "image/png", ".webp": "image/webp", ".ico": "image/x-icon", ".woff2": "font/woff2", ".webmanifest": "application/manifest+json",
 };
 
 export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStore; keys: KeyStore; analyzer: Analyzer; models: ModelCatalog }) {

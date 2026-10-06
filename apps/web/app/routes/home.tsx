@@ -52,9 +52,9 @@ function HomeList() {
 
   return (
     <>
-      <TopBar search={null} />
+      <TopBar />
       <main className="mx-auto max-w-[1100px] px-4 pb-16 pt-6 md:px-6">
-        <h1 className="sr-only">Home</h1>
+        <h1 className="sr-only">Search</h1>
         {ext.missing && (
           <section className="mb-6 rounded-control border border-line p-4">
             <h2 className="text-[15px] font-semibold">The no-fomo extension is needed to open accounts</h2>

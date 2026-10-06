@@ -15,13 +15,15 @@ const field =
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  // Esc is a keyboard action: close at once, no fade.
+  const [instant, setInstant] = useState(false);
   return (
-    <OpenSettings.Provider value={() => setOpen(true)}>
+    <OpenSettings.Provider value={() => { setInstant(false); setOpen(true); }}>
       {children}
-      <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Root open={open} onOpenChange={(next, details) => { setInstant(!next && details.reason === "escape-key"); setOpen(next); }}>
         <Dialog.Portal>
-          <Dialog.Backdrop className="fixed inset-0 z-[60] bg-scrim transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
-          <Dialog.Popup className="fixed left-1/2 top-1/2 z-[70] max-h-[90dvh] w-[min(480px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-control border border-line bg-bg p-5 shadow-pop transition-opacity duration-200 ease-out-soft data-[ending-style]:opacity-0 data-[starting-style]:opacity-0">
+          <Dialog.Backdrop data-instant={instant || undefined} className="fixed inset-0 z-[60] bg-scrim transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0 data-[instant]:duration-0!" />
+          <Dialog.Popup data-instant={instant || undefined} className="fixed left-1/2 top-1/2 z-[70] max-h-[90dvh] w-[min(480px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-sheet border border-line bg-paper p-5 shadow-pop transition-[scale,opacity] duration-200 ease-out-soft data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[ending-style]:duration-150 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0 data-[instant]:duration-0!">
             {open && <SettingsForm onDone={() => setOpen(false)} />}
           </Dialog.Popup>
         </Dialog.Portal>

@@ -3,6 +3,7 @@ import { api } from "../lib/api";
 import { NO_FILTERS, type Filters } from "../lib/filters";
 import { FacetPicker } from "./facet-picker";
 import { KindSwitch } from "./kind-switch";
+import { SearchBox } from "./search-box";
 import { SourceSwitch } from "./source-switch";
 import { Button } from "./ui/button";
 
@@ -49,6 +50,15 @@ export function FilterBar({ scope, filters, total, onChange }: {
       )}
       <KindSwitch value={filters.kind} onChange={(kind) => onChange({ kind })} />
       {scope === "reports" && <SourceSwitch value={filters.source} onChange={(source) => onChange({ source })} />}
+      {/* Right of the filters; it takes the room that is left, from 160 to 288px. */}
+      <div className="w-full sm:w-auto sm:min-w-40 sm:max-w-72 sm:flex-1">
+        <SearchBox
+          value={filters.q}
+          onChange={(q) => onChange({ q })}
+          placeholder="Search keywords"
+          label={scope === "reports" ? "Search reports" : "Search saved posts"}
+        />
+      </div>
       <div className="ms-auto flex items-center gap-2">
         {activeCount(filters) > 1 && (
           <Button variant="ghost" className="hidden md:inline-flex" onClick={() => onChange(NO_FILTERS)}>Clear all</Button>

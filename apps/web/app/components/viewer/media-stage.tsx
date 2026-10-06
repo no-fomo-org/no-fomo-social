@@ -1,8 +1,9 @@
 import { useState } from "react";
 import type { LivePost, PostListItem } from "@no-fomo/core";
-import { Alert02Icon, Loading03Icon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
+import { Alert02Icon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
 import { mediaErrorText } from "../../lib/media";
 import { usePostMedia } from "../../lib/use-post-media";
+import { LogoSymbol } from "../logo";
 import { Player } from "../player/player";
 import { SetupSteps } from "../setup-steps";
 import { Button, buttonClass } from "../ui/button";
@@ -24,7 +25,7 @@ export function MediaStage({ post, extensionId, configReady }: { post: PostListI
           <Icon icon={Alert02Icon} size={28} className="mx-auto text-white/70" />
           <p className="mt-3 text-[15px]" role="alert">{mediaErrorText(error)}</p>
           {error === "no_extension" && (
-            <div className="mt-4 rounded-control bg-bg p-4 pt-0 text-left text-text"><SetupSteps /></div>
+            <div className="mt-4 rounded-sheet bg-paper p-4 pt-0 text-left text-text"><SetupSteps /></div>
           )}
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             {error !== "not_found" && error !== "no_extension" && <Button onClick={retry}>Try again</Button>}
@@ -42,7 +43,7 @@ export function MediaStage({ post, extensionId, configReady }: { post: PostListI
     return (
       <div className="relative flex size-full items-center justify-center">
         <img src={post.thumbUrl} alt={alt} className="max-h-full max-w-full object-contain opacity-60" />
-        <Icon icon={Loading03Icon} size={32} className="absolute text-white/80 motion-safe:animate-spin" />
+        <LogoSymbol size={32} loading title="" className="absolute text-cream" />
       </div>
     );
   }
