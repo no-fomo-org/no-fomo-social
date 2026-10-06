@@ -14,7 +14,7 @@ import { PostGrid } from "../components/post-grid";
 import { SetupSteps } from "../components/setup-steps";
 import { TopBar } from "../components/top-bar";
 import { Viewer } from "../components/viewer/viewer";
-import { useExtension } from "../components/profiles/use-extension";
+import { useExtension } from "../components/home/use-extension";
 import { Button, buttonClass } from "../components/ui/button";
 import { Icon } from "../components/ui/icon";
 

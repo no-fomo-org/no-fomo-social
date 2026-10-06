@@ -1,7 +1,7 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { igStatus } from "../lib/extension";
 import { limitFrom, limitText, type IgLimit } from "../lib/ig-limit";
-import { useExtension } from "./profiles/use-extension";
+import { useExtension } from "./home/use-extension";
 
 /** Ask again now, for example right after an action answered `paused` or `budget`. */
 export const refreshIgLimit = (qc: QueryClient) => void qc.invalidateQueries({ queryKey: ["ig-status"] });
