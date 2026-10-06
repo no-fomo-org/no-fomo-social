@@ -26,6 +26,7 @@ export function stepText(step: ReportStep | null): string {
     case "downloading": return "Downloading the post";
     case "frames": return "Picking frames";
     case "transcribing": return "Turning speech into text";
+    case "reading": return "Reading text on screen";
     case "writing": return "Writing the report";
     default: return "Waiting to start";
   }

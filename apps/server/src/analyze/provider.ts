@@ -6,10 +6,13 @@ export type ReportContent = Array<{ type: "text"; text: string } | { type: "imag
 
 export interface Provider {
   transcribe(audio: Uint8Array, model: string): Promise<string>;
-  writeReport(o: { model: string; system: string; content: ReportContent }): Promise<string>;
+  /** One answer from a language model, for the report or for reading the screen. */
+  generate(o: { model: string; system: string; content: ReportContent }): Promise<string>;
 }
 
 const CALL_TIMEOUT_MS = 5 * 60_000;
+// Without this, OpenAI may read many images at low detail, and small text on screen is lost.
+const HIGH_DETAIL = { openai: { imageDetail: "high" } };
 
 /** The only place that talks to an AI provider. Add Groq, Gemini or Anthropic here later. */
 export function createProvider(models: { language: (id: string) => LanguageModel; transcription: (id: string) => TranscriptionModel }): Provider {
@@ -24,12 +27,12 @@ export function createProvider(models: { language: (id: string) => LanguageModel
         throw toAnalyzeError(e, model);
       }
     },
-    async writeReport({ model, system, content }) {
+    async generate({ model, system, content }) {
       try {
         const r = await generateText({
           model: models.language(model),
           system,
-          messages: [{ role: "user", content }],
+          messages: [{ role: "user", content: content.map((c) => (c.type === "image" ? { type: "file", data: c.image, mediaType: c.mediaType, providerOptions: HIGH_DETAIL } : c)) }],
           abortSignal: AbortSignal.timeout(CALL_TIMEOUT_MS),
         });
         return r.text;

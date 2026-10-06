@@ -1,9 +1,7 @@
 import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
-import {
-  assembleReport, cleanModelSections, hasSummary, needsRefresh, postContext, systemPrompt, type AnalyzeChoice, type PostReport,
-} from "@no-fomo/core";
+import { needsRefresh, type AnalyzeChoice, type PostReport } from "@no-fomo/core";
 import type { Db } from "../db/open";
 import { getPostItem, getPostMedia } from "../queries";
 import type { KeyStore } from "../secrets/key-store";
@@ -12,7 +10,7 @@ import { NotFoundError } from "../sync/ingest";
 import type { Downloader } from "./download";
 import { AnalyzeError } from "./errors";
 import { ToolMissingError, type MediaTools } from "./ffmpeg";
-import { buildInputs } from "./inputs";
+import { makeReport } from "./make-report";
 import type { Provider } from "./provider";
 import { failReport, finishReport, getReport, queueReport, setReportStep } from "./report-store";
 
@@ -75,29 +73,17 @@ export function createAnalyzer(d: {
       // The report row holds the choice made for this run, even if a newer choice was saved since.
       const row = getReport(d.db, postId);
       if (!row) throw new AnalyzeError("failed", "Report row is gone");
-      const opts = { language: row.language, reportModel: row.reportModel, transcribeModel: row.transcribeModel ?? "" };
+      const choice = { language: row.language, reportModel: row.reportModel, transcribeModel: row.transcribeModel ?? "" };
       const key = d.keys.get().openai;
       if (!key) throw new AnalyzeError("no_key");
       const post = getPostItem(d.db, postId);
       const media = getPostMedia(d.db, postId);
       if (!post || !media) throw new AnalyzeError("failed", "Post is gone");
-      const provider = d.makeProvider(key);
-      const inputs = await buildInputs({
-        media, dir, tools: d.tools, download: d.download, provider, transcribeModel: opts.transcribeModel,
-        onStep: (s) => setReportStep(d.db, postId, s),
+      const result = await makeReport({
+        post, media, choice, dir, tools: d.tools, download: d.download, provider: d.makeProvider(key),
+        onStep: (s) => setReportStep(d.db, postId, s), now: now(),
       });
-      setReportStep(d.db, postId, "writing");
-      const transcriptText = inputs.transcript === null ? [] : [{ type: "text" as const, text: `Transcript:\n${inputs.transcript || "No speech."}` }];
-      const raw = await provider.writeReport({
-        model: opts.reportModel,
-        system: systemPrompt(opts.language),
-        content: [{ type: "text", text: postContext(post) }, ...transcriptText, ...inputs.content],
-      });
-      const sections = cleanModelSections(raw);
-      if (!hasSummary(sections)) throw new AnalyzeError("bad_output");
-      const transcribeModel = inputs.transcribed ? opts.transcribeModel : null;
-      const markdown = assembleReport({ post, sections, transcript: inputs.transcript, reportModel: opts.reportModel, transcribeModel, analyzedAt: now() });
-      finishReport(d.db, postId, { markdown, frameCount: inputs.frameCount, transcribeModel }, now());
+      finishReport(d.db, postId, result, now());
     } catch (e) {
       const err =
         e instanceof AnalyzeError ? e

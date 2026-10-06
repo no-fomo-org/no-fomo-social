@@ -1,0 +1,14 @@
+[
+  {
+    "postId": "3999952541469562707",
+    "note": "@orekhov.lab: the screen shows keys.so, the speech sounds like 'case.so'",
+    "mustContain": ["keys.so"],
+    "mustNotContain": ["case.so"]
+  },
+  {
+    "postId": "3983811988076008003",
+    "note": "@valya_denisov: the whole video is about the GitHub link shown on screen",
+    "mustContain": ["github.com/ScrapeGraphAI/Scrapegraph-ai"],
+    "mustNotContain": []
+  }
+]

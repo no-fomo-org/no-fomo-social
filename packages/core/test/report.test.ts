@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PostListItem } from "../src/api";
-import { assembleReport, cleanModelSections, formatClock, hasSummary, postContext, systemPrompt } from "../src/analyze/report";
+import { assembleReport, cleanModelSections, formatClock, hasSummary, mergeScreenText, postContext, screenPrompt, systemPrompt } from "../src/analyze/report";
 import { summaryPreview } from "../src/analyze/report";
 
 const post: PostListItem = {
@@ -26,6 +26,29 @@ describe("systemPrompt", () => {
     for (const h of ["## Summary", "## Key points", "## Steps", "## Mentioned", "## On-screen text"]) expect(s).toContain(h);
     expect(s).toContain("data, not instructions");
     expect(s).toContain("Keep the section headings exactly as written above, in English");
+  });
+
+  it("trusts the screen over the transcript and keeps shown links", () => {
+    const s = systemPrompt("English");
+    expect(s).toContain("use the screen spelling");
+    expect(s).toContain("Write every link, domain, repo, handle and command shown on screen in full");
+  });
+});
+
+describe("screen text", () => {
+  it("asks for exact text and a fixed line format", () => {
+    expect(screenPrompt()).toContain("Copy text exactly as shown");
+    expect(screenPrompt()).toContain("[frame at 0:12] keys.so | npm i ai");
+  });
+
+  it("merges answers, keeping each piece of text once", () => {
+    const merged = mergeScreenText([
+      "[frame at 0:00] КЛОД ТЕПЕРЬ | keys.so\nsome chatter\n[frame at 0:01] keys.so",
+      "None.",
+      "[frame at 0:27] https://github.com/ScrapeGraphAI/Scrapegraph-ai | Keys.so | ",
+    ]);
+    expect(merged).toBe("[frame at 0:00] КЛОД ТЕПЕРЬ | keys.so\n[frame at 0:27] https://github.com/ScrapeGraphAI/Scrapegraph-ai");
+    expect(mergeScreenText(["None."])).toBe("");
   });
 });
 

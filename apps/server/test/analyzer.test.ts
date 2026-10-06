@@ -19,6 +19,7 @@ let db: Db;
 let keys: KeyStore;
 let tmpRoot: string;
 let calls: string[];
+let reportText: string;
 let provider: Provider;
 let tools: MediaTools;
 const KEY = "sk-test-1234567890abcdef";
@@ -67,8 +68,14 @@ beforeEach(() => {
       calls.push("transcribe");
       return "spoken words";
     },
-    writeReport: async ({ content }) => {
-      calls.push(`write:${content.filter((c) => c.type === "image").length}`);
+    generate: async ({ system, content }) => {
+      const images = content.filter((c) => c.type === "image").length;
+      if (system.startsWith("You read the text")) {
+        calls.push(`screen:${images}`);
+        return "[frame at 0:00] keys.so";
+      }
+      calls.push(`write:${images}`);
+      reportText = content.flatMap((c) => (c.type === "text" ? [c.text] : [])).join("\n");
       return "## Summary\nA post.";
     },
   };
@@ -88,6 +95,8 @@ describe("analyzer", () => {
     expect(r.frameCount).toBeGreaterThan(0);
     expect(calls.slice(0, 3)).toEqual(["download", "audio", "transcribe"]);
     expect(calls.at(-1)).toMatch(/^write:\d+$/);
+    expect(calls.some((c) => c.startsWith("screen:"))).toBe(true);
+    expect(reportText).toContain("Text read from the screen, with exact spelling:\n[frame at 0:00] keys.so");
     expect(readdirSync(tmpRoot)).toEqual([]);
   });
 
@@ -122,7 +131,7 @@ describe("analyzer", () => {
     const r = getReport(db, id)!;
     expect(r.status).toBe("done");
     expect(r.markdown).not.toContain("## Transcript");
-    expect(calls).toEqual(["download", "write:1"]);
+    expect(calls).toEqual(["download", "screen:1", "write:1"]);
   });
 
   it("refuses to start without a key, twice for one post, or with old links", async () => {
@@ -140,8 +149,8 @@ describe("analyzer", () => {
   it("runs one job at a time and finishes both", async () => {
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
-    const first = provider.writeReport;
-    provider.writeReport = async (o) => {
+    const first = provider.generate;
+    provider.generate = async (o) => {
       await gate;
       return first(o);
     };
@@ -167,7 +176,7 @@ describe("analyzer", () => {
   });
 
   it("maps errors and always removes the temp folder", async () => {
-    provider.writeReport = async () => {
+    provider.generate = async () => {
       throw new AnalyzeError("quota");
     };
     const a = make();
@@ -192,7 +201,7 @@ describe("analyzer", () => {
   });
 
   it("fails with bad_output when the answer has no summary", async () => {
-    provider.writeReport = async () => "Sorry, I cannot help.";
+    provider.generate = async () => "Sorry, I cannot help.";
     const a = make();
     const id = idOf("image");
     a.start(id, CHOICE);
@@ -217,7 +226,11 @@ describe("analyzer choices", () => {
       seen.push(`speech:${model}`);
       return "слова";
     };
-    provider.writeReport = async ({ model, system }) => {
+    provider.generate = async ({ model, system }) => {
+      if (system.startsWith("You read the text")) {
+        if (!seen.includes(`screen:${model}`)) seen.push(`screen:${model}`);
+        return "None.";
+      }
       seen.push(`report:${model}`, system.includes("Write in Russian") ? "lang:ok" : "lang:wrong");
       return "## Summary\nПост.";
     };
@@ -226,7 +239,7 @@ describe("analyzer choices", () => {
     expect(a.start(id, CHOICE)).toMatchObject({ reportModel: "gpt-6.1-sol", transcribeModel: "whisper-1", language: "Russian" });
     expect(analyzeOptions(db)).toEqual({ reportModel: "gpt-6.1-sol", transcribeModel: "whisper-1", language: "Russian" });
     await a.idle();
-    expect(seen).toEqual(["speech:whisper-1", "report:gpt-6.1-sol", "lang:ok"]);
+    expect(seen).toEqual(["speech:whisper-1", "screen:gpt-6.1-sol", "report:gpt-6.1-sol", "lang:ok"]);
     expect(getReport(db, id)!.markdown).toContain("with gpt-6.1-sol and whisper-1");
   });
 });

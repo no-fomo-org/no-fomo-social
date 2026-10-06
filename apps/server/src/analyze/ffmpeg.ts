@@ -16,6 +16,8 @@ export interface MediaTools {
 }
 
 const MAX_STDERR = 4 * 1024 * 1024;
+/** Short side up to 768 px, never upscaled: OpenAI's high detail reads images at this size, so small text stays sharp. */
+const FRAME_SCALE = "scale='if(lt(iw,ih),min(iw,768),-2)':'if(lt(iw,ih),-2,min(ih,768))'";
 
 function run(bin: "ffmpeg" | "ffprobe", args: string[], timeoutMs = 120_000): Promise<{ stdout: Buffer; stderr: string }> {
   return new Promise((resolve, reject) => {
@@ -67,7 +69,7 @@ export const ffmpegTools: MediaTools = {
     return r?.stdout.length === 768 ? new Uint8Array(r.stdout) : new Uint8Array(0);
   },
   async frameJpeg(file, t, out) {
-    await run("ffmpeg", ["-v", "error", "-y", "-ss", at(t), "-i", file, "-frames:v", "1", "-vf", "scale=512:-2", "-q:v", "4", out]).catch(noFrame);
+    await run("ffmpeg", ["-v", "error", "-y", "-ss", at(t), "-i", file, "-frames:v", "1", "-vf", FRAME_SCALE, "-q:v", "3", out]).catch(noFrame);
     return wrote(out);
   },
   async extractAudio(file, out) {
