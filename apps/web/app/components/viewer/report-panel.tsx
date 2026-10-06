@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert02Icon, Copy01Icon, Download04Icon, Loading03Icon } from "@hugeicons/core-free-icons";
+import { Alert02Icon, Copy01Icon, Download04Icon } from "@hugeicons/core-free-icons";
 import { REPORT_LANGUAGES, REPORT_MODELS, TRANSCRIBE_MODELS, type AnalyzeChoice, type ModelsInfo, type PostListItem, type PostMedia } from "@no-fomo/core";
 import { api } from "../../lib/api";
 import { startAnalysis } from "../../lib/analyze";
 import {
   analyzeErrorText, isWorking, reportFileName, reportView, safeMarkdownUrl, startingChoice, stepText, usableModels,
 } from "../../lib/report";
+import { LogoSymbol } from "../logo";
 import { DeleteReport } from "../reports/delete-report";
 import { useOpenSettings } from "../settings-dialog";
 import { Button } from "../ui/button";
@@ -138,7 +139,7 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
 
       {view.kind === "working" && (
         <p role="status" className="flex items-center gap-2 text-[15px]">
-          <Icon icon={Loading03Icon} size={16} className="motion-safe:animate-spin" />
+          <LogoSymbol size={16} loading title="" className="text-accent" />
           {starting && !isWorking(r) ? "Starting" : stepText(r?.step ?? null)}
         </p>
       )}
@@ -160,7 +161,7 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
               <Icon icon={Copy01Icon} />
               {copied ? "Copied" : "Copy as Markdown"}
             </Button>
-            <Button onClick={download}>
+            <Button variant="primary" onClick={download}>
               <Icon icon={Download04Icon} />
               Download .md
             </Button>

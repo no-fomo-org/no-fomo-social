@@ -8,9 +8,11 @@ import { api } from "../lib/api";
 import { pingExtension, startExtensionSync, syncErrorText } from "../lib/extension";
 import { formatAgo, fullCheckDue, runResultNote } from "../lib/format";
 import { refreshIgLimit, useIgLimit } from "./ig-limit";
+import { LogoSymbol } from "./logo";
 import { SetupSteps } from "./setup-steps";
 import { Button, buttonClass } from "./ui/button";
 import { Icon } from "./ui/icon";
+import { POPUP } from "./ui/popup";
 
 export function SyncControl() {
   const qc = useQueryClient();
@@ -63,7 +65,7 @@ export function SyncControl() {
         <Popover.Trigger className={buttonClass("secondary")}>Set up sync</Popover.Trigger>
         <Popover.Portal>
           <Popover.Positioner sideOffset={6} align="end" className="z-30">
-            <Popover.Popup className="w-[min(420px,calc(100vw-32px))] origin-[var(--transform-origin)] rounded-control border border-line bg-bg p-4 shadow-pop transition-[transform,opacity] duration-200 ease-out-soft data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+            <Popover.Popup className={`w-[min(420px,calc(100vw-32px))] p-4 ${POPUP}`}>
               <Popover.Title className="text-[15px] font-semibold">The no-fomo extension is not installed</Popover.Title>
               <SetupSteps />
             </Popover.Popup>
@@ -82,6 +84,8 @@ export function SyncControl() {
       (status.data?.lastSuccessAt ? `Synced ${formatAgo(status.data.lastSuccessAt)}${runResultNote(run)}` : "Not synced yet");
   const errorTone = !!(startError || lastError || warning);
   const disabled = running || starting || !ext.data?.ok || !!limit;
+  // While syncing, the button carries the loading mark, so it stays at full strength.
+  const busy = running || starting ? "disabled:opacity-100" : "";
 
   return (
     <div className="flex min-w-0 items-center gap-3">
@@ -89,18 +93,18 @@ export function SyncControl() {
         {note}
       </p>
       {due && !errorTone && !disabled && (
-        <button type="button" onClick={() => start("full")} className="shrink-0 text-[13px] text-text underline underline-offset-2 transition-colors duration-200 hover:text-accent">
+        <button type="button" onClick={() => start("full")} className="shrink-0 text-[13px] text-text underline underline-offset-2 transition-colors duration-150 hover:text-accent">
           Full check suggested
         </button>
       )}
       <div className="flex shrink-0">
-        <Button variant="primary" className="rounded-r-none" onClick={() => start()} disabled={disabled}>
-          <Icon icon={RefreshIcon} className={running || starting ? "motion-safe:animate-spin" : ""} />
+        <Button variant="primary" className={`rounded-r-none ${busy}`} onClick={() => start()} disabled={disabled}>
+          {running || starting ? <LogoSymbol size={16} loading title="" /> : <Icon icon={RefreshIcon} />}
           Sync
         </Button>
         <Menu.Root>
           <Menu.Trigger
-            className={buttonClass("primary", "rounded-l-none border-l border-accent-ink/20 px-2")}
+            className={buttonClass("primary", `rounded-l-none border-l border-accent-ink/20 px-2 ${busy}`)}
             disabled={disabled}
             aria-label="More sync options"
           >
@@ -108,8 +112,8 @@ export function SyncControl() {
           </Menu.Trigger>
           <Menu.Portal>
             <Menu.Positioner sideOffset={6} align="end" className="z-30">
-              <Menu.Popup className="w-[min(300px,calc(100vw-32px))] origin-[var(--transform-origin)] rounded-control border border-line bg-bg p-1 shadow-pop transition-[transform,opacity] duration-200 ease-out-soft data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
-                <Menu.Item onClick={() => start("full")} className="flex cursor-default flex-col gap-0.5 rounded-[6px] px-3 py-2 outline-none data-[highlighted]:bg-surface">
+              <Menu.Popup className={`w-[min(300px,calc(100vw-32px))] p-1 ${POPUP}`}>
+                <Menu.Item onClick={() => start("full")} className="flex cursor-default flex-col gap-0.5 rounded-tile px-3 py-2 outline-none data-[highlighted]:bg-surface">
                   <span className="text-[14px] font-medium">Full resync</span>
                   <span className="text-[12px] text-muted">Checks every saved post and hides the ones you unsaved on Instagram. Takes about 2 minutes per 1,000 posts.</span>
                 </Menu.Item>
