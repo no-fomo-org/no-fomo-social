@@ -17,7 +17,7 @@ export function staleAction(o: { configReady: boolean; refreshing: boolean; last
   return canRefresh(o.lastRefreshAt, o.now) ? "refresh" : "give_up";
 }
 
-export type MediaErrorCode = "no_extension" | "old_extension" | "login_required" | "rate_limited" | "not_found" | "load_failed";
+export type MediaErrorCode = "no_extension" | "old_extension" | "login_required" | "rate_limited" | "not_found" | "load_failed" | "limited";
 
 export function mediaErrorCode(reply: ExtResponse | null): MediaErrorCode {
   if (!reply) return "no_extension";
@@ -28,6 +28,9 @@ export function mediaErrorCode(reply: ExtResponse | null): MediaErrorCode {
     case "rate_limited":
     case "not_found":
       return reply.error;
+    case "paused":
+    case "budget":
+      return "limited";
     default:
       return "load_failed";
   }
@@ -41,5 +44,6 @@ export function mediaErrorText(code: MediaErrorCode): string {
     case "rate_limited": return "Instagram asked to slow down. Try again in a few minutes.";
     case "not_found": return "This post was deleted on Instagram.";
     case "load_failed": return "Could not load this post. Try again, or open it on Instagram.";
+    case "limited": return "Instagram is limiting calls right now. See the message at the top, then try again.";
   }
 }

@@ -5,7 +5,10 @@ import { mediaErrorCode } from "./media";
 
 const codeOf = (e: unknown) => (e instanceof ApiError ? e.message : "failed");
 
-/** Starts analysis. If the post's links are old, renews them once through the extension and tries again. */
+/**
+ * Starts analysis. If the post's links are old, or the app does not store the post yet (seen on an account page),
+ * gets it once through the extension, stored, and tries again.
+ */
 export async function startAnalysis(
   postId: string,
   extensionId: string | undefined,
@@ -15,10 +18,11 @@ export async function startAnalysis(
     await api.analyze(postId, choice);
     return { ok: true };
   } catch (e) {
-    if (codeOf(e) !== "links_expired") return { ok: false, error: codeOf(e) };
+    const notStored = e instanceof ApiError && e.status === 404;
+    if (codeOf(e) !== "links_expired" && !notStored) return { ok: false, error: codeOf(e) };
   }
   if (!extensionId) return { ok: false, error: "no_extension" };
-  const reply = await refreshExtensionMedia(extensionId, postId);
+  const reply = await refreshExtensionMedia(extensionId, postId, true);
   if (!reply?.ok || !reply.media) return { ok: false, error: mediaErrorCode(reply) };
   try {
     await api.analyze(postId, choice);

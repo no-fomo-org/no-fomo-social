@@ -23,6 +23,7 @@ export interface PostListItem {
   thumbUrl: string;
   permalink: string;
   hasReport: boolean;
+  saved: boolean;
 }
 
 export interface MediaPart {
@@ -41,8 +42,31 @@ export interface PostMedia {
   expiresAt: number | null;
 }
 
-export interface PostsPage { items: PostListItem[]; nextCursor: number | null; total: number }
-export interface PostsQuery { q?: string; author?: string; collection?: string; kind?: MediaKind; cursor?: number; limit: number; report?: boolean }
+export interface PostsPage { items: PostListItem[]; nextCursor: string | null; total: number }
+/** Cursors come from `nextCursor`. */
+export interface PostsQuery { q?: string; author?: string; collection?: string; kind?: MediaKind; cursor?: string; limit: number }
+export type AuthorScope = "saved" | "reports";
+/** "other": analyzed posts that are not (or no longer) saved. */
+export type ReportSource = "saved" | "other";
+export interface ReportsQuery { q?: string; author?: string; kind?: MediaKind; source?: ReportSource; cursor?: string; limit: number }
+/** `reportedAt` is in milliseconds. `summary` is the report's Summary section as one short line. */
+export interface ReportListItem extends PostListItem { reportedAt: number; reportModel: string; summary: string }
+export interface ReportsPage { items: ReportListItem[]; nextCursor: string | null; total: number }
+export interface FollowingRunInfo {
+  id: number;
+  status: "running" | "done" | "error";
+  startedAt: number;
+  finishedAt: number | null;
+  pages: number;
+  /** Accounts seen so far. */
+  items: number;
+  /** Accounts Instagram sent twice: then some others were missed and nothing was removed. */
+  duplicates: number;
+  errorCode: string | null;
+  errorMessage: string | null;
+}
+export interface FollowingItem { id: string; username: string; fullName: string | null; avatarUrl: string }
+export interface FollowingPage { items: FollowingItem[]; total: number; updatedAt: number | null; run: FollowingRunInfo | null }
 export interface AuthorFacet { id: string; username: string; fullName: string | null; avatarUrl: string; count: number }
 export interface CollectionFacet { id: string; name: string | null; count: number }
 
@@ -89,3 +113,18 @@ export interface ModelOption { id: string; note: string; available: boolean }
 /** `checked` is false when OpenAI could not be asked; then every model shows as available. */
 export interface ModelsInfo { report: ModelOption[]; transcribe: ModelOption[]; checked: boolean }
 export interface AnalyzeChoice { reportModel: string; transcribeModel: string; language: string }
+
+/** A post shown straight from Instagram on an account page, with its links. Stored only once analyzed. */
+export interface LivePost extends PostListItem { media: PostMedia }
+export interface LiveProfile {
+  id: string;
+  username: string;
+  fullName: string | null;
+  /** Instagram's own link; the avatar is not stored. */
+  avatarUrl: string | null;
+  postCount: number | null;
+  isPrivate: boolean;
+  followedByViewer: boolean;
+}
+/** `nextCursor` is "<userId>:<max_id>", so the next page needs nothing else. */
+export interface LivePage { posts: LivePost[]; nextCursor: string | null }

@@ -11,10 +11,17 @@ const nowSec = () => Date.now() / 1000;
  * A post's media links, renewed through the extension when missing, about to expire, or failing to load.
  * Mount once per post (the viewer keys it by post id), so state never leaks between posts.
  * `configReady`: the app config (with the extension id) has loaded, so a missing id means no extension.
+ * `live`: links that came with a post shown straight from Instagram. The app may not store that post, so it never asks the server.
  */
-export function usePostMedia(postId: string, extensionId: string | undefined, configReady: boolean) {
+export function usePostMedia(postId: string, extensionId: string | undefined, configReady: boolean, live?: PostMedia) {
   const qc = useQueryClient();
-  const query = useQuery({ queryKey: ["media", postId], queryFn: () => api.media(postId), staleTime: 60_000 });
+  const query = useQuery({
+    queryKey: ["media", postId],
+    queryFn: () => api.media(postId),
+    staleTime: 60_000,
+    initialData: live,
+    enabled: !live,
+  });
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<MediaErrorCode | null>(null);
   const lastRefreshAt = useRef<number | null>(null);

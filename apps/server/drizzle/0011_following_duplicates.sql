@@ -1,0 +1,1 @@
+ALTER TABLE `following_runs` ADD `duplicates` integer DEFAULT 0 NOT NULL;

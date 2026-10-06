@@ -7,6 +7,7 @@ import { createMediaStore, imageType } from "../src/media/store";
 const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
 
 describe("media store", () => {
+
   it("downloads allowed images once and reports saved jobs", async () => {
     const dir = mkdtempSync(join(tmpdir(), "nf-media-"));
     let calls = 0;

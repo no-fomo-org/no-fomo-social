@@ -59,3 +59,11 @@ describe("refresh rules", () => {
     expect(mediaErrorCode({ ok: false, error: "timeout" })).toBe("load_failed");
   });
 });
+
+describe("limited media errors", () => {
+  it("turns paused and budget into one plain text", () => {
+    expect(mediaErrorCode({ ok: false, error: "paused" })).toBe("limited");
+    expect(mediaErrorCode({ ok: false, error: "budget" })).toBe("limited");
+    expect(mediaErrorText("limited")).toBe("Instagram is limiting calls right now. See the message at the top, then try again.");
+  });
+});

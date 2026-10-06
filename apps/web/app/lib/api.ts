@@ -1,5 +1,6 @@
 import type {
-  AnalyzeChoice, AppConfig, AppSettings, AuthorFacet, CollectionFacet, ModelsInfo, PostMedia, PostReport, PostsPage, SettingsUpdate, SyncStatus,
+  AnalyzeChoice, AppConfig, AppSettings, AuthorFacet, AuthorScope, CollectionFacet, FollowingPage, ModelsInfo, PostMedia, PostReport, PostsPage,
+  ReportsPage, SettingsUpdate, SyncStatus,
 } from "@no-fomo/core";
 
 /** `message` is the server's error code when it sent one. */
@@ -23,7 +24,11 @@ export const api = {
   config: () => get<AppConfig>("/api/config"),
   posts: (qs: string) => get<PostsPage>(`/api/posts?${qs}`),
   media: (id: string) => get<PostMedia>(`/api/posts/${id}/media`),
-  authors: () => get<AuthorFacet[]>("/api/authors"),
+  authors: (scope: AuthorScope = "saved") => get<AuthorFacet[]>(`/api/authors?scope=${scope}`),
+  reports: (qs: string) => get<ReportsPage>(`/api/reports?${qs}`),
+  /** Which of these posts the app stores, and whether they are saved or have a report. */
+  known: (ids: string[]) => get<Array<{ id: string; saved: boolean; hasReport: boolean }>>(`/api/posts/known?ids=${ids.join(",")}`),
+  following: (q: string | null) => get<FollowingPage>(`/api/following?${new URLSearchParams(q ? { q, limit: "100" } : { limit: "100" })}`),
   collections: () => get<CollectionFacet[]>("/api/collections"),
   syncStatus: () => get<SyncStatus>("/api/sync/status"),
   settings: () => get<AppSettings>("/api/settings"),

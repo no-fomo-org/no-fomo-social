@@ -3,11 +3,19 @@ import { api } from "../lib/api";
 import { NO_FILTERS, type Filters } from "../lib/filters";
 import { FacetPicker } from "./facet-picker";
 import { KindSwitch } from "./kind-switch";
+import { SourceSwitch } from "./source-switch";
 import { Button } from "./ui/button";
 
-export function FilterBar({ filters, total, onChange }: { filters: Filters; total: number | undefined; onChange: (p: Partial<Filters>) => void }) {
-  const authors = useQuery({ queryKey: ["authors"], queryFn: api.authors });
-  const collections = useQuery({ queryKey: ["collections"], queryFn: api.collections });
+export function FilterBar({ scope, filters, total, onChange }: {
+  scope: "saved" | "reports";
+  filters: Filters;
+  total: number | undefined;
+  onChange: (p: Partial<Filters>) => void;
+}) {
+  const authorScope = scope === "reports" ? "reports" : "saved";
+  const authors = useQuery({ queryKey: ["authors", authorScope], queryFn: () => api.authors(authorScope) });
+  const collections = useQuery({ queryKey: ["collections"], queryFn: api.collections, enabled: scope === "saved" });
+  const noun = scope === "reports" ? ["report", "reports"] : ["post", "posts"];
 
   return (
     <div className="flex flex-wrap items-center gap-2 py-3 md:py-4">
@@ -25,7 +33,7 @@ export function FilterBar({ filters, total, onChange }: { filters: Filters; tota
           leading: <img src={a.avatarUrl} alt="" className="size-5 shrink-0 rounded-full bg-surface-2 object-cover" loading="lazy" />,
         }))}
       />
-      {(collections.data?.length ?? 0) > 0 && (
+      {scope === "saved" && (collections.data?.length ?? 0) > 0 && (
         <FacetPicker
           label="Collection"
           allLabel="All collections"
@@ -40,24 +48,17 @@ export function FilterBar({ filters, total, onChange }: { filters: Filters; tota
         />
       )}
       <KindSwitch value={filters.kind} onChange={(kind) => onChange({ kind })} />
-      <button
-        type="button"
-        aria-pressed={filters.report}
-        onClick={() => onChange({ report: !filters.report })}
-        className="h-9 rounded-control border border-line bg-surface px-3 text-[14px] text-muted transition-colors duration-200 hover:text-text focus-visible:outline-2 focus-visible:outline-accent aria-pressed:border-accent-line aria-pressed:bg-accent-soft aria-pressed:text-text"
-      >
-        Has report
-      </button>
+      {scope === "reports" && <SourceSwitch value={filters.source} onChange={(source) => onChange({ source })} />}
       <div className="ms-auto flex items-center gap-2">
         {activeCount(filters) > 1 && (
           <Button variant="ghost" className="hidden md:inline-flex" onClick={() => onChange(NO_FILTERS)}>Clear all</Button>
         )}
         <span className="font-mono text-[13px] tabular-nums text-muted" role="status" aria-live="polite">
-          {total !== undefined ? `${total.toLocaleString("en")} ${total === 1 ? "post" : "posts"}` : ""}
+          {total !== undefined ? `${total.toLocaleString("en")} ${total === 1 ? noun[0] : noun[1]}` : ""}
         </span>
       </div>
     </div>
   );
 }
 
-const activeCount = (f: Filters) => [f.q, f.author, f.collection, f.kind, f.report].filter(Boolean).length;
+const activeCount = (f: Filters) => [f.q, f.author, f.collection, f.kind, f.source].filter(Boolean).length;

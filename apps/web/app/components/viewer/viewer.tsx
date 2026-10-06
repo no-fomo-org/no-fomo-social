@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { PostListItem } from "@no-fomo/core";
 import { api } from "../../lib/api";
 import { keyBelongsToWidget } from "../../lib/keys";
+import { tabOnOpen } from "../../lib/viewer-tab";
 import { MediaStage } from "./media-stage";
 import { PostDetails, type DetailsTab } from "./post-details";
 
@@ -13,17 +14,25 @@ export function Viewer({
   onPrev,
   onNext,
   onShowAuthor,
+  initialTab,
 }: {
   post: PostListItem | null;
   onClose: () => void;
   onPrev: (() => void) | null;
   onNext: (() => void) | null;
-  onShowAuthor: (id: string) => void;
+  onShowAuthor: ((id: string) => void) | null;
+  initialTab?: DetailsTab;
 }) {
   const config = useQuery({ queryKey: ["config"], queryFn: api.config, staleTime: Infinity });
   const stage = useRef<HTMLDivElement>(null);
   // Lives here, so the chosen tab stays while moving between posts.
-  const [tab, setTab] = useState<DetailsTab>("details");
+  const [tab, setTab] = useState<DetailsTab>(initialTab ?? "details");
+  // Each opening starts on the page's start tab (Reports opens on the report).
+  const [wasOpen, setWasOpen] = useState(false);
+  if (!!post !== wasOpen) {
+    setWasOpen(!!post);
+    if (post) setTab(tabOnOpen(tab, initialTab));
+  }
   // Keep showing the last post while the close animation runs.
   const last = useRef<PostListItem | null>(null);
   if (post) last.current = post;

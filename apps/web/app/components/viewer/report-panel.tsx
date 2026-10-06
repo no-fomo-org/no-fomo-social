@@ -69,11 +69,16 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
     <ChoiceForm value={choice} onChange={setPicked} models={models.data ?? ALL_MODELS} />
   );
 
-  // A finished job changes the grid's "Has report" filter and search results.
+  // A finished job changes search results and the Reports tab.
   const working = isWorking(r);
   const wasWorking = useRef(working);
   useEffect(() => {
-    if (wasWorking.current && !working) void qc.invalidateQueries({ queryKey: ["posts"] });
+    if (wasWorking.current && !working) {
+      void qc.invalidateQueries({ queryKey: ["posts"] });
+      void qc.invalidateQueries({ queryKey: ["reports"] });
+      void qc.invalidateQueries({ queryKey: ["authors", "reports"] });
+      void qc.invalidateQueries({ queryKey: ["known"] });
+    }
     wasWorking.current = working;
   }, [working, qc]);
 

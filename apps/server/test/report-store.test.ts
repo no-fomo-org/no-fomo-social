@@ -41,12 +41,10 @@ describe("report store", () => {
     expect(getReport(db, id)).toMatchObject({ status: "error", errorCode: "interrupted", finishedAt: 5 });
   });
 
-  it("shows hasReport, filters by it and searches report text", () => {
-    expect(listPosts(db, { limit: 50, report: true }).total).toBe(0);
+  it("shows hasReport and searches report text", () => {
     queueReport(db, id, opts, 1);
     finishReport(db, id, { markdown: "spoken word zanzibar", frameCount: 1, transcribeModel: null }, 2);
-    const page = listPosts(db, { limit: 50, report: true });
-    expect(page.items.map((p) => [p.id, p.hasReport])).toEqual([[id, true]]);
+    expect(listPosts(db, { limit: 50 }).items.find((p) => p.id === id)!.hasReport).toBe(true);
     expect(listPosts(db, { limit: 50, q: "zanzibar" }).items.map((p) => p.id)).toEqual([id]);
     finishReport(db, id, { markdown: "now about kilimanjaro", frameCount: 1, transcribeModel: null }, 3);
     expect(listPosts(db, { limit: 50, q: "zanzibar" }).total).toBe(0);

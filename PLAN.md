@@ -43,6 +43,9 @@ Web app (React Router v8 **SPA mode** + Vite + Tailwind v4 + shadcn/Base UI + Hu
    - Graph in SQLite: `nodes` (post, author, topic, entity, hashtag) + `edges` (post→topic, etc.) + topic co-occurrence weights.
    - Embeddings: **local, free by default** (transformers.js, e.g. multilingual small model); OpenAI embeddings optional.
    - Search "posts about claude code": hybrid = FTS5 keyword + vector similarity + graph expansion (matching topic nodes) → ranked post grid in the UI.
+   - **What search reads:** caption, hashtags, author, music, Instagram's image description, and the transcript and report of analyzed posts. A reel whose substance is only spoken is found by meaning only after it is analyzed (each analysis costs a few cents).
+   - **Sort and filter by numbers:** views, likes, comments (already stored for every saved post), next to the existing author, collection, type and date filters.
+   - **On an account (Home):** the same search and sorting over the account's posts. Account posts are not stored and come 12 per Instagram call, so the account view gets a **Load all posts** button with progress (a 300-post account is about 25 calls, roughly 2 minutes at the gate's pace; the hourly limit allows about 1,800 posts). Search and sorting then run on the loaded posts with no more Instagram calls. Instagram's account answer has likes and comments; views may be missing for some posts.
    - **AI report** page: top topics/authors, trends over time, clusters, forgotten saves; LLM writes a short summary from aggregated stats (not raw posts).
 5. **Analyze one post (lazy):** button "Analyze" →
    - Video, Mode A (default): download video to temp dir → ffmpeg scene frames (ported claude-video rules) → transcribe (OpenAI or Groq Whisper key) → vision LLM gets metadata + frames + transcript → markdown report.
@@ -50,18 +53,19 @@ Web app (React Router v8 **SPA mode** + Vite + Tailwind v4 + shadcn/Base UI + Hu
    - Image / carousel: download the image(s) to temp dir → vision LLM gets metadata + images (no ffmpeg, no Whisper) → same report template.
    - Report saved in DB; temp files deleted. Buttons: **Copy as Markdown**, **Download .md** (to use in any AI). No chat.
 6. **AI provider layer:** Vercel AI SDK so one code path supports OpenAI, Gemini, Anthropic, Groq. Keys stored locally in an encrypted file (`~/.no-fomo/keys.enc`, AES-256-GCM, machine-bound secret; `keytar` is archived and not used), never sent anywhere except the chosen provider.
+7. **Home, Saved and Reports tabs** (shipped): Home lists the accounts the owner follows (stored, updated on a button) and searches all of Instagram on Enter; picking an account shows its posts inside Home, 12 at a time with **Load more**, nothing stored; Analyze stores just that post. Account posts are read the way Instagram's own page reads them: a hidden Instagram tab opens the account and the extension watches and repeats the page's GraphQL query. Saved state lives in `saved_posts`, so a post is one row and has one report. Reports tab lists every report with text, author, source (saved / not saved) and type filters. Every Instagram call goes through one gate stored in the extension (150 per hour, stops of 15 min, 1 h, 6 h, a banner, a call log in `ig_calls`). Spec: `docs/superpowers/specs/2026-10-05-profiles-reports-design.md`. Plan: `docs/superpowers/plans/2026-10-06-home-tabs-instagram-safety.md`.
 
 ## Milestones
 1. Monorepo + extension sync (posts + collections) + SQLite + basic grid with author, collection and type filters.
 2. Video player + image lightbox with on-demand URL refresh. Full resync.
 3. Batch unsave queue.
 4. Analyze (video Mode A, image path, then video Mode B).
-5. Free graph + local embeddings + semantic search. Optional LLM enrichment.
+5. Free graph + local embeddings + semantic search, and sorting by views, likes and comments: first in Saved, then on an account with **Load all posts**. Optional LLM enrichment.
 6. Knowledge graph view + AI report.
 7. Packaging (`npx`, Docker), Chrome Web Store release of the extension (one-click install instead of unpacked developer mode), README, security review.
 
 ## Main risks
-- Instagram changes private endpoints → keep all IG calls in one module in `packages/core`, with tests on saved JSON samples.
+- Instagram changes private endpoints → keep all IG calls in one module in `packages/core`, with tests on saved JSON samples. In 2026 Instagram retired `web_profile_info` (429 for everyone) and `feed/user` for the web; where the web API is gone, read what Instagram's own page asks for (see `packages/core/src/ig/posts-query.ts`).
 - Account flags from unsave/sync → strict throttle, user-visible limits, no background loops.
 - Instagram ToS: unofficial access; state clearly in README (user acts on own account).
 

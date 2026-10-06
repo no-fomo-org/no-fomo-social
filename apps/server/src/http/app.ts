@@ -16,29 +16,55 @@ import { getReport } from "../analyze/report-store";
 import { imageType, type MediaStore } from "../media/store";
 import type { KeyStore } from "../secrets/key-store";
 import { readSettings, updateSettings } from "../settings";
-import { getPostMedia, listAuthors, listCollections, listPosts, syncStatus } from "../queries";
+import { getPostMedia, listAuthors, listCollections, listFollowing, listPosts, listReports, postStates, syncStatus } from "../queries";
 import {
   finishRun, ingestCollections, ingestMediaInfo, ingestSavedPage, MismatchError, NotFoundError, RunNotActiveError, startRun,
 } from "../sync/ingest";
+import { finishFollowingRun, ingestFollowingPage, startFollowingRun } from "../sync/following";
+import { logIgCall } from "../sync/ig-calls";
 import { security } from "./security";
 
 const Id = z.string().regex(/^\d{1,30}$/);
 const RunId = z.coerce.number().int().positive();
 const PageBody = z.object({ payload: z.unknown() });
+const MediaBody = z.object({ payload: z.unknown(), store: z.boolean().default(false) });
+/** Up to 100 post ids, comma separated; empty means none. */
+const KnownQuery = z.object({
+  ids: z.string().max(3200).default("").transform((v) => (v ? v.split(",") : [])).pipe(z.array(Id).max(100)),
+});
 const StartBody = z.object({ mode: z.enum(["incremental", "full"]).optional() });
 const FinishBody = z.union([
   z.object({ ok: z.literal(true) }),
   z.object({ ok: z.literal(false), code: z.string().max(64), message: z.string().max(500) }),
 ]);
+const Kind = z.enum(["image", "video", "carousel"]);
+const Cursor = z.string().regex(/^\d{1,20}(\.\d{1,30})?$/);
 const PostsQuerySchema = z.object({
   q: z.string().max(200).optional(),
   author: Id.optional(),
   collection: Id.optional(),
-  kind: z.enum(["image", "video", "carousel"]).optional(),
-  cursor: z.coerce.number().int().optional(),
+  kind: Kind.optional(),
+  profile: Id.optional(),
+  cursor: Cursor.optional(),
   limit: z.coerce.number().int().min(1).max(200).default(60),
-  report: z.literal("1").optional().transform((v) => v === "1"),
 });
+const ReportsQuerySchema = z.object({
+  q: z.string().max(200).optional(),
+  author: Id.optional(),
+  kind: Kind.optional(),
+  source: z.enum(["saved", "other"]).optional(),
+  cursor: Cursor.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(40),
+});
+const FollowingQuery = z.object({ q: z.string().max(100).optional(), limit: z.coerce.number().int().min(1).max(500).default(100) });
+const IgCallBody = z.object({
+  at: z.number().int().nonnegative(),
+  kind: z.enum(["saved", "collections", "post", "profile", "feed", "search", "following"]),
+  status: z.number().int().min(0).max(999),
+  result: z.enum(["ok", "rate_limited", "refused", "login_required", "not_found", "error"]),
+  ms: z.number().int().nonnegative().max(600_000),
+});
+const AuthorsQuery = z.object({ scope: z.enum(["saved", "reports"]).default("saved") });
 
 const SettingsBody = z.object({ openaiKey: z.string().trim().regex(/^[\x21-\x7e]{20,300}$/).nullable().optional() }).strict();
 const AnalyzeBody = z
@@ -120,13 +146,33 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
 
   app.post("/api/sync/media/:id", async (c) => {
     const id = Id.parse(c.req.param("id"));
-    const { payload } = PageBody.parse(await c.req.json());
-    media.enqueue(ingestMediaInfo(db, id, payload));
+    const { payload, store } = MediaBody.parse(await c.req.json());
+    media.enqueue(ingestMediaInfo(db, id, payload, { store }));
     return c.json(getPostMedia(db, id));
+  });
+
+  app.post("/api/sync/following/runs", (c) => c.json(startFollowingRun(db), 201));
+
+  app.post("/api/sync/following/runs/:id/page", async (c) => {
+    const runId = RunId.parse(c.req.param("id"));
+    const { payload } = PageBody.parse(await c.req.json());
+    await dump(runId, "load-following", payload);
+    return c.json(ingestFollowingPage(db, runId, payload));
+  });
+
+  app.post("/api/sync/following/runs/:id/finish", async (c) => {
+    finishFollowingRun(db, RunId.parse(c.req.param("id")), FinishBody.parse(await c.req.json()));
+    return c.json({ ok: true });
+  });
+
+  app.post("/api/sync/ig-calls", async (c) => {
+    logIgCall(db, IgCallBody.parse(await c.req.json()));
+    return c.json({ ok: true });
   });
 
   app.get("/api/sync/status", (c) => c.json(syncStatus(db)));
   app.get("/api/posts", (c) => c.json(listPosts(db, PostsQuerySchema.parse(c.req.query()))));
+  app.get("/api/posts/known", (c) => c.json(postStates(db, KnownQuery.parse(c.req.query()).ids)));
   app.get("/api/posts/:id/media", (c) => {
     const found = getPostMedia(db, Id.parse(c.req.param("id")));
     return found ? c.json(found) : c.json({ error: "not_found" }, 404);
@@ -141,7 +187,9 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
     const found = getReport(db, Id.parse(c.req.param("id")));
     return found ? c.json(found) : c.json({ error: "not_found" }, 404);
   });
-  app.get("/api/authors", (c) => c.json(listAuthors(db)));
+  app.get("/api/authors", (c) => c.json(listAuthors(db, AuthorsQuery.parse(c.req.query()).scope)));
+  app.get("/api/reports", (c) => c.json(listReports(db, ReportsQuerySchema.parse(c.req.query()))));
+  app.get("/api/following", (c) => c.json(listFollowing(db, FollowingQuery.parse(c.req.query()))));
   app.get("/api/collections", (c) => c.json(listCollections(db)));
   app.get("/api/settings", (c) => (fromExtension(c) ? c.json({ error: "forbidden" }, 403) : c.json(readSettings(db, keys))));
   app.post("/api/settings", async (c) => {

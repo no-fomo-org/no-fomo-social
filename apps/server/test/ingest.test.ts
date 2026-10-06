@@ -4,7 +4,7 @@ import page1 from "@no-fomo/core/fixtures/saved-page-1.json";
 import page2 from "@no-fomo/core/fixtures/saved-page-2.json";
 import collectionsList from "@no-fomo/core/fixtures/collections-list.json";
 import { openDb, type Db } from "../src/db/open";
-import { posts, postCollections, settings, syncRuns } from "../src/db/schema";
+import { posts, postCollections, savedPosts, settings, syncRuns } from "../src/db/schema";
 import {
   finishRun, ingestCollections, ingestSavedPage, lastFullAt, RunNotActiveError, startRun,
 } from "../src/sync/ingest";
@@ -17,7 +17,7 @@ const media = (pk: string) => ({
 const pageOf = (pks: string[], more: boolean) => ({
   items: pks.map((pk) => ({ media: media(pk) })), more_available: more, next_max_id: more ? "N" : undefined,
 });
-const order = (db: Db) => db.select({ id: posts.id }).from(posts).orderBy(desc(posts.sortKey)).all().map((r) => r.id);
+const order = (db: Db) => db.select({ id: savedPosts.postId }).from(savedPosts).orderBy(desc(savedPosts.sortKey)).all().map((r) => r.id);
 
 let db: Db;
 beforeEach(() => { db = openDb(":memory:"); });
@@ -143,7 +143,7 @@ describe("full resync", () => {
     finishRun(db, r.runId, { ok: true });
     return r;
   }
-  const visible = () => db.select({ id: posts.id }).from(posts).where(isNull(posts.removedRemotelyAt)).all().map((r) => r.id).sort();
+  const visible = () => db.select({ id: savedPosts.postId }).from(savedPosts).where(isNull(savedPosts.removedRemotelyAt)).all().map((r) => r.id).sort();
   const runRow = (id: number) => db.select().from(syncRuns).where(eq(syncRuns.id, id)).get()!;
 
   it("runs in full mode when asked", () => {

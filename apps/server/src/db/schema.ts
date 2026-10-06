@@ -34,16 +34,11 @@ export const posts = sqliteTable(
     musicArtist: text("music_artist"),
     width: integer("width"),
     height: integer("height"),
-    sortKey: integer("sort_key").notNull(),
-    firstSeenRunId: integer("first_seen_run_id").notNull(),
-    lastSeenRunId: integer("last_seen_run_id").notNull(),
-    removedAt: integer("removed_at"),
-    removedRemotelyAt: integer("removed_remotely_at"),
   },
   (t) => [
-    index("posts_sort_idx").on(t.sortKey),
     index("posts_author_idx").on(t.authorId),
     index("posts_kind_idx").on(t.kind),
+    index("posts_taken_idx").on(t.takenAt),
   ],
 );
 
@@ -125,4 +120,56 @@ export const reports = sqliteTable("reports", {
   errorMessage: text("error_message"),
   createdAt: integer("created_at").notNull(),
   finishedAt: integer("finished_at"),
+});
+
+/** A post's place in the saved feed. A post without a row here was never saved. */
+export const savedPosts = sqliteTable(
+  "saved_posts",
+  {
+    postId: text("post_id").primaryKey().references(() => posts.id, { onDelete: "cascade" }),
+    sortKey: integer("sort_key").notNull(),
+    firstSeenRunId: integer("first_seen_run_id").notNull(),
+    lastSeenRunId: integer("last_seen_run_id").notNull(),
+    removedAt: integer("removed_at"),
+    removedRemotelyAt: integer("removed_remotely_at"),
+  },
+  (t) => [index("saved_posts_sort_idx").on(t.sortKey)],
+);
+
+/** Accounts the owner follows. Names and avatars live in `authors`. */
+export const following = sqliteTable("following", {
+  authorId: text("author_id").primaryKey().references(() => authors.id),
+  /** Instagram's order, most recent follow first. */
+  position: integer("position").notNull(),
+  lastSeenRunId: integer("last_seen_run_id").notNull(),
+});
+
+/** Runs of "Update list" for the following list, done by the extension. */
+export const followingRuns = sqliteTable("following_runs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  status: text("status", { enum: ["running", "done", "error"] }).notNull(),
+  startedAt: integer("started_at").notNull(),
+  /** Last sign of life: the start or the last page. */
+  activeAt: integer("active_at").notNull(),
+  finishedAt: integer("finished_at"),
+  pages: integer("pages").notNull().default(0),
+  /** Accounts seen so far. */
+  items: integer("items").notNull().default(0),
+  nextPos: integer("next_pos").notNull().default(0),
+  /** Accounts Instagram sent more than once in this run: then the walk missed others, so it proves nothing. */
+  duplicates: integer("duplicates").notNull().default(0),
+  /** The run read the whole list once, so accounts it did not see were unfollowed. */
+  complete: integer("complete", { mode: "boolean" }).notNull().default(false),
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
+});
+
+/** Every Instagram call the extension made, newest 2,000 kept. Read by hand to find the cause of a refusal. */
+export const igCalls = sqliteTable("ig_calls", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  at: integer("at").notNull(),
+  kind: text("kind").notNull(),
+  status: integer("status").notNull(),
+  result: text("result").notNull(),
+  ms: integer("ms").notNull(),
 });

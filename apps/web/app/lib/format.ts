@@ -38,3 +38,19 @@ export function runResultNote(run: { status: string; postsNew: number; postsRemo
   if (run.postsRemoved > 0) parts.push(`${run.postsRemoved.toLocaleString("en")} removed on Instagram`);
   return parts.length ? `, ${parts.join(", ")}` : "";
 }
+
+/** A failed following update stays the last run until the next one. After a while, say when it failed. */
+const FRESH_MS = 10 * 60_000;
+
+export function followingRunError(
+  run: { status: string; startedAt: number; finishedAt: number | null; errorMessage: string | null },
+  now: number,
+): string | null {
+  if (run.status !== "error") return null;
+  const at = run.finishedAt ?? run.startedAt;
+  if (now - at < FRESH_MS) return run.errorMessage ?? "The last update failed.";
+  const d = new Date(at);
+  const day = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return `The last update, on ${day} at ${time}, did not finish. Press Update list to try again.`;
+}

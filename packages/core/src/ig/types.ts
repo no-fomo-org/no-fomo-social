@@ -57,3 +57,14 @@ export interface PageInfo {
   /** Instagram said plainly that this is the last page. A missing flag is not proof. */
   endOfFeed: boolean;
 }
+
+export interface UserSuggestion extends ParsedAuthor {
+  isPrivate: boolean;
+  isVerified: boolean;
+}
+
+export interface ParsedUserPage {
+  items: ParsedAuthor[];
+  nextCursor: string | null;
+  moreAvailable: boolean;
+}

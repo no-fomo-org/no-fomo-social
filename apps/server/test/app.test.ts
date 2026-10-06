@@ -29,6 +29,7 @@ const analyzerFor = (db: Db, keys: KeyStore) =>
 const EXT = "abcdefghijklmnopabcdefghijklmnop";
 const HOST = "localhost:4747";
 const CHOICE = { reportModel: "gpt-6-luna", transcribeModel: "gpt-transcribe", language: "English" };
+const APP = "http://localhost:4747";
 let app: ReturnType<typeof createApp>;
 
 beforeEach(() => {
@@ -230,5 +231,54 @@ describe("analyze routes", () => {
     expect([res.status, body.checked, body.report[0]!.id]).toEqual([200, false, "gpt-6-luna"]);
     const fromExt = await app.request("/api/models", { headers: { host: HOST, origin: `chrome-extension://${EXT}` } });
     expect(fromExt.status).toBe(403);
+  });
+});
+
+describe("account pages, following and reports API", () => {
+  it("stores a post on demand through the media route, only when asked", async () => {
+    expect((await post("/api/sync/media/3500000000000000002", { payload: mediaInfo, store: false })).status).toBe(404);
+    const res = await post("/api/sync/media/3500000000000000002", { payload: mediaInfo, store: true });
+    expect(res.status).toBe(200);
+    expect((await get("/api/posts/3500000000000000002/media")).status).toBe(200);
+    expect(((await (await get("/api/posts")).json()) as PostsPage).total).toBe(0);
+  });
+
+  it("tells which posts are stored, saved or reported", async () => {
+    await syncFixtures();
+    const res = await get("/api/posts/known?ids=3500000000000000001,123");
+    expect(await res.json()).toEqual([{ id: "3500000000000000001", saved: true, hasReport: false }]);
+    expect((await get("/api/posts/known?ids=abc")).status).toBe(400);
+    const many = Array.from({ length: 101 }, (_, i) => String(i + 1)).join(",");
+    expect((await get(`/api/posts/known?ids=${many}`)).status).toBe(400);
+    expect(await (await get("/api/posts/known?ids=")).json()).toEqual([]);
+  });
+
+  it("updates and filters the following list", async () => {
+    const { runId } = (await (await post("/api/sync/following/runs", {})).json()) as { runId: number };
+    expect(await (await post(`/api/sync/following/runs/${runId}/page`, { payload: { users: [{ pk: "8", username: "maria" }] } })).json()).toEqual({ seen: 1 });
+    expect((await post(`/api/sync/following/runs/${runId}/finish`, { ok: true })).status).toBe(200);
+    const page = (await (await get("/api/following?q=mar")).json()) as { items: Array<{ id: string }>; total: number };
+    expect(page).toMatchObject({ total: 1, items: [{ id: "8" }] });
+  });
+
+  it("lists reports by source and report authors", async () => {
+    await syncFixtures();
+    expect(await (await get("/api/reports?source=other&limit=10")).json()).toEqual({ items: [], nextCursor: null, total: 0 });
+    expect((await get("/api/reports?source=profile")).status).toBe(400);
+    expect((await get("/api/authors?scope=reports")).status).toBe(200);
+  });
+
+  it("has no profile library routes", async () => {
+    expect((await get("/api/profiles")).status).toBe(404);
+    expect((await post("/api/sync/profiles/runs", { mode: "add", payload: {} })).status).toBe(404);
+  });
+});
+
+describe("Instagram call log route", () => {
+  it("stores a call from the extension and rejects bad ones", async () => {
+    const ok = await post("/api/sync/ig-calls", { at: 1791283542340, kind: "feed", status: 429, result: "rate_limited", ms: 812 });
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toEqual({ ok: true });
+    expect((await post("/api/sync/ig-calls", { at: 1, kind: "dm", status: 200, result: "ok", ms: 1 })).status).toBe(400);
   });
 });

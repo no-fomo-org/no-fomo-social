@@ -1,7 +1,7 @@
 import { and, count, desc, eq, isNull, lt, sql } from "drizzle-orm";
-import { parseCollectionsPage, parseMediaPage, type ParsedPost, type SyncMode, type SyncResult } from "@no-fomo/core";
+import { parseCollectionsPage, parseMediaPage, type ParsedAuthor, type ParsedPost, type SyncMode, type SyncResult } from "@no-fomo/core";
 import type { Db } from "../db/open";
-import { authors, collections, postCollections, postParts, posts, syncRuns } from "../db/schema";
+import { authors, collections, postCollections, postParts, posts, savedPosts, syncRuns } from "../db/schema";
 import { getSetting, setSetting, type Q } from "../db/settings";
 
 export const RUN_SPAN = 1_000_000_000;
@@ -40,7 +40,7 @@ export function startRun(db: Db, requested: SyncMode = "incremental", now = Date
       .run();
     const upToDate = getSetting(tx, SAVED_BACKFILL) === "1" && getSetting(tx, FEED_VERSION_KEY) === FEED_VERSION;
     const mode: SyncMode = requested === "full" || !upToDate ? "full" : "incremental";
-    const max = tx.select({ max: sql<number | null>`max(${posts.sortKey})` }).from(posts).get()?.max ?? 0;
+    const max = tx.select({ max: sql<number | null>`max(${savedPosts.sortKey})` }).from(savedPosts).get()?.max ?? 0;
     const run = tx
       .insert(syncRuns)
       .values({ mode, status: "running", startedAt: now, baseKey: max + RUN_SPAN })
@@ -50,7 +50,7 @@ export function startRun(db: Db, requested: SyncMode = "incremental", now = Date
   });
 }
 
-function upsertAuthor(q: Q, a: ParsedPost["author"], jobs: MediaJob[]) {
+export function upsertAuthor(q: Q, a: ParsedAuthor, jobs: MediaJob[]) {
   const existing = q.select({ avatarPath: authors.avatarPath }).from(authors).where(eq(authors.id, a.id)).get();
   q.insert(authors)
     .values({ id: a.id, username: a.username, fullName: a.fullName, avatarUrl: a.avatarUrl })
@@ -70,26 +70,32 @@ function postFields(p: ParsedPost) {
   };
 }
 
-function upsertPost(q: Q, p: ParsedPost, runId: number, keyIfNew: number, keyUpdate: number | null, jobs: MediaJob[]) {
+/** Post content, shared by every source. Never touches saved or profile state. */
+export function upsertPostContent(q: Q, p: ParsedPost, jobs: MediaJob[]): { isNew: boolean } {
   upsertAuthor(q, p.author, jobs);
-  const existing = q
-    .select({ firstSeenRunId: posts.firstSeenRunId, thumbPath: posts.thumbPath, firstRunComplete: syncRuns.savedComplete })
-    .from(posts)
-    .leftJoin(syncRuns, eq(syncRuns.id, posts.firstSeenRunId))
-    .where(eq(posts.id, p.id))
-    .get();
-  if (!existing) {
-    q.insert(posts).values({ id: p.id, ...postFields(p), sortKey: keyIfNew, firstSeenRunId: runId, lastSeenRunId: runId }).run();
-  } else {
-    q.update(posts)
-      .set({ ...postFields(p), lastSeenRunId: runId, removedRemotelyAt: null, ...(keyUpdate !== null ? { sortKey: keyUpdate } : {}) })
-      .where(eq(posts.id, p.id))
-      .run();
-  }
+  const existing = q.select({ thumbPath: posts.thumbPath }).from(posts).where(eq(posts.id, p.id)).get();
+  if (!existing) q.insert(posts).values({ id: p.id, ...postFields(p) }).run();
+  else q.update(posts).set(postFields(p)).where(eq(posts.id, p.id)).run();
   replaceParts(q, p);
-  syncCollectionLinks(q, p, runId);
   replaceSearch(q, p);
   if (!existing?.thumbPath && p.thumbnailUrl) jobs.push({ kind: "thumb", id: p.id, url: p.thumbnailUrl });
+  return { isNew: !existing };
+}
+
+function upsertSavedPost(q: Q, p: ParsedPost, runId: number, key: number, jobs: MediaJob[]) {
+  upsertPostContent(q, p, jobs);
+  const existing = q
+    .select({ firstSeenRunId: savedPosts.firstSeenRunId, firstRunComplete: syncRuns.savedComplete })
+    .from(savedPosts)
+    .leftJoin(syncRuns, eq(syncRuns.id, savedPosts.firstSeenRunId))
+    .where(eq(savedPosts.postId, p.id))
+    .get();
+  if (!existing) {
+    q.insert(savedPosts).values({ postId: p.id, sortKey: key, firstSeenRunId: runId, lastSeenRunId: runId }).run();
+  } else {
+    q.update(savedPosts).set({ sortKey: key, lastSeenRunId: runId, removedRemotelyAt: null }).where(eq(savedPosts.postId, p.id)).run();
+  }
+  syncCollectionLinks(q, p, runId);
   // "Known" means first seen by an earlier run that finished walking the saved feed.
   // Posts from a run that was cut off may sit above a gap of posts nobody fetched yet.
   return { isNew: !existing, knownBefore: !!existing && existing.firstSeenRunId < runId && existing.firstRunComplete === true };
@@ -112,23 +118,26 @@ function replaceSearch(q: Q, p: ParsedPost) {
 }
 
 export class MismatchError extends Error {}
+/** The post is not stored and the caller did not ask to store it. The message is the code the extension checks. */
+export class NotStoredError extends NotFoundError {
+  constructor() {
+    super("not_stored");
+  }
+}
 
 /**
  * Fresh links for one post from Instagram's media info.
- * Keeps the post's feed position, run ids and collections: this answer says nothing about them.
+ * Keeps the post's saved place and collections: this answer says nothing about them.
+ * `store`: create the post when it is not stored yet (Analyze on an account page). It is not added to Saved.
  */
-export function ingestMediaInfo(db: Db, id: string, raw: unknown): MediaJob[] {
+export function ingestMediaInfo(db: Db, id: string, raw: unknown, o: { store: boolean }): MediaJob[] {
   const p = parseMediaPage(raw).items[0];
   if (!p || p.id !== id) throw new MismatchError(`Instagram answered about a different post than ${id}`);
   const jobs: MediaJob[] = [];
   db.transaction((tx) => {
-    const existing = tx.select({ thumbPath: posts.thumbPath }).from(posts).where(eq(posts.id, id)).get();
-    if (!existing) throw new NotFoundError(`Post ${id} is not in your library`);
-    upsertAuthor(tx, p.author, jobs);
-    tx.update(posts).set(postFields(p)).where(eq(posts.id, id)).run();
-    replaceParts(tx, p);
-    replaceSearch(tx, p);
-    if (!existing.thumbPath && p.thumbnailUrl) jobs.push({ kind: "thumb", id, url: p.thumbnailUrl });
+    const exists = tx.select({ id: posts.id }).from(posts).where(eq(posts.id, id)).get();
+    if (!exists && !o.store) throw new NotStoredError();
+    upsertPostContent(tx, p, jobs);
   });
   return jobs;
 }
@@ -169,7 +178,7 @@ export function ingestSavedPage(db: Db, runId: number, raw: unknown) {
       // Every run walks a prefix of the feed, so giving each seen post a fresh key above
       // all older keys keeps the whole list in feed order, in both modes.
       const key = run.baseKey - pos++;
-      const r = upsertPost(tx, p, runId, key, key, jobs);
+      const r = upsertSavedPost(tx, p, runId, key, jobs);
       if (r.isNew) newCount++;
       if (r.knownBefore) sawKnown = true;
     }
@@ -237,12 +246,12 @@ export function finishRun(db: Db, runId: number, result: SyncResult, now = Date.
 }
 
 function hideMissingPosts(q: Q, runId: number, now: number): { count: number; warning: string | null } {
-  const visible = and(isNull(posts.removedAt), isNull(posts.removedRemotelyAt));
-  const missing = and(visible, lt(posts.lastSeenRunId, runId));
-  const total = q.select({ n: count() }).from(posts).where(visible).get()?.n ?? 0;
-  const n = q.select({ n: count() }).from(posts).where(missing).get()?.n ?? 0;
+  const visible = and(isNull(savedPosts.removedAt), isNull(savedPosts.removedRemotelyAt));
+  const missing = and(visible, lt(savedPosts.lastSeenRunId, runId));
+  const total = q.select({ n: count() }).from(savedPosts).where(visible).get()?.n ?? 0;
+  const n = q.select({ n: count() }).from(savedPosts).where(missing).get()?.n ?? 0;
   if (n > SMALL_CHANGE && n > total * MAX_HIDDEN_SHARE) return { count: 0, warning: TOO_MANY_MISSING };
-  if (n > 0) q.update(posts).set({ removedRemotelyAt: now }).where(missing).run();
+  if (n > 0) q.update(savedPosts).set({ removedRemotelyAt: now }).where(missing).run();
   return { count: n, warning: null };
 }
 

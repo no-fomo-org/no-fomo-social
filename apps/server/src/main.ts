@@ -14,11 +14,13 @@ import { createApp } from "./http/app";
 import { createMediaStore, isMediaUrl } from "./media/store";
 import { createKeyStore } from "./secrets/key-store";
 import { failStaleRuns, markMediaSaved } from "./sync/ingest";
+import { failStaleFollowingRuns } from "./sync/following";
 
 const config = loadConfig();
 mkdirSync(config.dataDir, { recursive: true });
 const db = openDb(join(config.dataDir, "no-fomo.db"));
 failStaleRuns(db);
+failStaleFollowingRuns(db);
 failStaleReports(db, Date.now());
 cleanTempDirs(tmpdir());
 const media = createMediaStore({

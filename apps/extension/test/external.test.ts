@@ -7,11 +7,43 @@ function deps(over: Partial<ExternalDeps> = {}): ExternalDeps {
     findInstagramTab: vi.fn(async () => 5),
     openInstagramTab: vi.fn(async () => 9),
     sendToTab: vi.fn(async () => ({ ok: true })),
+    igStatus: vi.fn(async () => ({ pausedUntil: null, reason: null, budgetUntil: null })),
+    openWorkerTab: vi.fn(async () => 7),
     ...over,
   };
 }
 
 describe("handleExternalMessage", () => {
+  it("passes profile search, open, next page and following update to the Instagram tab", async () => {
+    const d = deps({ sendToTab: vi.fn(async () => ({ ok: true })) });
+    await handleExternalMessage({ type: "profile:search", query: " nasa " }, "http://localhost:4747/profiles", d);
+    await handleExternalMessage({ type: "profile:open", username: "nasa" }, "http://localhost:4747/", d);
+    await handleExternalMessage({ type: "profile:page", cursor: "nasa:QVFB_x-1=" }, "http://localhost:4747/", d);
+    await handleExternalMessage({ type: "following:update" }, "http://localhost:4747/", d);
+    expect((d.sendToTab as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[1])).toEqual([
+      { type: "profile:search", serverUrl: "http://localhost:4747", query: "nasa" },
+      { type: "profile:open", serverUrl: "http://localhost:4747", username: "nasa" },
+      { type: "profile:page", serverUrl: "http://localhost:4747", cursor: "nasa:QVFB_x-1=" },
+      { type: "following:update", serverUrl: "http://localhost:4747" },
+    ]);
+  });
+
+  it("rejects bad profile messages", async () => {
+    const d = deps();
+    const bad = [
+      { type: "profile:search", query: "x" },
+      { type: "profile:search", query: "a".repeat(61) },
+      { type: "profile:open", username: "../etc" },
+      { type: "profile:page", cursor: "../etc:1" },
+      { type: "profile:page", cursor: "nasa:a b<" },
+      { type: "profile:page", cursor: "nasa" },
+      { type: "media:refresh", id: "1", store: "yes" },
+    ];
+    for (const m of bad) expect(await handleExternalMessage(m, "http://localhost:4747/", d)).toEqual({ ok: false, error: "bad_message" });
+    expect(await handleExternalMessage({ type: "profile:load", mode: "add", username: "nasa" }, "http://localhost:4747/", d)).toEqual({ ok: false, error: "unknown_type" });
+    expect(d.sendToTab).not.toHaveBeenCalled();
+  });
+
   it("answers ping", async () => {
     expect(await handleExternalMessage({ type: "ping" }, undefined, deps())).toEqual({ ok: true, version: "0.1.0" });
   });
@@ -54,7 +86,9 @@ describe("handleExternalMessage", () => {
     const d = deps({ sendToTab: vi.fn(async () => ({ ok: true, media })) });
     const r = await handleExternalMessage({ type: "media:refresh", id: "123" }, "http://localhost:4747/", d);
     expect(r).toEqual({ ok: true, media });
-    expect(d.sendToTab).toHaveBeenCalledWith(5, { type: "media:fetch", serverUrl: "http://localhost:4747", id: "123" });
+    expect(d.sendToTab).toHaveBeenCalledWith(5, { type: "media:fetch", serverUrl: "http://localhost:4747", id: "123", store: false });
+    await handleExternalMessage({ type: "media:refresh", id: "123", store: true }, "http://localhost:4747/", d);
+    expect(d.sendToTab).toHaveBeenLastCalledWith(5, { type: "media:fetch", serverUrl: "http://localhost:4747", id: "123", store: true });
   });
 
   it("refuses media refresh with a bad id or from other pages", async () => {
@@ -63,5 +97,34 @@ describe("handleExternalMessage", () => {
     expect(await handleExternalMessage({ type: "media:refresh", id: 5 }, "http://localhost:4747/", d)).toEqual({ ok: false, error: "bad_message" });
     expect(await handleExternalMessage({ type: "media:refresh", id: "123" }, "https://evil.example/", d)).toEqual({ ok: false, error: "untrusted_sender" });
     expect(d.sendToTab).not.toHaveBeenCalled();
+  });
+  it("answers ig:status from storage without an Instagram tab", async () => {
+    const d = deps({ igStatus: vi.fn(async () => ({ pausedUntil: 5, reason: "slow", budgetUntil: null })) });
+    expect(await handleExternalMessage({ type: "ig:status" }, "http://localhost:4747/", d)).toEqual({
+      ok: true, status: { pausedUntil: 5, reason: "slow", budgetUntil: null },
+    });
+    expect(d.findInstagramTab).not.toHaveBeenCalled();
+    expect(await handleExternalMessage({ type: "ig:status" }, "https://evil.example/", d)).toEqual({ ok: false, error: "untrusted_sender" });
+  });
+
+  it("reads accounts in the hidden worker tab: a new account loads its page, a next page uses the open tab", async () => {
+    const d = deps();
+    await handleExternalMessage({ type: "profile:open", username: "nasa" }, "http://localhost:4747/", d);
+    await handleExternalMessage({ type: "profile:page", cursor: "nasa:ABC" }, "http://localhost:4747/", d);
+    expect((d.openWorkerTab as ReturnType<typeof vi.fn>).mock.calls).toEqual([
+      ["https://www.instagram.com/nasa/", true],
+      ["https://www.instagram.com/nasa/", false],
+    ]);
+    expect(d.sendToTab).toHaveBeenCalledWith(7, { type: "profile:open", serverUrl: "http://localhost:4747", username: "nasa" });
+    expect(d.findInstagramTab).not.toHaveBeenCalled();
+  });
+
+  it("does not load an Instagram page for an account while calls are limited", async () => {
+    const d = deps({ igStatus: vi.fn(async () => ({ pausedUntil: 99, reason: "slow", budgetUntil: null })) });
+    expect(await handleExternalMessage({ type: "profile:open", username: "nasa" }, "http://localhost:4747/", d)).toMatchObject({ ok: false, error: "paused", until: 99 });
+    const b = deps({ igStatus: vi.fn(async () => ({ pausedUntil: null, reason: null, budgetUntil: 55 })) });
+    expect(await handleExternalMessage({ type: "profile:page", cursor: "nasa:A" }, "http://localhost:4747/", b)).toMatchObject({ ok: false, error: "budget", until: 55 });
+    expect(d.openWorkerTab).not.toHaveBeenCalled();
+    expect(b.openWorkerTab).not.toHaveBeenCalled();
   });
 });

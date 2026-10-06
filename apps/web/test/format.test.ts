@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatAgo, formatCount, formatDuration, fullCheckDue, runResultNote } from "../app/lib/format";
+import { followingRunError, formatAgo, formatCount, formatDuration, fullCheckDue, runResultNote } from "../app/lib/format";
 import { syncErrorText } from "../app/lib/extension";
 
 describe("format", () => {
@@ -38,5 +38,22 @@ describe("full resync hints", () => {
     expect(runResultNote({ status: "done", postsNew: 2, postsRemoved: 3 })).toBe(", 2 new posts, 3 removed on Instagram");
     expect(runResultNote({ status: "done", postsNew: 0, postsRemoved: 1 })).toBe(", 1 removed on Instagram");
     expect(runResultNote({ status: "error", postsNew: 5, postsRemoved: 5 })).toBe("");
+  });
+});
+
+describe("followingRunError", () => {
+  const failed = new Date(2026, 9, 5, 21, 15).getTime();
+  const run = { status: "error" as const, startedAt: failed - 60_000, finishedAt: failed, errorMessage: "Instagram is limiting calls." };
+  it("shows a fresh failure as it is", () => {
+    expect(followingRunError(run, failed + 5 * 60_000)).toBe("Instagram is limiting calls.");
+  });
+  it("dates an old failure, so it does not look like it is happening now", () => {
+    expect(followingRunError(run, failed + 18 * 3600_000)).toBe("The last update, on Oct 5 at 21:15, did not finish. Press Update list to try again.");
+  });
+  it("dates an update that stopped without finishing by its start", () => {
+    expect(followingRunError({ ...run, finishedAt: null, startedAt: failed }, failed + 3600_000)).toBe("The last update, on Oct 5 at 21:15, did not finish. Press Update list to try again.");
+  });
+  it("says nothing for a run that did not fail", () => {
+    expect(followingRunError({ ...run, status: "done" }, failed)).toBeNull();
   });
 });
