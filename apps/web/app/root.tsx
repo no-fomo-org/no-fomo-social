@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import "@fontsource-variable/geist";
+import "@fontsource-variable/outfit";
+import "@fontsource-variable/figtree";
 import "@fontsource-variable/geist-mono";
 import "./app.css";
 

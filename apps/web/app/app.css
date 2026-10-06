@@ -1,36 +1,60 @@
+/* First Light tokens. Source: docs/brand/first-light/tokens.css */
 @import "tailwindcss";
 
 :root {
-  --bg: oklch(0.982 0.002 250);
-  --surface: oklch(0.955 0.003 250);
-  --surface-2: oklch(0.925 0.004 250);
-  --line: oklch(0.885 0.005 250);
-  --text: oklch(0.215 0.008 250);
-  --muted: oklch(0.47 0.01 250);
-  --accent: oklch(0.56 0.17 38);
-  --accent-ink: oklch(0.985 0.008 60);
-  --accent-soft: oklch(0.94 0.035 45);
-  --accent-line: oklch(0.74 0.1 42);
-  --danger: oklch(0.53 0.19 25);
-  --scrim: oklch(0.2 0.01 250 / 0.4);
-  --shadow: 0 1px 2px oklch(0.3 0.02 250 / 0.08), 0 12px 32px oklch(0.3 0.02 250 / 0.1);
+  /* Surfaces: near-white with a hint of green. Never pure white. */
+  --bg: #f6f7f3;            /* Mist: page background */
+  --surface: #edf0e8;       /* hover fills, input fills, skeletons */
+  --surface-2: #e4e8de;     /* pressed fills, second level */
+  --paper: #fdfdfb;         /* NEW Paper: sheets, popovers, menus */
+  --line: #e2e5dc;          /* Line: hairlines and borders */
+
+  /* Text */
+  --text: #1e2a22;          /* Forest: 13.9:1 on bg */
+  --muted: #5c685e;         /* 5.4:1 on bg, 5.1:1 on surface */
+
+  /* Accent: Fern. Primary action and active state only. */
+  --accent: #4f6b3a;        /* Fern */
+  --accent-ink: #fdfdfb;    /* text on Fern, 5.9:1 */
+  --accent-soft: #e3ebdc;   /* active tab, active chip, selection */
+  --accent-line: #b9cba8;   /* edge of active chip, focus ring halo */
+
+  /* Brand colors used outside controls */
+  --sage: #8ea796;          /* NEW secondary nature tone (illustration, charts) */
+  --lake: #3d7891;          /* NEW info and links inside report text, 4.6:1 */
+  --dawn: #f3e6c4;          /* NEW warm highlight (rare: new badge, search hit mark) */
+  --cream: #f4eedc;         /* NEW text and marks on the hero photo */
+
+  --danger: #a63d2f;        /* errors only, 5.9:1 */
+  --scrim: rgb(20 28 22 / 0.4);
+  --shadow: 0 1px 2px rgb(30 42 34 / 0.06), 0 12px 32px rgb(30 42 34 / 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: oklch(0.165 0.004 250);
-    --surface: oklch(0.2 0.005 250);
-    --surface-2: oklch(0.24 0.006 250);
-    --line: oklch(0.29 0.007 250);
-    --text: oklch(0.945 0.004 250);
-    --muted: oklch(0.7 0.01 250);
-    --accent: oklch(0.74 0.15 52);
-    --accent-ink: oklch(0.2 0.03 45);
-    --accent-soft: oklch(0.29 0.05 48);
-    --accent-line: oklch(0.56 0.1 50);
-    --danger: oklch(0.7 0.16 25);
-    --scrim: oklch(0.1 0.005 250 / 0.6);
-    --shadow: 0 1px 2px oklch(0.05 0 0 / 0.4), 0 16px 40px oklch(0.05 0 0 / 0.45);
+    /* "Evening": deep forest green-black */
+    --bg: #141a16;
+    --surface: #1c241f;
+    --surface-2: #232d26;
+    --paper: #1a211c;
+    --line: #2a332d;
+
+    --text: #eef0e8;        /* 15.4:1 on bg */
+    --muted: #9aa595;       /* 6.9:1 on bg */
+
+    --accent: #a3b98c;      /* light Fern */
+    --accent-ink: #16200f;  /* 7.9:1 on accent */
+    --accent-soft: #2a3726;
+    --accent-line: #4e6440;
+
+    --sage: #8ea796;
+    --lake: #7fb3c8;
+    --dawn: #e9d9ae;
+    --cream: #f4eedc;
+
+    --danger: #e58a76;
+    --scrim: rgb(5 8 6 / 0.6);
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.45);
   }
 }
 
@@ -38,6 +62,7 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-paper: var(--paper);
   --color-line: var(--line);
   --color-text: var(--text);
   --color-muted: var(--muted);
@@ -45,14 +70,45 @@
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
   --color-accent-line: var(--accent-line);
+  --color-sage: var(--sage);
+  --color-lake: var(--lake);
+  --color-dawn: var(--dawn);
+  --color-cream: var(--cream);
   --color-danger: var(--danger);
   --color-scrim: var(--scrim);
-  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
-  --radius-control: 8px;
-  --radius-tile: 6px;
+
+  /* Type */
+  --font-display: "Outfit Variable", ui-sans-serif, system-ui, sans-serif; /* NEW: logo, hero, big titles, weight 800-900 */
+  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, sans-serif;   /* UI and body */
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;             /* numbers, durations, dates */
+
+  /* Shape: small and crisp */
+  --radius-control: 6px;  /* buttons, inputs, tabs, chips, popovers */
+  --radius-tile: 4px;     /* thumbnails, video, images */
+  --radius-sheet: 8px;    /* NEW: sheets and dialogs */
+  --radius-icon: 22%;     /* NEW: app icon squircle */
+
   --shadow-pop: var(--shadow);
-  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Motion (Emil Kowalski curves) */
+  --ease-out-soft: cubic-bezier(0.23, 1, 0.32, 1);  /* enter, press, hover */
+  --ease-in-out-soft: cubic-bezier(0.77, 0, 0.175, 1); /* NEW: things moving on screen */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);    /* NEW: sheet slide */
+}
+
+/* NEW: brand loading mark. The star rises over the horizon, then rests. */
+@keyframes fl-star-rise {
+  0%   { transform: translateY(10%); opacity: 0.35; }
+  60%  { transform: translateY(0);   opacity: 1; }
+  100% { transform: translateY(0);   opacity: 1; }
+}
+.fl-loading-star {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fl-star-rise 1.4s var(--ease-in-out-soft) infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fl-loading-star { animation: none; }
 }
 
 html { color-scheme: light dark; }
@@ -71,6 +127,6 @@ body { font-family: var(--font-sans); }
 .report-md ul { list-style: disc; padding-inline-start: 20px; }
 .report-md ol { list-style: decimal; padding-inline-start: 20px; }
 .report-md li { margin: 2px 0; }
-.report-md a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+.report-md a { color: var(--lake); text-decoration: underline; text-underline-offset: 2px; }
 .report-md code { font-family: var(--font-mono); font-size: 13px; background: var(--surface); border-radius: 4px; padding: 1px 4px; }
 .report-md pre { background: var(--surface); border-radius: var(--radius-control); padding: 8px 12px; overflow-x: auto; }
