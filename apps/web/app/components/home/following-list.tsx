@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { FollowingPage } from "@no-fomo/core";
-import { formatAgo } from "../../lib/format";
+import { followingRunError, formatAgo } from "../../lib/format";
 import { Avatar } from "../avatar";
 import { Button } from "../ui/button";
 
@@ -28,7 +28,7 @@ export function FollowingList(props: {
         <Button className="ms-auto" onClick={props.onUpdate} disabled={!props.ready || running || props.limited}>{running ? "Updating…" : "Update list"}</Button>
       </div>
       {props.error && <p role="alert" className="mt-2 text-[13px] text-danger">{props.error}</p>}
-      {page?.run?.status === "error" && !props.error && <p className="mt-2 text-[13px] text-danger">{page.run.errorMessage ?? "The last update failed."}</p>}
+      {page?.run?.status === "error" && !props.error && <p className="mt-2 text-[13px] text-danger">{followingRunError(page.run, Date.now())}</p>}
       {page?.run?.status === "done" && page.run.duplicates > 0 && (
         <p className="mt-2 text-[13px] text-muted">Instagram changed the list while it was read, so some accounts may be missing. Nothing was removed. Try Update list again later.</p>
       )}
