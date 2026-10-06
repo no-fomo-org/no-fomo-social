@@ -129,6 +129,8 @@ html { color-scheme: light dark; }
 ::selection { background: var(--accent-soft); color: var(--text); }
 :focus-visible { outline-color: var(--accent); }
 body { font-family: var(--font-sans); }
+/* While the post viewer is open, the scroll lock keeps a scrollbar gutter: paint it like the sheet next to it. */
+:root:has([data-post-viewer]) { background-color: var(--paper); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }

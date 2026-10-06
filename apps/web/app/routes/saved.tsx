@@ -32,7 +32,7 @@ export default function Saved() {
           onClearFilters={() => update(NO_FILTERS)}
           empty={
             <EmptyHero variant="full" title={<h2>Your saved posts will show up here</h2>}>
-              <SetupSteps tone="photo" />
+              <SetupSteps tone="inherit" />
               <SyncNowButton />
             </EmptyHero>
           }

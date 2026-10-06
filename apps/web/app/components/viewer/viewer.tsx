@@ -61,6 +61,7 @@ export function Viewer({
             if (e.key === "ArrowUp" && onPrev) { e.preventDefault(); onPrev(); }
             if (e.key === "ArrowDown" && onNext) { e.preventDefault(); onNext(); }
           }}
+          data-post-viewer
           data-instant={instant || undefined}
           className="group/sheet fixed inset-0 z-50 flex flex-col overflow-y-auto bg-paper transition-opacity duration-200 ease-out-soft data-[ending-style]:opacity-0 data-[starting-style]:opacity-0 data-[instant]:duration-0! md:grid md:grid-cols-[minmax(0,1fr)_380px] md:overflow-hidden md:bg-bg"
         >

@@ -7,9 +7,9 @@ const STEPS = [
   <>Come back here and press Sync.</>,
 ];
 
-/** `photo`: cream text for the brand photograph. */
-export function SetupSteps({ tone = "page" }: { tone?: "page" | "photo" }) {
-  const text = tone === "photo" ? "text-cream/85 [&_code]:text-cream" : "text-muted [&_code]:text-text";
+/** `inherit`: take text colors from the parent (the brand photo sets cream). */
+export function SetupSteps({ tone = "page" }: { tone?: "page" | "inherit" }) {
+  const text = tone === "inherit" ? "" : "text-muted [&_code]:text-text";
   return (
     <ol className={`mt-4 grid max-w-[60ch] gap-2.5 text-[15px] leading-relaxed ${text}`}>
       {STEPS.map((step, i) => (
