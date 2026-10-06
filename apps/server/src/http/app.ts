@@ -12,7 +12,7 @@ import { authors, posts } from "../db/schema";
 import type { Analyzer } from "../analyze/analyzer";
 import { AnalyzeError } from "../analyze/errors";
 import type { ModelCatalog } from "../analyze/models";
-import { getReport } from "../analyze/report-store";
+import { deleteReport, getReport } from "../analyze/report-store";
 import { imageType, type MediaStore } from "../media/store";
 import type { KeyStore } from "../secrets/key-store";
 import { readSettings, updateSettings } from "../settings";
@@ -186,6 +186,13 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
   app.get("/api/posts/:id/report", (c) => {
     const found = getReport(db, Id.parse(c.req.param("id")));
     return found ? c.json(found) : c.json({ error: "not_found" }, 404);
+  });
+  app.delete("/api/posts/:id/report", (c) => {
+    if (fromExtension(c)) return c.json({ error: "forbidden" }, 403);
+    const result = deleteReport(db, Id.parse(c.req.param("id")));
+    if (result === "not_found") return c.json({ error: "not_found" }, 404);
+    if (result === "busy") return c.json({ error: "already_running" }, 409);
+    return c.json({ ok: true });
   });
   app.get("/api/authors", (c) => c.json(listAuthors(db, AuthorsQuery.parse(c.req.query()).scope)));
   app.get("/api/reports", (c) => c.json(listReports(db, ReportsQuerySchema.parse(c.req.query()))));

@@ -42,3 +42,15 @@ export function failStaleReports(db: Db, now: number) {
     .where(inArray(reports.status, ["queued", "running"]))
     .run();
 }
+
+/** "busy" while a job for this post is queued or running, because the job would write its report back. */
+export function deleteReport(db: Db, postId: string): "deleted" | "not_found" | "busy" {
+  const r = getReport(db, postId);
+  if (!r) return "not_found";
+  if (r.status === "queued" || r.status === "running") return "busy";
+  db.transaction((tx) => {
+    tx.delete(reports).where(eq(reports.postId, postId)).run();
+    tx.run(sql`DELETE FROM report_search WHERE post_id = ${postId}`);
+  });
+  return "deleted";
+}
