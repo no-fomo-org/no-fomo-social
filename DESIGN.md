@@ -236,7 +236,7 @@ Every text pair passes WCAG AA in both themes. The lowest pairs are Muted on Sur
 
 Content is centered with a 1600px maximum width and a 16px gutter on phone, 24px from 768px. Reports and Search use narrower columns (900px and 1100px) for reading.
 
-The top bar is 64px tall on desktop with a hairline at the bottom: the logo on the left (it links to Search), the tabs Search, Saved and Reports centered, and Settings and Sync on the right. The tabs stay in the same spot on every page. On a phone the tabs take a second, centered row. Search lives in the filter row of Saved and Reports, first in the row (`/` focuses it, placeholder "Search keywords").
+The top bar is 64px tall on desktop with a hairline at the bottom: the logo on the left (it links to Search), the tabs Search, Saved and Reports centered, and Settings and Sync on the right. The tabs stay in the same spot on every page. On a phone the tabs take a second, centered row. Search lives in the filter row of Saved and Reports, right after the filters (`/` focuses it, placeholder "Search keywords").
 
 The Saved grid uses large 3:4 tiles: 2 columns on phone, 3 from 640px, 4 from 1024px, 5 from 1280px and 6 from 1680px. Column gaps grow from 12px to 20px; row gaps from 24px to 32px. Under each tile: author and duration on one line, then the first line of the caption.
 
