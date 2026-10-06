@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { UseInfiniteQueryResult, InfiniteData } from "@tanstack/react-query";
 import type { PostListItem } from "@no-fomo/core";
+import { Tooltip } from "@base-ui/react/tooltip";
 import { hasFilters, type Filters } from "../lib/filters";
 import { listBody } from "../lib/live-pages";
 import { PostTile } from "./post-tile";
@@ -81,13 +82,16 @@ export function PostGrid(props: {
 
   return (
     <>
-      <ul className={GRID}>
-        {props.items.map((p) => (
-          <li key={p.id} className={intro.has(p.id) ? "fl-rise" : undefined} style={intro.has(p.id) ? ({ "--i": intro.get(p.id) } as CSSProperties) : undefined}>
-            <PostTile post={p} onOpen={props.onOpen} />
-          </li>
-        ))}
-      </ul>
+      {/* One shared delay: after the first tooltip, the next ones open at once. */}
+      <Tooltip.Provider delay={400}>
+        <ul className={GRID}>
+          {props.items.map((p) => (
+            <li key={p.id} className={intro.has(p.id) ? "fl-rise" : undefined} style={intro.has(p.id) ? ({ "--i": intro.get(p.id) } as CSSProperties) : undefined}>
+              <PostTile post={p} onOpen={props.onOpen} />
+            </li>
+          ))}
+        </ul>
+      </Tooltip.Provider>
       <div ref={sentinel} aria-hidden="true" />
       {query.isFetchingNextPage && <div className="mt-6 lg:mt-8"><Skeleton count={6} /></div>}
       {query.isFetchNextPageError && !query.isFetchingNextPage && (
