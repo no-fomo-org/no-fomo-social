@@ -43,6 +43,9 @@ Web app (React Router v8 **SPA mode** + Vite + Tailwind v4 + shadcn/Base UI + Hu
    - Graph in SQLite: `nodes` (post, author, topic, entity, hashtag) + `edges` (post→topic, etc.) + topic co-occurrence weights.
    - Embeddings: **local, free by default** (transformers.js, e.g. multilingual small model); OpenAI embeddings optional.
    - Search "posts about claude code": hybrid = FTS5 keyword + vector similarity + graph expansion (matching topic nodes) → ranked post grid in the UI.
+   - **What search reads:** caption, hashtags, author, music, Instagram's image description, and the transcript and report of analyzed posts. A reel whose substance is only spoken is found by meaning only after it is analyzed (each analysis costs a few cents).
+   - **Sort and filter by numbers:** views, likes, comments (already stored for every saved post), next to the existing author, collection, type and date filters.
+   - **On an account (Home):** the same search and sorting over the account's posts. Account posts are not stored and come 12 per Instagram call, so the account view gets a **Load all posts** button with progress (a 300-post account is about 25 calls, roughly 2 minutes at the gate's pace; the hourly limit allows about 1,800 posts). Search and sorting then run on the loaded posts with no more Instagram calls. Instagram's account answer has likes and comments; views may be missing for some posts.
    - **AI report** page: top topics/authors, trends over time, clusters, forgotten saves; LLM writes a short summary from aggregated stats (not raw posts).
 5. **Analyze one post (lazy):** button "Analyze" →
    - Video, Mode A (default): download video to temp dir → ffmpeg scene frames (ported claude-video rules) → transcribe (OpenAI or Groq Whisper key) → vision LLM gets metadata + frames + transcript → markdown report.
@@ -57,7 +60,7 @@ Web app (React Router v8 **SPA mode** + Vite + Tailwind v4 + shadcn/Base UI + Hu
 2. Video player + image lightbox with on-demand URL refresh. Full resync.
 3. Batch unsave queue.
 4. Analyze (video Mode A, image path, then video Mode B).
-5. Free graph + local embeddings + semantic search. Optional LLM enrichment.
+5. Free graph + local embeddings + semantic search, and sorting by views, likes and comments: first in Saved, then on an account with **Load all posts**. Optional LLM enrichment.
 6. Knowledge graph view + AI report.
 7. Packaging (`npx`, Docker), Chrome Web Store release of the extension (one-click install instead of unpacked developer mode), README, security review.
 

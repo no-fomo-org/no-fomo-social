@@ -45,7 +45,9 @@ Running locally and being free are constraints of the project, not its main sell
 **Planned:** see `PLAN.md`.
 - Batch unsave.
 - Groq and Gemini options for the per-post report.
-- Semantic search and a topic map.
+- Semantic search, in Saved and on any account's posts: for example "posts that teach how to sell".
+- Sorting by views, likes and comments, in Saved and on an account.
+- A topic map.
 - An AI report on the whole library.
 - Packaging with `npx` and Docker.
 
