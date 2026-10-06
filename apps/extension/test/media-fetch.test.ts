@@ -57,4 +57,11 @@ describe("fetchMedia", () => {
     const r = await fetchMedia({ ig: ig(async () => ({ items: [] })), id: "123", serverUrl: "http://localhost:4747", send, store: true });
     expect(r).toEqual({ ok: false, error: "server_error" });
   });
+
+  it("passes on when calls are allowed again", async () => {
+    const send = vi.fn();
+    const r = await fetchMedia({ ig: ig(async () => { throw new IgError("budget", "many calls", undefined, 99); }), id: "1", serverUrl: "http://localhost:4747", send, store: false });
+    expect(r).toEqual({ ok: false, error: "budget", until: 99 });
+    expect(send).not.toHaveBeenCalled();
+  });
 });

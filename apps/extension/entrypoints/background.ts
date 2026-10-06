@@ -1,5 +1,6 @@
-import { APP_VERSION, DEFAULT_PORT } from "@no-fomo/core";
+import { APP_VERSION, DEFAULT_PORT, gateStatus } from "@no-fomo/core";
 import { handleExternalMessage } from "../src/external";
+import { readGateState } from "../src/gate-store";
 import { handleRelay, type RelayMessage } from "../src/relay";
 
 const IG_URL = "https://www.instagram.com/";
@@ -45,6 +46,7 @@ export default defineBackground(() => {
         return tab.id!;
       },
       sendToTab,
+      igStatus: async () => gateStatus(await readGateState(browser.storage.local), Date.now()),
     }).then(sendResponse, (e: Error) => sendResponse({ ok: false, error: e.message }));
     return true;
   });

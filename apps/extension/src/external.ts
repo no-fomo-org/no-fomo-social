@@ -1,15 +1,16 @@
-import type { LivePage, LiveProfile, PostMedia, SyncMode, UserSuggestion } from "@no-fomo/core";
+import type { GateStatus, LivePage, LiveProfile, PostMedia, SyncMode, UserSuggestion } from "@no-fomo/core";
 import { isAppOrigin } from "./origins";
 
 export type ExtResponse =
-  | { ok: true; version?: string; media?: PostMedia; users?: UserSuggestion[]; profile?: LiveProfile; page?: LivePage | null }
-  | { ok: false; error: string };
+  | { ok: true; version?: string; media?: PostMedia; users?: UserSuggestion[]; profile?: LiveProfile; page?: LivePage | null; status?: GateStatus }
+  | { ok: false; error: string; detail?: string; until?: number };
+/** Every message carries `serverUrl`, so the tab knows where to send its call log. */
 export type TabMessage =
   | { type: "sync:run"; serverUrl: string; mode: SyncMode }
   | { type: "media:fetch"; serverUrl: string; id: string; store: boolean }
-  | { type: "profile:search"; query: string }
-  | { type: "profile:open"; username: string }
-  | { type: "profile:page"; cursor: string }
+  | { type: "profile:search"; serverUrl: string; query: string }
+  | { type: "profile:open"; serverUrl: string; username: string }
+  | { type: "profile:page"; serverUrl: string; cursor: string }
   | { type: "following:update"; serverUrl: string };
 
 export interface ExternalDeps {
@@ -17,6 +18,8 @@ export interface ExternalDeps {
   findInstagramTab(): Promise<number | null>;
   openInstagramTab(): Promise<number>;
   sendToTab(tabId: number, msg: TabMessage): Promise<unknown>;
+  /** Read from storage; needs no Instagram tab. */
+  igStatus(): Promise<GateStatus>;
 }
 
 const ID = /^\d{1,30}$/;
@@ -36,12 +39,12 @@ function toTabMessage(m: Record<string, unknown>, serverUrl: string): TabMessage
       return { type: "media:fetch", serverUrl, id: m.id, store: m.store === true };
     case "profile:search": {
       const query = typeof m.query === "string" ? m.query.trim() : "";
-      return query.length >= 2 && query.length <= 60 ? { type: "profile:search", query } : null;
+      return query.length >= 2 && query.length <= 60 ? { type: "profile:search", serverUrl, query } : null;
     }
     case "profile:open":
-      return typeof m.username === "string" && USERNAME.test(m.username) ? { type: "profile:open", username: m.username } : null;
+      return typeof m.username === "string" && USERNAME.test(m.username) ? { type: "profile:open", serverUrl, username: m.username } : null;
     case "profile:page":
-      return typeof m.cursor === "string" && CURSOR.test(m.cursor) ? { type: "profile:page", cursor: m.cursor } : null;
+      return typeof m.cursor === "string" && CURSOR.test(m.cursor) ? { type: "profile:page", serverUrl, cursor: m.cursor } : null;
     case "following:update":
       return { type: "following:update", serverUrl };
     default:
@@ -53,9 +56,10 @@ export async function handleExternalMessage(msg: unknown, senderUrl: string | un
   if (typeof msg !== "object" || msg === null) return { ok: false, error: "bad_message" };
   const m = msg as Record<string, unknown>;
   if (m.type === "ping") return { ok: true, version: deps.version };
-  if (typeof m.type !== "string" || !TYPES.has(m.type)) return { ok: false, error: "unknown_type" };
+  if (m.type !== "ig:status" && (typeof m.type !== "string" || !TYPES.has(m.type))) return { ok: false, error: "unknown_type" };
   if (!senderUrl) return { ok: false, error: "no_sender" };
   if (!isAppOrigin(senderUrl)) return { ok: false, error: "untrusted_sender" };
+  if (m.type === "ig:status") return { ok: true, status: await deps.igStatus() };
 
   const tabMsg = toTabMessage(m, new URL(senderUrl).origin);
   if (!tabMsg) return { ok: false, error: "bad_message" };

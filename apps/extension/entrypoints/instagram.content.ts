@@ -1,4 +1,5 @@
-import { createIgClient, createRequestGate, gateClient, runSync, type SyncMode } from "@no-fomo/core";
+import { createIgClient, createRequestGate, gateClient, runSync, type IgCallLog, type SyncMode } from "@no-fomo/core";
+import { storageGateStore } from "../src/gate-store";
 import { createRelaySink } from "../src/relay-sink";
 import { fetchMedia } from "../src/media-fetch";
 import { createTabJobs } from "../src/tab-jobs";
@@ -16,13 +17,24 @@ export default defineContentScript({
   matches: ["https://www.instagram.com/*"],
   main() {
     const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-    // Every Instagram job in this tab shares one gate, so Instagram never sees two requests close together.
-    const ig = gateClient(createIgClient({ fetch: window.fetch.bind(window), csrfToken: readCsrf }), createRequestGate({ sleep }), { mode: "fail" });
     const send = (m: RelayMessage) => browser.runtime.sendMessage(m) as Promise<RelayResponse>;
-    const jobs = createTabJobs({ ig, send, viewerId: () => readCookie("ds_user_id") });
+    /** Where the call log goes: the app that sent the last message. */
+    let serverUrl: string | null = null;
+    const log = (entry: IgCallLog) => {
+      if (serverUrl) void send({ type: "relay", serverUrl, path: "/api/sync/ig-calls", body: entry }).catch(() => {});
+    };
+    // One gate for every Instagram job. Its state is in browser storage, shared by all Instagram tabs.
+    const gate = createRequestGate({ sleep, store: storageGateStore(browser.storage.local) });
+    const raw = createIgClient({ fetch: window.fetch.bind(window), csrfToken: readCsrf });
+    /** Calls the owner waits for: fail at once when calls are limited. */
+    const ig = gateClient(raw, gate, { mode: "fail", log });
+    /** Sync and following updates: wait for the hourly limit and go on. */
+    const backgroundIg = gateClient(raw, gate, { mode: "wait", log });
+    const jobs = createTabJobs({ ig, backgroundIg, send, viewerId: () => readCookie("ds_user_id") });
     let running = false;
 
     browser.runtime.onMessage.addListener((msg: TabMsg, _sender, sendResponse) => {
+      if (typeof msg?.serverUrl === "string") serverUrl = msg.serverUrl;
       const job = jobs.handle(msg);
       if (job) {
         void job.then(sendResponse);
@@ -42,7 +54,7 @@ export default defineContentScript({
       sendResponse({ ok: true });
       const sink = createRelaySink(msg.serverUrl, send);
       // The gate spaces requests, so the sync loop adds no pause of its own.
-      void runSync({ ig, sink, sleep, delayMs: () => 0, mode: msg.mode === "full" ? "full" : "incremental" })
+      void runSync({ ig: backgroundIg, sink, sleep, delayMs: () => 0, mode: msg.mode === "full" ? "full" : "incremental" })
         .then((r) => console.info("[no-fomo] sync finished", r))
         .finally(() => { running = false; });
     });

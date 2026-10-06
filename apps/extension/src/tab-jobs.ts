@@ -6,10 +6,13 @@ import { createFollowingSink } from "./relay-sink";
 import type { RelayMessage, RelayResponse } from "./relay";
 
 type Msg = { type?: unknown; query?: unknown; serverUrl?: unknown; username?: unknown; cursor?: unknown };
-type Reply = { ok: true; [k: string]: unknown } | { ok: false; error: string; detail?: string };
+type Reply = { ok: true; [k: string]: unknown } | { ok: false; error: string; detail?: string; until?: number };
 
-/** The code picks the app's text; the detail says what Instagram answered. */
-const failure = (e: unknown): Reply => ({ ok: false, error: e instanceof IgError ? e.code : "internal", detail: (e as Error).message });
+/** The code picks the app's text; the detail says what Instagram answered; `until` says when calls are allowed again. */
+const failure = (e: unknown): Reply =>
+  e instanceof IgError
+    ? { ok: false, error: e.code, detail: e.message, ...(e.until ? { until: e.until } : {}) }
+    : { ok: false, error: "internal", detail: (e as Error).message };
 
 /** One page of an account, ready to show. The cursor carries the user id, so the next call needs nothing else. */
 function livePage(userId: string, raw: unknown): LivePage {
@@ -23,9 +26,10 @@ function livePage(userId: string, raw: unknown): LivePage {
 /**
  * Account pages, profile search and following updates in the Instagram tab.
  * Account pages go straight back to the app page: nothing is stored.
- * The request gate keeps every Instagram call apart.
+ * The request gate keeps every Instagram call apart. Account pages and search use `ig` (fails at once when calls are limited);
+ * the following update uses `backgroundIg` (waits).
  */
-export function createTabJobs(deps: { ig: IgClient; send: (m: RelayMessage) => Promise<RelayResponse>; viewerId: () => string | null }) {
+export function createTabJobs(deps: { ig: IgClient; backgroundIg: IgClient; send: (m: RelayMessage) => Promise<RelayResponse>; viewerId: () => string | null }) {
   let updating = false;
 
   async function open(username: string): Promise<Reply> {
@@ -53,7 +57,7 @@ export function createTabJobs(deps: { ig: IgClient; send: (m: RelayMessage) => P
     if (updating) return Promise.resolve({ ok: false, error: "busy" });
     updating = true;
     return new Promise<LoadStart>((resolve) => {
-      void runFollowingUpdate({ ig: deps.ig, sink: createFollowingSink(serverUrl, deps.send), viewerId: deps.viewerId(), onStart: resolve })
+      void runFollowingUpdate({ ig: deps.backgroundIg, sink: createFollowingSink(serverUrl, deps.send), viewerId: deps.viewerId(), onStart: resolve })
         .then((r) => console.info("[no-fomo] following update finished", r))
         .finally(() => { updating = false; });
     });

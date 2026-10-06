@@ -9,7 +9,7 @@ export default defineConfig({
       name: "no-fomo",
       description: "Syncs your Instagram saved posts to the no-fomo app on your computer.",
       key: EXTENSION_PUBLIC_KEY,
-      permissions: ["tabs"],
+      permissions: ["tabs", "storage"],
       host_permissions: ["https://www.instagram.com/*", ...origins],
       externally_connectable: { matches: origins },
       action: { default_title: "Open no-fomo" },

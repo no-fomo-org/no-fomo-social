@@ -1,7 +1,7 @@
 import { IgError, parseMediaPage, toLivePost, type IgClient, type PostMedia } from "@no-fomo/core";
 import type { RelayMessage, RelayResponse } from "./relay";
 
-export type MediaFetchResult = { ok: true; media: PostMedia } | { ok: false; error: string };
+export type MediaFetchResult = { ok: true; media: PostMedia } | { ok: false; error: string; until?: number };
 
 /**
  * One Instagram request for a post's fresh links. The local server updates its copy of the post.
@@ -20,7 +20,8 @@ export async function fetchMedia(opts: {
   try {
     payload = await opts.ig.mediaInfo(opts.id);
   } catch (e) {
-    return { ok: false, error: e instanceof IgError ? e.code : "internal" };
+    if (e instanceof IgError) return { ok: false, error: e.code, ...(e.until ? { until: e.until } : {}) };
+    return { ok: false, error: "internal" };
   }
   const r = await opts.send({ type: "relay", serverUrl: opts.serverUrl, path: `/api/sync/media/${opts.id}`, body: { payload, store: opts.store } });
   if (r.ok) return { ok: true, media: r.data as PostMedia };

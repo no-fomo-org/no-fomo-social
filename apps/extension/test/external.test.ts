@@ -7,6 +7,7 @@ function deps(over: Partial<ExternalDeps> = {}): ExternalDeps {
     findInstagramTab: vi.fn(async () => 5),
     openInstagramTab: vi.fn(async () => 9),
     sendToTab: vi.fn(async () => ({ ok: true })),
+    igStatus: vi.fn(async () => ({ pausedUntil: 5, reason: "slow", budgetUntil: null })),
     ...over,
   };
 }
@@ -19,9 +20,9 @@ describe("handleExternalMessage", () => {
     await handleExternalMessage({ type: "profile:page", cursor: "528817151:QVFB_x-1=" }, "http://localhost:4747/", d);
     await handleExternalMessage({ type: "following:update" }, "http://localhost:4747/", d);
     expect((d.sendToTab as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[1])).toEqual([
-      { type: "profile:search", query: "nasa" },
-      { type: "profile:open", username: "nasa" },
-      { type: "profile:page", cursor: "528817151:QVFB_x-1=" },
+      { type: "profile:search", serverUrl: "http://localhost:4747", query: "nasa" },
+      { type: "profile:open", serverUrl: "http://localhost:4747", username: "nasa" },
+      { type: "profile:page", serverUrl: "http://localhost:4747", cursor: "528817151:QVFB_x-1=" },
       { type: "following:update", serverUrl: "http://localhost:4747" },
     ]);
   });
@@ -95,5 +96,13 @@ describe("handleExternalMessage", () => {
     expect(await handleExternalMessage({ type: "media:refresh", id: 5 }, "http://localhost:4747/", d)).toEqual({ ok: false, error: "bad_message" });
     expect(await handleExternalMessage({ type: "media:refresh", id: "123" }, "https://evil.example/", d)).toEqual({ ok: false, error: "untrusted_sender" });
     expect(d.sendToTab).not.toHaveBeenCalled();
+  });
+  it("answers ig:status from storage without an Instagram tab", async () => {
+    const d = deps();
+    expect(await handleExternalMessage({ type: "ig:status" }, "http://localhost:4747/", d)).toEqual({
+      ok: true, status: { pausedUntil: 5, reason: "slow", budgetUntil: null },
+    });
+    expect(d.findInstagramTab).not.toHaveBeenCalled();
+    expect(await handleExternalMessage({ type: "ig:status" }, "https://evil.example/", d)).toEqual({ ok: false, error: "untrusted_sender" });
   });
 });
