@@ -51,14 +51,16 @@ All Instagram calls stay in the extension and in `packages/core/src/ig`, and eve
 **Pace**
 - One call at a time, with a 3–6 s random pause between two calls.
 - At most **150 calls in any 60 minutes**. The gate keeps the times of recent calls in storage.
-  - Background jobs (saved sync, **Update list**) wait until a call is allowed again and go on.
-  - Calls the owner is waiting for (search, open account, **Load more**, post links, Analyze) do not wait. They fail with code `budget` and the time when calls are allowed again.
+  - Saved sync waits until a call is allowed again and goes on.
+  - Everything else (**Update list**, search, open account, **Load more**, post links, Analyze) does not wait. It fails with code `budget` and the time when calls are allowed again. (An **Update list** that waited would look stopped to the app after 2 minutes.)
+  - A call that does not wait never queues behind a sync that is waiting: it fails at once.
+  - Tabs change the shared state under one browser lock (Web Locks, `no-fomo-ig-gate`), so one tab never writes over another tab's stop.
 
-**After Instagram refuses** (HTTP 429, `spam: true`, or `status: "fail"` that is not "not found")
+**After Instagram refuses** (HTTP 429, `spam: true`, "wait a few minutes", `feedback_required`, or `status: "fail"` that is not "not found")
 - The gate stops all calls for **15 minutes**. If the first call after that is refused again, **1 hour**, then **6 hours** for every further refusal.
 - A successful call resets the step back to 15 minutes.
 - During the stop, calls fail at once with code `paused`, the end time and Instagram's answer. No call reaches Instagram.
-- Login errors (401, 403, `require_login`) do not start a stop.
+- Login errors (401, 403, `require_login`) do not start a stop, except when the answer says "wait a few minutes", has `spam: true` or `feedback_required`: those are limits, whatever the status code.
 
 **Status for the app**
 - New extension message `ig:status` → `{ pausedUntil, reason, budgetUntil }` (times in ms or null). The background script answers it from `browser.storage.local`, without an Instagram tab. The web app asks for it every 30 s and right after any `paused` or `budget` answer.
