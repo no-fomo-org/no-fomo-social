@@ -42,7 +42,7 @@ Unchanged from the second version (migrations 0008–0010 are applied on the own
 - **`following`**: `author_id` (references `authors`), `position`, `last_seen_run_id`. Names and avatars live in `authors`.
 - **`following_runs`**: one row per **Update list** run.
 - **`reports`**: keyed by `post_id`, so one report per post, wherever the post came from.
-- **`ig_calls`** (new, migration 0011): one row per Instagram call: `id`, `at` (ms), `kind` (`saved`, `collections`, `post`, `profile`, `feed`, `search`, `following`), `status` (HTTP status, or 0 when the network failed), `result` (`ok`, `rate_limited`, `refused`, `login_required`, `not_found`, `error`), `ms` (duration). The server keeps the newest 2,000 rows and deletes older ones on insert.
+- **`ig_calls`** (new, migration 0012): one row per Instagram call: `id`, `at` (ms), `kind` (`saved`, `collections`, `post`, `profile`, `feed`, `search`, `following`), `status` (HTTP status, or 0 when the network failed), `result` (`ok`, `rate_limited`, `refused`, `login_required`, `not_found`, `error`), `ms` (duration). The server keeps the newest 2,000 rows and deletes older ones on insert.
 
 ## 2. Instagram safety (extension)
 
@@ -61,11 +61,12 @@ All Instagram calls stay in the extension and in `packages/core/src/ig`, and eve
 - Login errors (401, 403, `require_login`) do not start a stop.
 
 **Status for the app**
-- New extension message `ig:status` → `{ pausedUntil, reason, budgetUntil }` (times in ms or null). The web app asks for it every 30 s and right after any `paused` or `budget` answer.
-- A banner under the top bar, on every tab, while a stop or the hourly limit is on. Stop: "Instagram is limiting calls. Try again at 15:30." (Instagram's answer as a tooltip). Hourly limit: "The app made many Instagram calls this hour. Try again at 15:30." Buttons that need Instagram (Sync, Update list, search on Enter, Load more, Analyze) are disabled until then.
+- New extension message `ig:status` → `{ pausedUntil, reason, budgetUntil }` (times in ms or null). The background script answers it from `browser.storage.local`, without an Instagram tab. The web app asks for it every 30 s and right after any `paused` or `budget` answer.
+- A banner under the top bar, on every tab, while a stop or the hourly limit is on. Stop: "Instagram is limiting calls. Try again at 15:30." (Instagram's answer as a tooltip). Hourly limit: "The app made many Instagram calls this hour. Try again at 15:30." Buttons that always need Instagram (Sync, Update list, search on Enter, Load more) are disabled until then. Analyze stays on, because a stored post with fresh links needs no Instagram call; when it does need one, it shows the same text.
 
 **Call log**
-- After each call, the extension sends `{ at, kind, status, result, ms }` to `POST /api/ig-calls` (through the background relay, as for sync). A failed log write never fails the call.
+- After each call, the extension sends `{ at, kind, status, result, ms }` to `POST /api/sync/ig-calls` (through the background relay, as for sync; the relay only allows `/api/sync/` paths). A failed log write never fails the call. Calls stopped by the gate never reach Instagram and are not logged.
+- Every message to the Instagram tab carries `serverUrl`, so the tab always knows where to send the log.
 - Nothing in the app shows the log. It is for finding the cause of the next refusal (`sqlite3 ~/.no-fomo/no-fomo.db "select * from ig_calls order by id desc limit 50"`).
 
 **Calls**
@@ -73,7 +74,7 @@ All Instagram calls stay in the extension and in `packages/core/src/ig`, and eve
 - `profileInfo(username)`: `GET /api/v1/users/web_profile_info/?username=…`.
 - `userFeed(userId, cursor)`: `GET /api/v1/feed/user/{userId}/?count=12&max_id=…`.
 - `searchUsers(query)`: `GET /api/v1/web/search/topsearch/?context=blended&query=…`.
-- `followingPage(viewerId, cursor)`: `GET /api/v1/friendships/{viewerId}/following/?count=50&order=date_followed_latest&max_id=…` (50 per page instead of 100).
+- `followingPage(viewerId, cursor)`: `GET /api/v1/friendships/{viewerId}/following/?count=50&order=date_followed_latest&max_id=…` (50 per page instead of 100; the page cap goes from 50 to 100, still about 5,000 accounts).
 
 **Messages from the app page to the extension:** `profile:search`, `profile:open`, `profile:page`, `following:update`, `media:refresh { id, store }`, `sync:start`, as in the second version, plus `ig:status`.
 
@@ -88,7 +89,7 @@ As in the second version, plus the call log:
 - `GET /api/authors?scope=saved|reports`.
 - `GET /api/following?q=…`: the stored following list, filtered by username and full name, plus the last update run.
 - `POST /api/sync/following/runs`, `…/:id/page`, `…/:id/finish`: a complete run removes accounts it did not see; a run that stopped early removes nothing.
-- `POST /api/ig-calls` (new): stores one call log row (local requests only, like the other `/api/sync` routes).
+- `POST /api/sync/ig-calls` (new): stores one call log row.
 
 ## 4. Web app
 
@@ -127,7 +128,7 @@ As in the second version, plus the call log:
 
 - Gate (core, fake clock and fake storage): one call at a time, pause between calls, the 150-per-hour limit (background calls wait, owner calls fail with `budget`), stop steps 15 min → 1 h → 6 h, reset after success, state read back from storage after a "reload", login errors start no stop.
 - Call log: one log record per call with the right `kind` and `result`; a failing log write does not fail the call.
-- Server: `POST /api/ig-calls` stores rows and keeps only the newest 2,000.
+- Server: `POST /api/sync/ig-calls` stores rows and keeps only the newest 2,000.
 - Web: Home list and account views from the URL, Back keeps the search text, Load more, no load by itself, banner text and disabled buttons while paused.
 - Existing tests for parsers, migration, known, reports and following stay.
 - Manual check in the real app (`pnpm start`, :4747): search on Enter, open a followed account and an unfollowed one, Load more, play a video, analyze a post and see the report in Reports, save that post on Instagram, sync, and see the report in Saved; check the banner by forcing a stop; check the three tabs at phone width.
