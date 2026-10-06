@@ -118,9 +118,6 @@
 @keyframes fl-rise {
   from { opacity: 0; transform: translateY(8px); }
 }
-@keyframes fl-fade {
-  from { opacity: 0; }
-}
 @media (prefers-reduced-motion: no-preference) {
   .fl-rise { animation: fl-rise 300ms var(--ease-out-soft) both; animation-delay: calc(var(--i, 0) * 40ms); }
 }
