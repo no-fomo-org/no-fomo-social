@@ -1,22 +1,24 @@
-import { Link, useParams, useSearchParams } from "react-router";
-import { useQuery } from "@tanstack/react-query";
+import { Link, useSearchParams } from "react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft01Icon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
 import type { LivePost, LiveProfile } from "@no-fomo/core";
-import { api } from "../lib/api";
-import { loadErrorText, openProfile, profilePage } from "../lib/extension";
-import { NO_FILTERS, readFilters, writeFilters, type Filters } from "../lib/filters";
-import { filterLive, uniqueById } from "../lib/live-filter";
-import { listBody, LIVE_LIST_OPTIONS } from "../lib/live-pages";
-import { usePostList } from "../lib/use-post-list";
-import { Avatar } from "../components/avatar";
-import { FilterBar } from "../components/filter-bar";
-import { PostGrid } from "../components/post-grid";
-import { SetupSteps } from "../components/setup-steps";
-import { TopBar } from "../components/top-bar";
-import { Viewer } from "../components/viewer/viewer";
-import { useExtension } from "../components/home/use-extension";
-import { Button, buttonClass } from "../components/ui/button";
-import { Icon } from "../components/ui/icon";
+import { api } from "../../lib/api";
+import { loadErrorText, openProfile, profilePage } from "../../lib/extension";
+import { NO_FILTERS } from "../../lib/filters";
+import { backSearch } from "../../lib/home-url";
+import { isLimitCode } from "../../lib/ig-limit";
+import { uniqueById } from "../../lib/live-filter";
+import { listBody, LIVE_LIST_OPTIONS } from "../../lib/live-pages";
+import { usePostList } from "../../lib/use-post-list";
+import { Avatar } from "../avatar";
+import { refreshIgLimit, useIgLimit } from "../ig-limit";
+import { PostGrid } from "../post-grid";
+import { SetupSteps } from "../setup-steps";
+import { TopBar } from "../top-bar";
+import { Viewer } from "../viewer/viewer";
+import { useExtension } from "./use-extension";
+import { Button, buttonClass } from "../ui/button";
+import { Icon } from "../ui/icon";
 
 type AccountPage = { items: LivePost[]; nextCursor: string | null; total: number; profile: LiveProfile | null };
 
@@ -28,28 +30,32 @@ async function knownStates(ids: string[]) {
   return new Map(rows.map((r) => [r.id, r]));
 }
 
-/** An Instagram account, shown straight from Instagram. Nothing is stored unless a post is analyzed. */
-export default function Profile() {
-  const { username = "" } = useParams();
-  const [params, setParams] = useSearchParams();
-  const filters = readFilters(params);
-  const update = (patch: Partial<Filters>) => setParams(writeFilters(params, patch), { replace: true });
+/**
+ * An Instagram account inside Home, shown straight from Instagram. Nothing is stored unless a post is analyzed.
+ * Every page is an Instagram request, so the next 12 posts load only when the owner presses Load more.
+ */
+export function AccountView({ username }: { username: string }) {
+  const [params] = useSearchParams();
   const ext = useExtension();
-  const filtering = Boolean(filters.q || filters.kind);
+  const limit = useIgLimit();
+  const qc = useQueryClient();
 
   const list = usePostList({
     queryKey: ["live-profile", username.toLowerCase()],
     enabled: ext.ready,
-    // Every page is an Instagram request: loaded pages stay as they are until the owner leaves for 30 minutes.
+    // Loaded pages stay as they are until the owner leaves for 30 minutes.
     cache: LIVE_LIST_OPTIONS,
-    autoLoad: !filtering,
+    autoLoad: false,
     fetchPage: async (cursor): Promise<AccountPage> => {
       const reply = cursor ? await profilePage(ext.extensionId!, cursor) : await openProfile(ext.extensionId!, username);
       if (!reply) throw new Error(loadErrorText("no_extension"));
-      if (!reply.ok) throw new Error(loadErrorText(reply.error, reply.detail, reply.until));
+      if (!reply.ok) {
+        if (isLimitCode(reply.error)) refreshIgLimit(qc);
+        throw new Error(loadErrorText(reply.error, reply.detail, reply.until));
+      }
       return { items: reply.page?.posts ?? [], nextCursor: reply.page?.nextCursor ?? null, total: 0, profile: reply.profile ?? null };
     },
-    view: (posts) => filterLive(uniqueById(posts), { q: filters.q, kind: filters.kind }),
+    view: (posts) => uniqueById(posts),
   });
   const ids = list.loaded.map((p) => p.id);
   const known = useQuery({
@@ -66,7 +72,6 @@ export default function Profile() {
 
   const profile = list.query.data?.pages[0]?.profile ?? null;
   const closed = profile ? profile.isPrivate && !profile.followedByViewer : false;
-  const search = { value: filters.q, onChange: (q: string | null) => update({ q }), placeholder: `Search @${username}`, label: `Search posts of @${username}` };
 
   let body;
   if (ext.missing) {
@@ -88,41 +93,39 @@ export default function Profile() {
     body = <p className="py-16 text-[15px] text-muted">This account is private and you do not follow it, so its posts cannot be shown.</p>;
   } else {
     body = (
-      <>
-        <FilterBar scope="profile" filters={filters} total={filtering ? list.items.length : (profile?.postCount ?? undefined)} onChange={update} />
-        {filtering && list.query.hasNextPage && (
-          <p className="-mt-1 mb-3 text-[13px] text-muted">
-            Filters look at the {list.loaded.length} posts loaded so far.{" "}
-            <button type="button" onClick={() => void list.query.fetchNextPage()} disabled={list.query.isFetchingNextPage} className="text-text underline underline-offset-2 hover:text-accent">
-              {list.query.isFetchingNextPage ? "Loading…" : "Load 12 more"}
-            </button>
-          </p>
-        )}
+      <div className="pt-4">
         <PostGrid
           query={list.query}
           items={list.items.map(mark)}
-          filters={filters}
+          filters={NO_FILTERS}
           onOpen={(id) => list.setPost(id)}
-          onClearFilters={() => update(NO_FILTERS)}
-          autoLoad={!filtering}
+          onClearFilters={() => {}}
+          autoLoad={false}
           nextErrorText={list.query.isFetchNextPageError ? (list.query.error as Error).message : undefined}
           empty={<h2 className="text-[17px] font-semibold">This account has no posts.</h2>}
         />
-      </>
+        {list.query.hasNextPage && !list.query.isFetchNextPageError && (
+          <div className="mt-6 flex justify-center">
+            <Button onClick={() => void list.query.fetchNextPage()} disabled={list.query.isFetchingNextPage || !!limit}>
+              {list.query.isFetchingNextPage ? "Loading…" : "Load more"}
+            </Button>
+          </div>
+        )}
+      </div>
     );
   }
 
   return (
     <>
-      <TopBar search={closed || list.query.isError ? null : search} />
+      <TopBar search={null} />
       <main className="mx-auto max-w-[1600px] px-4 pb-16 md:px-6">
         <div className="flex flex-wrap items-center gap-3 pt-4">
-          <Link to="/profiles" aria-label="Back to Profiles" className={buttonClass("ghost", "", "icon")}><Icon icon={ArrowLeft01Icon} size={18} /></Link>
+          <Link to={{ search: backSearch(params) }} aria-label="Back to Home" className={buttonClass("ghost", "", "icon")}><Icon icon={ArrowLeft01Icon} size={18} /></Link>
           <Avatar src={profile?.avatarUrl ?? null} name={username} size={40} />
           <div className="min-w-0">
             <h1 className="truncate text-[17px] font-semibold">@{profile?.username ?? username}</h1>
             <p className="truncate text-[13px] text-muted">
-              {[profile?.fullName, profile?.postCount != null ? `${profile.postCount.toLocaleString("en")} posts` : null].filter(Boolean).join(" · ") || " "}
+              {[profile?.fullName, profile?.postCount != null ? `${profile.postCount.toLocaleString("en")} posts` : null].filter(Boolean).join(" · ") || " "}
             </p>
           </div>
           <a href={`https://www.instagram.com/${profile?.username ?? username}/`} target="_blank" rel="noopener noreferrer" className={buttonClass("ghost", "ms-auto")}>

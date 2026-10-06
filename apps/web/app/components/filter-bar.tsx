@@ -7,19 +7,18 @@ import { SourceSwitch } from "./source-switch";
 import { Button } from "./ui/button";
 
 export function FilterBar({ scope, filters, total, onChange }: {
-  scope: "saved" | "profile" | "reports";
+  scope: "saved" | "reports";
   filters: Filters;
   total: number | undefined;
   onChange: (p: Partial<Filters>) => void;
 }) {
   const authorScope = scope === "reports" ? "reports" : "saved";
-  const authors = useQuery({ queryKey: ["authors", authorScope], queryFn: () => api.authors(authorScope), enabled: scope !== "profile" });
+  const authors = useQuery({ queryKey: ["authors", authorScope], queryFn: () => api.authors(authorScope) });
   const collections = useQuery({ queryKey: ["collections"], queryFn: api.collections, enabled: scope === "saved" });
   const noun = scope === "reports" ? ["report", "reports"] : ["post", "posts"];
 
   return (
     <div className="flex flex-wrap items-center gap-2 py-3 md:py-4">
-      {scope !== "profile" && (
       <FacetPicker
         label="Author"
         allLabel="All authors"
@@ -34,7 +33,6 @@ export function FilterBar({ scope, filters, total, onChange }: {
           leading: <img src={a.avatarUrl} alt="" className="size-5 shrink-0 rounded-full bg-surface-2 object-cover" loading="lazy" />,
         }))}
       />
-      )}
       {scope === "saved" && (collections.data?.length ?? 0) > 0 && (
         <FacetPicker
           label="Collection"

@@ -8,6 +8,7 @@ import { isLimitCode } from "../lib/ig-limit";
 import { parseProfileInput } from "../lib/profile-input";
 import { TopBar } from "../components/top-bar";
 import { SetupSteps } from "../components/setup-steps";
+import { AccountView } from "../components/home/account-view";
 import { ProfileSearch } from "../components/home/profile-search";
 import { FollowingList } from "../components/home/following-list";
 import { useExtension } from "../components/home/use-extension";
@@ -17,8 +18,7 @@ export default function Home() {
   const [params] = useSearchParams();
   const raw = params.get("account");
   const username = raw ? parseProfileInput(raw) : null;
-  // Task 8 replaces this line with: return username ? <AccountView key={username} username={username} /> : <HomeList />;
-  return username ? <p className="p-6">@{username}</p> : <HomeList />;
+  return username ? <AccountView key={username} username={username} /> : <HomeList />;
 }
 
 /** Search and the people you follow. */
