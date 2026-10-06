@@ -104,6 +104,6 @@ export function createIgClient(opts: {
     // The default order is a ranking that changes between pages, so pages overlap and miss accounts.
     // Ordered by follow date, the owner's own list stays put while it is read.
     followingPage: async (viewerId, cursor) =>
-      get("following list", userPath(viewerId, "friendships/{id}/following/"), { count: "100", order: "date_followed_latest", max_id: cursor }),
+      get("following list", userPath(viewerId, "friendships/{id}/following/"), { count: "50", order: "date_followed_latest", max_id: cursor }),
   };
 }

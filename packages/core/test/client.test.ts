@@ -31,7 +31,7 @@ describe("createIgClient", () => {
       "https://www.instagram.com/api/v1/users/web_profile_info/?username=nasa",
       "https://www.instagram.com/api/v1/feed/user/528817151/?count=12&max_id=CUR",
       "https://www.instagram.com/api/v1/web/search/topsearch/?context=blended&query=na+sa",
-      "https://www.instagram.com/api/v1/friendships/42/following/?count=100&order=date_followed_latest",
+      "https://www.instagram.com/api/v1/friendships/42/following/?count=50&order=date_followed_latest",
     ]);
   });
 

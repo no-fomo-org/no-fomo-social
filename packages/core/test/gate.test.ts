@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { IgError } from "../src/ig/client";
-import { createRequestGate, gateStatus, memoryGateStore, STOP_STEPS_MS, type GateStore } from "../src/ig/gate";
+import { IgError, type IgClient } from "../src/ig/client";
+import { callLogEntry, createRequestGate, gateClient, gateStatus, memoryGateStore, STOP_STEPS_MS, type GateStore, type IgCallLog } from "../src/ig/gate";
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -152,5 +152,68 @@ describe("gateStatus", () => {
   it("gives the time the hourly limit frees a call", () => {
     expect(gateStatus({ ...empty, calls: [10, 20, 30] }, 40, 2).budgetUntil).toBe(20 + HOUR);
     expect(gateStatus({ ...empty, calls: [10, 20] }, 40, 3).budgetUntil).toBeNull();
+  });
+});
+
+describe("gateClient", () => {
+  const unused = async () => { throw new Error("not used"); };
+  const raw = (over: Partial<IgClient> = {}): IgClient => ({
+    savedPage: unused, collectionsPage: unused, mediaInfo: unused, profileInfo: unused, userFeed: unused, searchUsers: unused, followingPage: unused, ...over,
+  });
+
+  it("logs each call that reached Instagram with its kind, result and time", async () => {
+    const c = clock();
+    const logs: IgCallLog[] = [];
+    const gate = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0 });
+    const ig = gateClient(raw({
+      savedPage: async () => { c.advance(120); return {}; },
+      searchUsers: async () => { throw new IgError("rate_limited", "slow", 429); },
+    }), gate, { mode: "fail", log: (e) => logs.push(e), now: c.now });
+    const start = c.now();
+    await ig.savedPage(null);
+    await expect(ig.searchUsers("nasa")).rejects.toMatchObject({ code: "rate_limited" });
+    expect(logs).toEqual([
+      { at: start, kind: "saved", status: 200, result: "ok", ms: 120 },
+      { at: start + 120, kind: "search", status: 429, result: "rate_limited", ms: 0 },
+    ]);
+  });
+
+  it("does not log calls the gate stopped", async () => {
+    const c = clock();
+    const logs: IgCallLog[] = [];
+    const gate = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0 });
+    const ig = gateClient(raw({ profileInfo: async () => { throw new IgError("refused", "no"); } }), gate, { mode: "fail", log: (e) => logs.push(e), now: c.now });
+    await expect(ig.profileInfo("nasa")).rejects.toThrow();
+    await expect(ig.profileInfo("nasa")).rejects.toMatchObject({ code: "paused" });
+    expect(logs.map((l) => l.result)).toEqual(["refused"]);
+  });
+
+  it("a throwing log does not fail the call", async () => {
+    const c = clock();
+    const gate = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0 });
+    const ig = gateClient(raw({ mediaInfo: async () => "media" }), gate, { mode: "fail", log: () => { throw new Error("server down"); }, now: c.now });
+    await expect(ig.mediaInfo("1")).resolves.toBe("media");
+  });
+
+  it("passes its mode to the gate", async () => {
+    const c = clock();
+    const gate = createRequestGate({ sleep: c.sleep, now: c.now, gapMs: () => 0, limit: 1 });
+    const page = async () => ({});
+    const owner = gateClient(raw({ userFeed: page }), gate, { mode: "fail", now: c.now });
+    const background = gateClient(raw({ followingPage: page }), gate, { mode: "wait", now: c.now });
+    await owner.userFeed("1", null);
+    await expect(owner.userFeed("1", null)).rejects.toMatchObject({ code: "budget" });
+    await expect(background.followingPage("1", null)).resolves.toEqual({});
+  });
+});
+
+describe("callLogEntry", () => {
+  it("maps errors to a status and a result", () => {
+    expect(callLogEntry("post", 1, 2)).toEqual({ at: 1, kind: "post", status: 200, result: "ok", ms: 2 });
+    expect(callLogEntry("post", 1, 2, new IgError("not_found", "x", 404))).toMatchObject({ status: 404, result: "not_found" });
+    expect(callLogEntry("post", 1, 2, new IgError("refused", "x"))).toMatchObject({ status: 200, result: "refused" });
+    expect(callLogEntry("post", 1, 2, new IgError("http_error", "network"))).toMatchObject({ status: 0, result: "error" });
+    expect(callLogEntry("post", 1, 2, new IgError("http_error", "x", 500))).toMatchObject({ status: 500, result: "error" });
+    expect(callLogEntry("post", 1, 2, new Error("x"))).toMatchObject({ status: 0, result: "error" });
   });
 });

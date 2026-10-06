@@ -129,14 +129,53 @@ export function createRequestGate(opts: {
   };
 }
 
-export function gateClient(ig: IgClient, gate: RequestGate): IgClient {
+export type IgCallKind = "saved" | "collections" | "post" | "profile" | "feed" | "search" | "following";
+export type IgCallResult = "ok" | "rate_limited" | "refused" | "login_required" | "not_found" | "error";
+/** One call that reached Instagram. Kept by the server in `ig_calls` to find the cause of a refusal. */
+export interface IgCallLog { at: number; kind: IgCallKind; status: number; result: IgCallResult; ms: number }
+
+const NAMED_RESULTS = new Set<string>(["rate_limited", "refused", "login_required", "not_found"]);
+
+/** `status`: HTTP status; 200 when Instagram answered 200 with an error inside; 0 when the network failed. */
+export function callLogEntry(kind: IgCallKind, at: number, ms: number, error?: unknown): IgCallLog {
+  if (error === undefined) return { at, kind, status: 200, result: "ok", ms };
+  if (!(error instanceof IgError)) return { at, kind, status: 0, result: "error", ms };
+  const status = error.status ?? (error.code === "http_error" ? 0 : 200);
+  return { at, kind, status, result: NAMED_RESULTS.has(error.code) ? (error.code as IgCallResult) : "error", ms };
+}
+
+/**
+ * The client every job uses. `mode`: background jobs ("wait") or calls the owner waits for ("fail").
+ * `log` hears about each call that reached Instagram; it must never fail the call.
+ */
+export function gateClient(ig: IgClient, gate: RequestGate, opts: { mode: GateMode; log?: (e: IgCallLog) => void; now?: () => number }): IgClient {
+  const now = opts.now ?? Date.now;
+  const report = (e: IgCallLog) => {
+    try {
+      opts.log?.(e);
+    } catch {
+      // The log is only for finding causes later.
+    }
+  };
+  const through = <T>(kind: IgCallKind, call: () => Promise<T>): Promise<T> =>
+    gate.run(async () => {
+      const at = now();
+      try {
+        const result = await call();
+        report(callLogEntry(kind, at, now() - at));
+        return result;
+      } catch (e) {
+        report(callLogEntry(kind, at, now() - at, e));
+        throw e;
+      }
+    }, opts.mode);
   return {
-    savedPage: (cursor) => gate.run(() => ig.savedPage(cursor)),
-    collectionsPage: (cursor) => gate.run(() => ig.collectionsPage(cursor)),
-    mediaInfo: (id) => gate.run(() => ig.mediaInfo(id)),
-    profileInfo: (username) => gate.run(() => ig.profileInfo(username)),
-    userFeed: (userId, cursor) => gate.run(() => ig.userFeed(userId, cursor)),
-    searchUsers: (query) => gate.run(() => ig.searchUsers(query)),
-    followingPage: (viewerId, cursor) => gate.run(() => ig.followingPage(viewerId, cursor)),
+    savedPage: (cursor) => through("saved", () => ig.savedPage(cursor)),
+    collectionsPage: (cursor) => through("collections", () => ig.collectionsPage(cursor)),
+    mediaInfo: (id) => through("post", () => ig.mediaInfo(id)),
+    profileInfo: (username) => through("profile", () => ig.profileInfo(username)),
+    userFeed: (userId, cursor) => through("feed", () => ig.userFeed(userId, cursor)),
+    searchUsers: (query) => through("search", () => ig.searchUsers(query)),
+    followingPage: (viewerId, cursor) => through("following", () => ig.followingPage(viewerId, cursor)),
   };
 }

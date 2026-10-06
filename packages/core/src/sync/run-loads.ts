@@ -11,8 +11,8 @@ export interface FollowingSink {
   finishRun(runId: number, result: SyncResult): Promise<void>;
 }
 
-/** About 5,000 accounts at 100 per page. */
-export const FOLLOWING_PAGES = 50;
+/** About 5,000 accounts at 50 per page. */
+export const FOLLOWING_PAGES = 100;
 
 const errorOf = (e: unknown) =>
   e instanceof IgError ? { code: e.code, message: e.message } : { code: "internal", message: (e as Error).message };

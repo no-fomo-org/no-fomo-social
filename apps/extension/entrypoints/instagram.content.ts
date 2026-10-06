@@ -17,7 +17,7 @@ export default defineContentScript({
   main() {
     const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
     // Every Instagram job in this tab shares one gate, so Instagram never sees two requests close together.
-    const ig = gateClient(createIgClient({ fetch: window.fetch.bind(window), csrfToken: readCsrf }), createRequestGate({ sleep }));
+    const ig = gateClient(createIgClient({ fetch: window.fetch.bind(window), csrfToken: readCsrf }), createRequestGate({ sleep }), { mode: "fail" });
     const send = (m: RelayMessage) => browser.runtime.sendMessage(m) as Promise<RelayResponse>;
     const jobs = createTabJobs({ ig, send, viewerId: () => readCookie("ds_user_id") });
     let running = false;
