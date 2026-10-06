@@ -1,4 +1,5 @@
-import type { LivePage, LiveProfile, PostMedia, SyncMode, UserSuggestion } from "@no-fomo/core";
+import type { GateStatus, LivePage, LiveProfile, PostMedia, SyncMode, UserSuggestion } from "@no-fomo/core";
+import { limitText } from "./ig-limit";
 
 type ChromeRuntime = {
   sendMessage(extensionId: string, msg: unknown, cb: (reply: unknown) => void): void;
@@ -6,8 +7,8 @@ type ChromeRuntime = {
 };
 
 export type ExtResponse =
-  | { ok: true; version?: string; media?: PostMedia; users?: UserSuggestion[]; profile?: LiveProfile; page?: LivePage | null }
-  | { ok: false; error: string; detail?: string };
+  | { ok: true; version?: string; media?: PostMedia; users?: UserSuggestion[]; profile?: LiveProfile; page?: LivePage | null; status?: GateStatus }
+  | { ok: false; error: string; detail?: string; until?: number };
 
 function runtime(): ChromeRuntime | null {
   const c = (globalThis as { chrome?: { runtime?: ChromeRuntime } }).chrome;
@@ -44,11 +45,14 @@ export const openProfile = (id: string, username: string) => send(id, { type: "p
 /** `cursor` comes from the previous page. */
 export const profilePage = (id: string, cursor: string) => send(id, { type: "profile:page", cursor }, 45_000);
 export const updateFollowing = (id: string) => send(id, { type: "following:update" }, 45_000);
+/** What holds Instagram calls back. Answered from extension storage, so it is quick. */
+export const igStatus = (id: string) => send(id, { type: "ig:status" }, 1500);
 
-/** `detail`: what Instagram answered, shown where the code alone does not explain it. */
-export function loadErrorText(code: string, detail?: string): string {
+/** `detail`: what Instagram answered. `until`: when calls are allowed again. */
+export function loadErrorText(code: string, detail?: string, until?: number): string {
   switch (code) {
-    case "paused": return detail ?? "Instagram calls are paused for a few minutes to protect your account. Try again later.";
+    case "paused": return limitText("paused", until);
+    case "budget": return limitText("budget", until);
     case "refused":
     case "http_error":
     case "bad_response":

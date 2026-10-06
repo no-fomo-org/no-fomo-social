@@ -32,7 +32,7 @@ export function ProfileSearch(props: {
     queryFn: async () => {
       const r = await searchInstagram(props.extensionId!, query);
       if (!r) throw new Error(loadErrorText("no_extension"));
-      if (!r.ok) throw new Error(loadErrorText(r.error, r.detail));
+      if (!r.ok) throw new Error(loadErrorText(r.error, r.detail, r.until));
       return r.users ?? [];
     },
     enabled: props.ready && query.length >= 2,

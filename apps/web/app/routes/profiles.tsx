@@ -25,7 +25,7 @@ export default function Profiles() {
     setListError(null);
     const reply = ext.extensionId ? await updateFollowing(ext.extensionId) : null;
     if (!reply) setListError(loadErrorText("no_extension"));
-    else if (!reply.ok) setListError(loadErrorText(reply.error, reply.detail));
+    else if (!reply.ok) setListError(loadErrorText(reply.error, reply.detail, reply.until));
     await qc.invalidateQueries({ queryKey: ["following"] });
   }
 

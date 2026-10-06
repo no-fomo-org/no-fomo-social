@@ -46,7 +46,7 @@ export default function Profile() {
     fetchPage: async (cursor): Promise<AccountPage> => {
       const reply = cursor ? await profilePage(ext.extensionId!, cursor) : await openProfile(ext.extensionId!, username);
       if (!reply) throw new Error(loadErrorText("no_extension"));
-      if (!reply.ok) throw new Error(loadErrorText(reply.error, reply.detail));
+      if (!reply.ok) throw new Error(loadErrorText(reply.error, reply.detail, reply.until));
       return { items: reply.page?.posts ?? [], nextCursor: reply.page?.nextCursor ?? null, total: 0, profile: reply.profile ?? null };
     },
     view: (posts) => filterLive(uniqueById(posts), { q: filters.q, kind: filters.kind }),

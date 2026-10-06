@@ -1,7 +1,7 @@
 import { DEFAULT_REPORT_LANGUAGE, isReportLanguage, type AnalyzeChoice, type ModelOption, type ModelsInfo, type PostReport, type ReportStep } from "@no-fomo/core";
 import { mediaErrorText, type MediaErrorCode } from "./media";
 
-const MEDIA_CODES = new Set(["no_extension", "old_extension", "login_required", "rate_limited", "not_found", "load_failed"]);
+const MEDIA_CODES = new Set(["no_extension", "old_extension", "login_required", "rate_limited", "not_found", "load_failed", "limited"]);
 
 export function analyzeErrorText(code: string, detail: string | null): string {
   switch (code) {

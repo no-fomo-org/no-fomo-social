@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { openProfile, profilePage, refreshExtensionMedia, syncErrorText } from "../app/lib/extension";
+import { igStatus, openProfile, profilePage, refreshExtensionMedia, syncErrorText } from "../app/lib/extension";
 import { loadErrorText } from "../app/lib/extension";
 
 afterEach(() => {
@@ -55,9 +55,23 @@ describe("loadErrorText", () => {
 
 describe("loadErrorText details", () => {
   it("adds what Instagram said for pauses, refusals and errors", () => {
-    expect(loadErrorText("paused", "Instagram calls are paused for 6 more minutes to protect your account, because: Instagram refused the request (feedback_required)."))
-      .toBe("Instagram calls are paused for 6 more minutes to protect your account, because: Instagram refused the request (feedback_required).");
+    expect(loadErrorText("paused", "Instagram is limiting calls. Its answer: Instagram refused the request (feedback_required)."))
+      .toBe("Instagram is limiting calls. Try again later.");
     expect(loadErrorText("http_error", "Instagram returned error 500 (profile).")).toBe("Could not load from Instagram. Instagram returned error 500 (profile).");
     expect(loadErrorText("rate_limited", "x")).toBe("Instagram asked to slow down. Try again in a few minutes.");
+  });
+});
+
+describe("Instagram limits through the extension", () => {
+  it("asks the extension for the limit status", async () => {
+    const sent: unknown[] = [];
+    (globalThis as { chrome?: unknown }).chrome = { runtime: { sendMessage: (_id: string, msg: unknown, cb: (r: unknown) => void) => { sent.push(msg); cb({ ok: true, status: { pausedUntil: null, reason: null, budgetUntil: null } }); } } };
+    expect(await igStatus("ext")).toEqual({ ok: true, status: { pausedUntil: null, reason: null, budgetUntil: null } });
+    expect(sent).toEqual([{ type: "ig:status" }]);
+  });
+  it("says when calls are allowed again", () => {
+    const at = new Date(2026, 9, 6, 15, 30).getTime();
+    expect(loadErrorText("paused", "Instagram is limiting calls. Its answer: x", at)).toBe("Instagram is limiting calls. Try again at 15:30.");
+    expect(loadErrorText("budget", undefined, at)).toBe("The app made many Instagram calls this hour. Try again at 15:30.");
   });
 });
