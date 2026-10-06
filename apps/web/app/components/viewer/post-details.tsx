@@ -5,6 +5,8 @@ import { ArrowDown01Icon, ArrowUp01Icon, Cancel01Icon, Location01Icon, MusicNote
 import { formatCount, formatDate, formatDuration } from "../../lib/format";
 import { Button, buttonClass } from "../ui/button";
 import { Icon } from "../ui/icon";
+import { TAB } from "../ui/tab";
+import { TabLabel } from "../ui/tab-label";
 import { ReportPanel } from "./report-panel";
 
 export type DetailsTab = "details" | "report";
@@ -40,7 +42,7 @@ export function PostDetails({
           <Dialog.Title className="truncate text-[15px] font-semibold">@{p.author.username}</Dialog.Title>
           {p.author.fullName && <p className="truncate text-[13px] text-muted">{p.author.fullName}</p>}
           {p.saved && (
-            <p className="mt-1"><span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12px] text-muted">Saved</span></p>
+            <p className="mt-1"><span className="rounded-tile bg-surface-2 px-2 py-0.5 text-[12px] text-muted">Saved</span></p>
           )}
         </div>
         <div className="flex items-center">
@@ -57,14 +59,14 @@ export function PostDetails({
       </div>
 
       <Tabs.Root value={tab} onValueChange={(v) => onTabChange(v as DetailsTab)} className="flex flex-1 flex-col">
-        <Tabs.List className="mx-5 flex gap-5 border-b border-line text-[14px]">
+        <Tabs.List className="mx-5 flex gap-1 border-b border-line pb-3">
           {(["details", "report"] as const).map((t) => (
             <Tabs.Tab
               key={t}
               value={t}
-              className="-mb-px border-b-2 border-transparent py-2 text-muted transition-colors duration-200 hover:text-text focus-visible:outline-2 focus-visible:outline-accent data-[active]:border-accent data-[active]:text-text"
+              className={TAB}
             >
-              {t === "details" ? "Details" : "Report"}
+              <TabLabel>{t === "details" ? "Details" : "Report"}</TabLabel>
             </Tabs.Tab>
           ))}
         </Tabs.List>
@@ -116,5 +118,5 @@ function Detail({ label, value, mono }: { label: string; value: string; mono?: b
 }
 
 function Kbd({ children }: { children: string }) {
-  return <kbd className="rounded-[5px] border border-line px-1 font-mono text-[11px] text-text">{children}</kbd>;
+  return <kbd className="rounded-tile border border-line px-1 font-mono text-[11px] text-text">{children}</kbd>;
 }
