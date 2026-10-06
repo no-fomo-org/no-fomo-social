@@ -21,6 +21,7 @@ import {
   finishRun, ingestCollections, ingestMediaInfo, ingestSavedPage, MismatchError, NotFoundError, RunNotActiveError, startRun,
 } from "../sync/ingest";
 import { finishFollowingRun, ingestFollowingPage, startFollowingRun } from "../sync/following";
+import { logIgCall } from "../sync/ig-calls";
 import { security } from "./security";
 
 const Id = z.string().regex(/^\d{1,30}$/);
@@ -56,6 +57,13 @@ const ReportsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(40),
 });
 const FollowingQuery = z.object({ q: z.string().max(100).optional(), limit: z.coerce.number().int().min(1).max(500).default(100) });
+const IgCallBody = z.object({
+  at: z.number().int().nonnegative(),
+  kind: z.enum(["saved", "collections", "post", "profile", "feed", "search", "following"]),
+  status: z.number().int().min(0).max(999),
+  result: z.enum(["ok", "rate_limited", "refused", "login_required", "not_found", "error"]),
+  ms: z.number().int().nonnegative().max(600_000),
+});
 const AuthorsQuery = z.object({ scope: z.enum(["saved", "reports"]).default("saved") });
 
 const SettingsBody = z.object({ openaiKey: z.string().trim().regex(/^[\x21-\x7e]{20,300}$/).nullable().optional() }).strict();
@@ -154,6 +162,11 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
 
   app.post("/api/sync/following/runs/:id/finish", async (c) => {
     finishFollowingRun(db, RunId.parse(c.req.param("id")), FinishBody.parse(await c.req.json()));
+    return c.json({ ok: true });
+  });
+
+  app.post("/api/sync/ig-calls", async (c) => {
+    logIgCall(db, IgCallBody.parse(await c.req.json()));
     return c.json({ ok: true });
   });
 

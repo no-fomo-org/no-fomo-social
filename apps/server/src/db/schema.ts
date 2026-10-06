@@ -163,3 +163,13 @@ export const followingRuns = sqliteTable("following_runs", {
   errorCode: text("error_code"),
   errorMessage: text("error_message"),
 });
+
+/** Every Instagram call the extension made, newest 2,000 kept. Read by hand to find the cause of a refusal. */
+export const igCalls = sqliteTable("ig_calls", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  at: integer("at").notNull(),
+  kind: text("kind").notNull(),
+  status: integer("status").notNull(),
+  result: text("result").notNull(),
+  ms: integer("ms").notNull(),
+});

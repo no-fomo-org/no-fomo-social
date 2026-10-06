@@ -273,3 +273,12 @@ describe("account pages, following and reports API", () => {
     expect((await post("/api/sync/profiles/runs", { mode: "add", payload: {} })).status).toBe(404);
   });
 });
+
+describe("Instagram call log route", () => {
+  it("stores a call from the extension and rejects bad ones", async () => {
+    const ok = await post("/api/sync/ig-calls", { at: 1791283542340, kind: "feed", status: 429, result: "rate_limited", ms: 812 });
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toEqual({ ok: true });
+    expect((await post("/api/sync/ig-calls", { at: 1, kind: "dm", status: 200, result: "ok", ms: 1 })).status).toBe(400);
+  });
+});
