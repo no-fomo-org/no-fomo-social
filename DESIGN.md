@@ -1,35 +1,48 @@
 # no-fomo design rules
 
-**Read:** a personal media library for one power user. Calm, dark-first, the posts are the color. The UI stays quiet.
+**Brand:** First Light. Full guide and assets in `docs/brand/first-light/`.
 
-**Dials:** variance 3, motion 3, density 6.
+**Read:** a calm personal library for professionals. A star rising over a horizon at first light. Light first, nature in the colors, logo and one photograph. The posts are the color, and the interface stays quiet and crisp.
+
+**Dials:** variance 3, motion 4, density 5.
 
 ## Color
-- Neutrals: cool gray (hue 250), never pure black or pure white.
-- One accent: burnt orange. Light `oklch(0.56 0.17 38)` with near-white text. Dark `oklch(0.74 0.15 52)` with near-black text. Both pass WCAG AA for button text.
-- Accent is only for the primary action on a screen and the active filter state. Never for decoration.
-- Active filters (picker, type switch) use the soft tint: `accent-soft` fill with an `accent-line` edge, and each active filter has its own remove control. Text on the tint stays `text`.
-- Danger red only for errors.
-- Theme follows the system (`prefers-color-scheme`). Both themes are first-class.
+- Tokens live in `apps/web/app/app.css` (source: `docs/brand/first-light/tokens.css`). Never use raw hex in components.
+- Light: Mist background `#F6F7F3`, Forest text `#1E2A22`, Fern accent `#4F6B3A`. Dark "evening": `#141A16` background, `#EEF0E8` text, light Fern `#A3B98C` accent.
+- Fern only for the main action on a screen and for active states. Never decoration.
+- Active tabs and chips: `accent-soft` fill and `text` color, chips also an `accent-line` border. No underlines anywhere.
+- Lake only for links inside report text. Danger only for errors.
+- No gradients in the interface. Never pure black or pure white.
+- Theme follows the system. Both themes are first-class.
 
 ## Type
-- Geist Variable for UI. Geist Mono Variable for numbers (counts, durations, dates in tables), always `tabular-nums`.
-- Sizes: 13px meta, 14px controls, 15px body, 20px sheet titles. No display sizes, this is a tool.
+- Outfit 800 to 900 (`font-display`) only for the logo, empty-state titles and the hero. Never for body or controls.
+- Figtree for the interface: 13px meta, 14px controls, 15px body, 20px sheet titles.
+- Geist Mono for numbers, always `tabular-nums`.
 
 ## Shape
-- Controls (buttons, inputs, popovers): 8px radius (`rounded-control`). Icon buttons are 36px squares (`buttonClass(variant, extra, "icon")`).
-- Media tiles and thumbnails: 6px radius (`rounded-tile`).
-- Avatars: full circle. Nothing else is a pill.
+- Controls 6px (`rounded-control`), media 4px (`rounded-tile`), sheets 8px (`rounded-sheet`). Icon buttons are 36px squares.
+- Avatars are circles. Nothing else is a pill.
 
 ## Layout
 - Content max width 1600px, 16px gutter on phone, 24px on desktop.
-- Grid tiles are 3:4: 2 columns on phone, up to 7 at 1280px and 8 at 1536px. Under each tile: author and length on one line, the caption's first line below it. Never text on top of the image.
-- The search box leads the top bar. Press `/` to focus it.
-- Group with spacing and single hairlines (`border-line`), not cards.
+- Grid tiles are 3:4 and large: 2 columns on phone, 3 from 640px, 4 from 1024px, 5 from 1280px, 6 from 1680px. Under each tile: author and duration on one line, the caption's first line below. Never text on top of the image.
+- The top bar is 64px: logo, search (`/` focuses it), tabs, Sync.
+- Group with spacing and single hairlines, not cards.
+
+## Imagery
+- One brand photograph (misty ridges at first light). Only in the first-run state and empty states. Never behind the grid, in sheets or in the player.
+- Text on the photo is Cream, bottom-left, on the dark ridges. The button stays Fern.
+- Phone uses the portrait version below 768px.
+
+## Logo
+- Star over a horizon arc plus `no-fomo.` in Outfit 900. Use the files in `docs/brand/first-light/logo/` or `<LogoLockup />` and `<LogoSymbol />`.
+- Below 24px use the small symbol. The arc never appears as UI decoration.
 
 ## Motion
-- Only feedback and state change: hover zoom on tiles (1.03), sheet slide-in, button press (scale 0.98).
-- Ease `cubic-bezier(0.16, 1, 0.3, 1)`, 200-300ms. Everything off under `prefers-reduced-motion`.
+- Feedback and state change only. Press `scale(0.97)` 160ms. Tile hover zoom 1.03, on hover devices only. Sheet slide 300ms `cubic-bezier(0.32, 0.72, 0, 1)`. Popovers scale from the trigger, 150ms.
+- Loading a sync uses the brand mark: the star rises over the arc. Content loading uses skeletons.
+- No animation on keyboard actions. Everything is still under `prefers-reduced-motion`.
 
 ## Icons
 - Hugeicons only, stroke width 1.5, 16px in controls, 14px in meta.
