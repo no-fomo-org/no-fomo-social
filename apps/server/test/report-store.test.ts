@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import page1 from "@no-fomo/core/fixtures/saved-page-1.json";
 import { openDb, type Db } from "../src/db/open";
-import { failReport, failStaleReports, finishReport, getReport, queueReport, setReportStep } from "../src/analyze/report-store";
-import { listPosts } from "../src/queries";
+import { deleteReport, failReport, failStaleReports, finishReport, getReport, queueReport, setReportStep } from "../src/analyze/report-store";
+import { listPosts, listReports } from "../src/queries";
 import { finishRun, ingestSavedPage, startRun } from "../src/sync/ingest";
 
 let db: Db;
@@ -48,5 +48,17 @@ describe("report store", () => {
     expect(listPosts(db, { limit: 50, q: "zanzibar" }).items.map((p) => p.id)).toEqual([id]);
     finishReport(db, id, { markdown: "now about kilimanjaro", frameCount: 1, transcribeModel: null }, 3);
     expect(listPosts(db, { limit: 50, q: "zanzibar" }).total).toBe(0);
+  });
+
+  it("deletes a finished report with its search text, but not a running one", () => {
+    expect(deleteReport(db, id)).toBe("not_found");
+    queueReport(db, id, opts, 1);
+    expect(deleteReport(db, id)).toBe("busy");
+    finishReport(db, id, { markdown: "spoken word zanzibar", frameCount: 1, transcribeModel: null }, 2);
+    expect(deleteReport(db, id)).toBe("deleted");
+    expect(getReport(db, id)).toBeNull();
+    expect(listPosts(db, { limit: 50 }).items.find((p) => p.id === id)!.hasReport).toBe(false);
+    expect(listPosts(db, { limit: 50, q: "zanzibar" }).total).toBe(0);
+    expect(listReports(db, { limit: 50 }).total).toBe(0);
   });
 });

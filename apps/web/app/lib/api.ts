@@ -19,6 +19,9 @@ async function read<T>(res: Response): Promise<T> {
 const get = async <T>(path: string) => read<T>(await fetch(path, { headers: { accept: "application/json" } }));
 const send = async <T>(path: string, body: unknown) =>
   read<T>(await fetch(path, { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify(body) }));
+// The server asks for JSON on every change, so a plain form on another site cannot call it.
+const del = async <T>(path: string) =>
+  read<T>(await fetch(path, { method: "DELETE", headers: { "content-type": "application/json", accept: "application/json" } }));
 
 export const api = {
   config: () => get<AppConfig>("/api/config"),
@@ -35,6 +38,7 @@ export const api = {
   saveSettings: (u: SettingsUpdate) => send<AppSettings>("/api/settings", u),
   models: () => get<ModelsInfo>("/api/models"),
   analyze: (id: string, choice: AnalyzeChoice) => send<PostReport>(`/api/posts/${id}/analyze`, choice),
+  deleteReport: (id: string) => del<{ ok: true }>(`/api/posts/${id}/report`),
   report: (id: string) =>
     get<PostReport>(`/api/posts/${id}/report`).catch((e: unknown) => {
       if (e instanceof ApiError && e.status === 404) return null;

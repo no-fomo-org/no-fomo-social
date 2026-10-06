@@ -7,22 +7,23 @@ import {
 import type { Downloader } from "./download";
 import { AnalyzeError } from "./errors";
 import type { MediaTools } from "./ffmpeg";
-import type { Provider, ReportContent } from "./provider";
+import type { Provider } from "./provider";
 
 export const VIDEO_MAX_BYTES = 300 * 1024 * 1024;
 export const IMAGE_MAX_BYTES = 15 * 1024 * 1024;
 export const MAX_DURATION_SEC = 15 * 60;
 
-export interface Inputs { content: ReportContent; transcript: string | null; frameCount: number; transcribed: boolean }
+/** One frame or photo, with the label the models see before it, like "frame at 0:12". */
+export interface Visual { label: string; image: Uint8Array }
+export interface Inputs { visuals: Visual[]; transcript: string | null; transcribed: boolean }
 type Ctx = { dir: string; tools: MediaTools; download: Downloader; provider: Provider; transcribeModel: string; onStep: (s: ReportStep) => void };
 type Frame = { t: number; bytes: Uint8Array };
 
 /** Frames, photos and speech of one post, ready for the report model. */
 export async function buildInputs(o: Ctx & { media: PostMedia }): Promise<Inputs> {
   const parts = o.media.parts;
-  const content: ReportContent = [];
+  const visuals: Visual[] = [];
   const transcripts: string[] = [];
-  let frameCount = 0;
   let transcribed = false;
   let hasVideo = false;
   const videos = parts.filter((p) => p.kind === "video" && p.videoUrl).length;
@@ -34,23 +35,17 @@ export async function buildInputs(o: Ctx & { media: PostMedia }): Promise<Inputs
     if (part.kind === "video" && part.videoUrl) {
       hasVideo = true;
       const v = await videoItem(o, part, cap);
-      for (const f of v.frames) {
-        content.push({ type: "text", text: `[${label ? `${label}, ` : ""}frame at ${formatClock(f.t)}]` });
-        content.push({ type: "image", image: f.bytes, mediaType: "image/jpeg" });
-      }
-      frameCount += v.frames.length;
+      for (const f of v.frames) visuals.push({ label: `${label ? `${label}, ` : ""}frame at ${formatClock(f.t)}`, image: f.bytes });
       if (v.transcript !== null) transcribed = true;
       if (v.transcript) transcripts.push(carousel ? `Item ${part.index + 1}: ${v.transcript}` : v.transcript);
     } else {
       const bytes = await imageItem(o, part);
       if (!bytes) continue;
-      content.push({ type: "text", text: `[${label ?? "photo"}]` });
-      content.push({ type: "image", image: bytes, mediaType: "image/jpeg" });
-      frameCount += 1;
+      visuals.push({ label: label ?? "photo", image: bytes });
     }
   }
-  if (frameCount === 0 && transcripts.length === 0) throw new AnalyzeError("failed", "No frames or speech could be read from this post");
-  return { content, transcript: hasVideo ? transcripts.join("\n\n") : null, frameCount, transcribed };
+  if (visuals.length === 0 && transcripts.length === 0) throw new AnalyzeError("failed", "No frames or speech could be read from this post");
+  return { visuals, transcript: hasVideo ? transcripts.join("\n\n") : null, transcribed };
 }
 
 async function videoItem(o: Ctx, part: MediaPart, carouselCap: number | null): Promise<{ frames: Frame[]; transcript: string | null }> {

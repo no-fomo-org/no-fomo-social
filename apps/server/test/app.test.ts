@@ -210,6 +210,13 @@ describe("analyze routes", () => {
     expect((await post("/api/posts/999/analyze", CHOICE)).status).toBe(403);
     expect((await get("/api/posts/999/report")).status).toBe(404);
   });
+  it("deletes reports only from the app page", async () => {
+    const del = (path: string, origin: string) =>
+      app.request(path, { method: "DELETE", headers: { host: HOST, origin, "content-type": "application/json" } });
+    expect((await del("/api/posts/abc/report", "http://localhost:4747")).status).toBe(400);
+    expect((await del("/api/posts/999/report", "http://localhost:4747")).status).toBe(404);
+    expect((await del("/api/posts/999/report", `chrome-extension://${EXT}`)).status).toBe(403);
+  });
   it("answers 409 no_key before any key is saved", async () => {
     await syncFixtures();
     const id = ((await (await get("/api/posts?limit=1")).json()) as PostsPage).items[0]!.id;

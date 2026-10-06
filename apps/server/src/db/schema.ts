@@ -109,7 +109,7 @@ export const settings = sqliteTable("settings", {
 export const reports = sqliteTable("reports", {
   postId: text("post_id").primaryKey().references(() => posts.id, { onDelete: "cascade" }),
   status: text("status", { enum: ["queued", "running", "done", "error"] }).notNull(),
-  step: text("step", { enum: ["downloading", "frames", "transcribing", "writing"] }),
+  step: text("step", { enum: ["downloading", "frames", "transcribing", "reading", "writing"] }),
   /** Kept when a later run fails, so the last good report stays visible. */
   markdown: text("markdown"),
   language: text("language").notNull(),

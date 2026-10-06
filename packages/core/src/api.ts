@@ -88,7 +88,7 @@ export interface SyncStatus { run: SyncRunInfo | null; lastSuccessAt: number | n
 export interface AppConfig { extensionId: string; version: string }
 
 export type ReportStatus = "queued" | "running" | "done" | "error";
-export type ReportStep = "downloading" | "frames" | "transcribing" | "writing";
+export type ReportStep = "downloading" | "frames" | "transcribing" | "reading" | "writing";
 export type AnalyzeErrorCode =
   | "no_key" | "bad_key" | "quota" | "model_not_found" | "no_ffmpeg" | "too_long" | "too_large"
   | "links_expired" | "download_failed" | "bad_output" | "interrupted" | "failed" | "already_running";

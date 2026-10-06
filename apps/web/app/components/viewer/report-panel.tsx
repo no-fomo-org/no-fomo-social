@@ -8,6 +8,7 @@ import { startAnalysis } from "../../lib/analyze";
 import {
   analyzeErrorText, isWorking, reportFileName, reportView, safeMarkdownUrl, startingChoice, stepText, usableModels,
 } from "../../lib/report";
+import { DeleteReport } from "../reports/delete-report";
 import { useOpenSettings } from "../settings-dialog";
 import { Button } from "../ui/button";
 import { Icon } from "../ui/icon";
@@ -166,6 +167,7 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
             {!choosing && (
               <Button variant="ghost" onClick={hasKey ? () => setChoosing(true) : openSettings}>Analyze again</Button>
             )}
+            {!choosing && <DeleteReport postId={post.id} />}
           </div>
           <article className="report-md">
             <Markdown

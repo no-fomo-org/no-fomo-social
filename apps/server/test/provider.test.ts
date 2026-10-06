@@ -17,7 +17,7 @@ describe("provider", () => {
       doGenerate: async () => ({ content: [{ type: "text", text: "## Summary\nok" }], finishReason: { unified: "stop", raw: undefined }, usage, warnings: [] }),
     });
     const p = createProvider({ language: () => lm, transcription: unused });
-    const text = await p.writeReport({
+    const text = await p.generate({
       model: "m",
       system: "SYS",
       content: [{ type: "text", text: "info" }, { type: "image", image: new Uint8Array([0xff, 0xd8, 0xff]), mediaType: "image/jpeg" }],
@@ -26,6 +26,8 @@ describe("provider", () => {
     const prompt = lm.doGenerateCalls[0]!.prompt;
     expect(prompt[0]).toMatchObject({ role: "system", content: "SYS" });
     expect(JSON.stringify(prompt[1])).toContain("image/jpeg");
+    // Small text on screen needs the full-size image.
+    expect(JSON.stringify(prompt[1])).toContain('"imageDetail":"high"');
   });
 
   it("returns the trimmed transcript", async () => {
