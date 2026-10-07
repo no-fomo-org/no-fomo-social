@@ -59,7 +59,7 @@ export function loadErrorText(code: string, detail?: string, until?: number): st
     case "bad_response":
     case "internal": return `Could not load from Instagram.${detail ? ` ${detail}` : ""}`;
     case "unknown_type":
-      return "Your no-fomo extension is out of date. Run pnpm ext:build, then press Reload on the chrome://extensions page.";
+      return "Your no-fomo extension is out of date. Open chrome://extensions, turn on Developer mode and press Update.";
     case "not_found":
     case "profile_not_found": return "No Instagram account has this name.";
     case "private":

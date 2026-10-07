@@ -47,3 +47,12 @@ no-fomo uses Instagram with the user's own account. Any change that adds Instagr
 ## Code of Conduct
 
 By taking part you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Releasing (maintainers)
+
+1. Set the new version in `package.json`, `apps/extension/package.json` and `APP_VERSION` in `packages/core/src/constants.ts`. Add a `CHANGELOG.md` entry.
+2. Merge to `main`, then tag: `git tag v0.2.0 && git push --tags`.
+3. The Release workflow builds the Mac and Windows bundles, installs them on real machines, and creates a draft release. Check it and press Publish. The install scripts always download the latest published release.
+4. Upload `no-fomo-extension.zip` from the release to the Chrome Web Store if the extension changed.
+
+To test bundles locally: `pnpm --filter @no-fomo/web build && pnpm release:bundle darwin-arm64`, then run `scripts/install/install.sh` with `NO_FOMO_DOWNLOAD_BASE=file://$PWD/dist/release`.

@@ -1,15 +1,20 @@
-const code = "font-mono [overflow-wrap:anywhere]";
+import { EXTENSION_STORE_URL } from "@no-fomo/core";
 
 const STEPS = [
-  <>Build the extension with <code className={code}>pnpm ext:build</code>.</>,
-  <>Open <code className={code}>chrome://extensions</code>, turn on Developer mode, press Load unpacked, and choose <code className={code}>apps/extension/.output/chrome-mv3</code>.</>,
+  <>
+    Add the{" "}
+    <a href={EXTENSION_STORE_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-text underline underline-offset-2">
+      no-fomo extension
+    </a>{" "}
+    to Chrome.
+  </>,
   <>Log in to instagram.com in this browser.</>,
   <>Come back here and press Sync.</>,
 ];
 
 /** `inherit`: take text colors from the parent (the brand photo sets cream). */
 export function SetupSteps({ tone = "page" }: { tone?: "page" | "inherit" }) {
-  const text = tone === "inherit" ? "" : "text-muted [&_code]:text-text";
+  const text = tone === "inherit" ? "[&_a]:text-inherit" : "text-muted";
   return (
     <ol className={`mt-4 grid max-w-[60ch] gap-2.5 text-[15px] leading-relaxed ${text}`}>
       {STEPS.map((step, i) => (

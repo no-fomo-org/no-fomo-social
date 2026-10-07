@@ -7,6 +7,7 @@
     "dev": "wxt",
     "build": "wxt build",
     "build:dev": "wxt build --mode development",
+    "zip:store": "NO_FOMO_STORE_BUILD=1 wxt zip",
     "postinstall": "wxt prepare",
     "typecheck": "tsc -p tsconfig.json"
   },
