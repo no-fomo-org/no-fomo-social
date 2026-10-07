@@ -4,3 +4,9 @@ packages:
 allowBuilds:
   better-sqlite3: true
   esbuild: true
+  workerd: true
+# Security fixes for development-only tools until their parents update.
+overrides:
+  shell-quote: ">=1.11.0"
+  sharp: ">=0.35.5"
+  "@esbuild-kit/core-utils>esbuild": ">=0.25.0"
