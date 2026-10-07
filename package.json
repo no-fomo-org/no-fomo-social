@@ -1,6 +1,15 @@
 {
   "name": "no-fomo",
+  "version": "0.1.0",
   "private": true,
+  "description": "Let AI watch the reels. Your Instagram saves and any account, turned into knowledge on your own computer.",
+  "license": "MIT",
+  "homepage": "https://github.com/no-fomo/no-fomo#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/no-fomo/no-fomo.git"
+  },
+  "bugs": "https://github.com/no-fomo/no-fomo/issues",
   "type": "module",
   "packageManager": "pnpm@12.9.1",
   "engines": {
