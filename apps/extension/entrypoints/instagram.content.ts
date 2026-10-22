@@ -67,7 +67,7 @@ export default defineContentScript({
       const sink = createRelaySink(msg.serverUrl, send);
       // The gate spaces requests, so the sync loop adds no pause of its own.
       void runSync({ ig: backgroundIg, sink, sleep, delayMs: () => 0, mode: msg.mode === "full" ? "full" : "incremental" })
-        .then((r) => console.info("[no-fomo] sync finished", r))
+        .then((r) => console.info("[no-fomo-social] sync finished", r))
         .finally(() => { running = false; });
     });
   },
