@@ -73,7 +73,7 @@
     (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") -or
     (Test-Path "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe")
 
-  Write-Host 'Starting no-fomo...' -ForegroundColor White
+  Write-Host 'Starting no-fomo-social...' -ForegroundColor White
   & (Join-Path $AppDir 'bin\no-fomo-social.ps1') start
 
   $version = Get-Content (Join-Path $AppDir 'VERSION')

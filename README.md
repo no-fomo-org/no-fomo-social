@@ -48,7 +48,7 @@ irm https://raw.githubusercontent.com/no-fomo-org/no-fomo-social/main/scripts/in
 
 **2. Add the [no-fomo-social extension](https://chromewebstore.google.com/detail/EXTENSION_STORE_ID) to Chrome.**
 
-**3. Log in to instagram.com in Chrome, then press Sync in no-fomo.**
+**3. Log in to instagram.com in Chrome, then press Sync in no-fomo-social.**
 
 no-fomo-social opens at `http://localhost:4747`. Next time, open it from Launchpad or Spotlight (Mac) or the Start Menu (Windows). To make reports, add your OpenAI key under the gear icon. Each report usually costs a few cents.
 
