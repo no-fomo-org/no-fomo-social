@@ -25,7 +25,6 @@ Start with [boards/01-brand-board.jpg](boards/01-brand-board.jpg).
 | `tokens.css` | Drop-in replacement for the token part of `apps/web/app/app.css` |
 | `Logo.tsx` | React logo components to copy into `apps/web/app/components/` |
 | `design-rules.md` | Replacement for the root `DESIGN.md` |
-| `references/` | The owner's inspiration posters and the chosen logo sketch. Inspiration only, never copy them |
 
 The boards were made with an image generator. Use them for the look and feel only. Their small mistakes are not the spec: some chips repeat, logos differ a little between screens, some letters are not perfect. **This README, `tokens.css` and `logo/svg/` are the spec.**
 

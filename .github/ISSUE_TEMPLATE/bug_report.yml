@@ -1,0 +1,33 @@
+name: Bug report
+description: Something does not work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Press ...
+  - type: input
+    id: version
+    attributes:
+      label: no-fomo version
+      description: Shown in Settings (gear icon, top right).
+  - type: dropdown
+    id: os
+    attributes:
+      label: Computer
+      options: [Mac (Apple chip), Mac (Intel), Windows, Linux, Other]
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error messages or screenshots
+      description: Please remove anything personal, such as Instagram usernames you do not want to share.

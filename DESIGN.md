@@ -76,6 +76,18 @@ typography:
     fontSize: "22px"
     fontWeight: 900
     letterSpacing: "-0.02em"
+  site-hero:
+    fontFamily: "Outfit Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "72px"
+    fontWeight: 800
+    lineHeight: 1.02
+    letterSpacing: "-0.02em"
+  site-section:
+    fontFamily: "Outfit Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "44px"
+    fontWeight: 800
+    lineHeight: 1.08
+    letterSpacing: "-0.015em"
 rounded:
   tile: "4px"
   control: "6px"
@@ -91,6 +103,9 @@ spacing:
   grid-gap-y-desktop: "32px"
   top-bar: "64px"
   content-max: "1600px"
+  site-max: "1280px"
+  site-reading-max: "760px"
+  install-sheet-max: "500px"
 components:
   button-primary:
     backgroundColor: "{colors.fern}"
@@ -148,6 +163,38 @@ components:
   popover:
     backgroundColor: "{colors.paper}"
     rounded: "{rounded.control}"
+  button-cream:
+    backgroundColor: "transparent"
+    textColor: "{colors.cream}"
+    rounded: "{rounded.control}"
+    padding: "0 14px"
+    height: "36px"
+  photo-band:
+    backgroundColor: "{colors.forest}"
+    textColor: "{colors.cream}"
+  install-sheet:
+    backgroundColor: "{colors.paper}"
+    rounded: "{rounded.sheet}"
+    width: "500px"
+  install-command:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.forest}"
+    typography: "{typography.numeric}"
+    rounded: "{rounded.control}"
+    padding: "8px 12px"
+  install-command-copied:
+    backgroundColor: "{colors.accent-soft}"
+  install-step-current:
+    backgroundColor: "{colors.accent-soft}"
+    rounded: "{rounded.control}"
+  label-planned:
+    backgroundColor: "{colors.dawn}"
+    textColor: "{colors.forest}"
+    rounded: "{rounded.tile}"
+    padding: "2px 6px"
+  screenshot:
+    backgroundColor: "{colors.surface-2}"
+    rounded: "{rounded.sheet}"
 ---
 
 # Design System: no-fomo
@@ -162,18 +209,20 @@ A star rises over a calm horizon at first light. The horizon is the calm overvie
 
 Density is medium (dial 5), variance is low (dial 3), motion is calm and quick (dial 4). Hierarchy comes from space and single hairlines, not from cards, shadows or color. Fern green is rare on purpose, so the one main action on a screen is always obvious. A dark "evening" theme of deep forest green-black follows the system setting and is as complete as the light one.
 
+The public site (`apps/site`) is the same world, louder by one step. It uses the same tokens, buttons and hairlines, with a bigger Outfit display ramp, the photograph as its first screen, and one deep Forest band that stays dark in both themes.
+
 **Key Characteristics:**
 - Light first, with a first-class dark "evening" theme that follows the system.
 - Near-white mist surfaces with a hint of green; never pure white or pure black.
 - One accent (Fern) for the main action and active states only.
 - Small, crisp corners: 6px controls, 4px media, 8px sheets.
 - Big 3:4 tiles with author, duration and caption below the image, never on it.
-- One brand photograph, only in empty and first-run states.
+- One brand photograph: in the app only in empty and first-run states; on the public site in the hero and the Forest band.
 - Motion gives feedback or shows a change of state, and nothing else.
 
 ## Colors
 
-A calm, nature-tinted neutral palette (mist, paper, forest) with a single Fern green accent and a few rare brand tones. All values are tokens in `apps/web/app/app.css` (source `docs/brand/first-light/tokens.css`); components never use raw hex. Light values are listed first; the `evening-*` keys are the same roles in the dark theme.
+A calm, nature-tinted neutral palette (mist, paper, forest) with a single Fern green accent and a few rare brand tones. All values are tokens in `apps/web/app/app.css` and the matching `apps/site/app/app.css` (source `docs/brand/first-light/tokens.css`); components never use raw hex. Light values are listed first; the `evening-*` keys are the same roles in the dark theme.
 
 ### Primary
 - **Fern** (light and evening values above): the primary button, focus rings, the progress fill, and the tick on a chosen option. Text on Fern is **Accent Ink**.
@@ -185,8 +234,8 @@ A calm, nature-tinted neutral palette (mist, paper, forest) with a single Fern g
 - **Sage**: secondary nature tone for illustration and charts; also the solid color behind the brand photo while it loads, and active marks on video controls.
 
 ### Tertiary
-- **Dawn**: a rare warm highlight (a new badge, a search hit mark). Use sparingly.
-- **Cream**: text and marks on the brand photograph only.
+- **Dawn**: a rare warm highlight (a new badge, a search hit mark, the "Planned" label on the site roadmap). Use sparingly.
+- **Cream**: text and marks on the brand photograph and on the Forest band only.
 
 ### Neutral
 - **Mist** (`bg`): the page background.
@@ -194,6 +243,7 @@ A calm, nature-tinted neutral palette (mist, paper, forest) with a single Fern g
 - **Paper**: sheets, popovers, menus and dialogs, one step lighter than the page.
 - **Line**: hairlines and borders.
 - **Forest** (`text`): main text, 13.8:1 on Mist.
+- **Deep Forest** (`--color-forest` on the site): the same Forest value, but constant. It does not flip in the evening theme. It is the ground of the photo band and the text on the Dawn "Planned" label.
 - **Muted**: secondary text, 5.1:1 on Surface at its lowest.
 - **Danger**: errors only.
 
@@ -203,6 +253,8 @@ A calm, nature-tinted neutral palette (mist, paper, forest) with a single Fern g
 **The Soft Active Rule.** Active tabs and active filter chips use the Soft Fern fill with Forest text (chips add the Fern Edge). There are no underlines and no sliding indicators.
 
 **The No Gradient Rule.** No gradients in the interface. The only exceptions are the Dawn app icon and the soft dark scrim that keeps cream text readable on the photograph.
+
+**The Constant Forest Rule.** The photo band on the site is deep Forest in both themes, with Cream text and Cream hairlines (25% Cream). It is the one place the page stays dark in the light theme.
 
 **The No Extremes Rule.** Never pure white or pure black in the interface. (The video stage stays black around the media, because it frames video.)
 
@@ -225,10 +277,17 @@ Every text pair passes WCAG AA in both themes. The lowest pairs are Muted on Sur
 - **Body** (Figtree 400, 15px, line height 1.6): captions, report text, explanations. Keep lines to about 60ch.
 - **Label** (Figtree 500, 14px): buttons, tabs, inputs, menu rows.
 - **Meta** (Figtree 400, 13px): author, captions under tiles, status notes.
-- **Numeric** (Geist Mono 400, 12 to 13px, tabular numbers): counts, durations, dates in tables, keyboard hints.
+- **Numeric** (Geist Mono 400, 12 to 13px, tabular numbers): counts, durations, dates in tables, keyboard hints. On the site also the install command and the step numbers.
+
+### Public site ramp
+The site adds two display sizes. The app ramp above does not change.
+- **Site hero** (Outfit 800, 44px phone, 56px from 640px, 72px from 1024px, line height 1.02, -2% tracking): the one hero headline, in Cream on the photograph, about 12ch wide. Under it one lead line in Figtree 17px (18px from 768px), Cream at 90%.
+- **Site section** (Outfit 800, 32px phone, 44px from 768px, line height 1.08, -1.5% tracking): section titles on the landing page.
+- **Page title** on simple pages like Privacy uses the app Display (Outfit 800, 40px).
+- Everything below a section title is the app ramp: item headings in Section (Figtree 600, 17px), text in Body (15px) in Muted, captions in Meta (13px).
 
 ### Named Rules
-**The Display Is Rare Rule.** Outfit is only for the logo, the hero and empty-state titles. Never for body text, controls or headings in the working UI.
+**The Display Is Rare Rule.** Outfit is only for the logo, the hero, empty-state titles and the section titles of the public site. Never for body text, controls, item headings or headings in the working UI.
 
 **The Tabular Numbers Rule.** Every number that can change or line up (counts, durations, dates) is Geist Mono with tabular numbers.
 
@@ -244,16 +303,18 @@ The post viewer fills the screen: media on the left, a 380px paper sheet on the 
 
 Group with space and single hairlines, not cards.
 
+**Public site.** Content is centered at 1280px with the same 16px and 24px gutters; Privacy reads in a 760px column. Sections breathe: 80px top and bottom on phone, 96 to 112px from 768px. The first screen is the photograph at full width, up to the screen height (at most 920px), with the top bar on it: logo left, Contact and GitHub right. The headline sits bottom-left; the install sheet sits in a right column up to 500px wide. Below 768px the photo keeps a portrait height (133vw, at most 720px) and holds only the headline; the install sheet follows below it on the page. Lists (features, roadmap, FAQ) are hairline lists: a Line border at the top and bottom and a hairline between rows, never cards.
+
 ## Elevation & Depth
 
-The system is flat and tonal. Depth comes from the step between Mist, Surface and Paper, and from hairlines. One shadow exists, `shadow-pop`, only for things that float above the page: popovers, menus, dialogs and the viewer sheet. In light it is a soft green-tinted drop (`0 1px 2px rgb(30 42 34 / 0.06), 0 12px 32px rgb(30 42 34 / 0.1)`); in the evening theme it is deeper (`0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.45)`). Behind dialogs sits the scrim.
+The system is flat and tonal. Depth comes from the step between Mist, Surface and Paper, and from hairlines. One shadow exists, `shadow-pop`, only for things that float above the page: popovers, menus, dialogs, the viewer sheet, and the install sheet that floats on the site photograph. In light it is a soft green-tinted drop (`0 1px 2px rgb(30 42 34 / 0.06), 0 12px 32px rgb(30 42 34 / 0.1)`); in the evening theme it is deeper (`0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.45)`). Behind dialogs sits the scrim.
 
 ### Named Rules
 **The Flat At Rest Rule.** Nothing on the page itself has a shadow. A shadow means "this floats above the page" and nothing else. No glass, no blur panels.
 
 ## Shapes
 
-Corners are small and crisp: controls 6px (buttons, inputs, tabs, chips, popovers), media 4px (thumbnails, video, rows inside menus, segment buttons), sheets and dialogs 8px. Avatars are circles. Nothing else is a pill. The app icon is a squircle (22%).
+Corners are small and crisp: controls 6px (buttons, inputs, tabs, chips, popovers), media 4px (thumbnails, video, rows inside menus, segment buttons, small labels), sheets and dialogs 8px. App screenshots on the site are framed like sheets: 8px with a Line border. Avatars and small status marks (the report tick, the install step numbers) are circles. Nothing else is a pill. The app icon is a squircle (22%).
 
 The logo symbol is a four-point star with soft concave sides, rising over a thin horizon arc that is thickest in the middle. The arc lives only inside the logo and the loading mark; it is never a UI decoration or underline.
 
@@ -269,6 +330,7 @@ Quiet and responsive; they press back.
 - **Press:** every pressable scales to 0.97 in 160ms with the soft ease-out curve. Tiles scale to 0.98.
 - **Focus:** a 2px Fern outline, 2px offset, in both themes.
 - **Disabled:** half opacity, except the Sync button while it syncs, which stays full and shows the loading mark.
+- **Cream (site only):** for links on the photograph, like Contact and GitHub in the top bar. Cream text at 90%, a light Cream fill (12%) and full Cream on hover, a Cream focus outline.
 
 ### Tabs
 - **Style:** Muted text, 6px corners, 36px tall. Hover gives a Surface fill.
@@ -314,14 +376,31 @@ The logo symbol with the star rising over the arc and resting (`<LogoSymbol load
 ### Errors
 Danger text with a short sentence: what happened and what to do.
 
+### Install Sheet (site)
+The installer on the site photograph. It shows one next step at a time.
+- **Style:** Paper, 8px corners, `shadow-pop`, 20px padding (24px from 768px). Title "Install in 3 steps" in Section, Mac and Windows tabs on the right in the Soft Active style. The guess comes from the browser; the visitor can switch.
+- **Steps:** three numbered rows. Exactly one is current: it gets a light Soft Fern fill (60%) and a Fern-edged number circle. Done steps show a solid Fern circle with a tick. Later steps are Muted with a Line circle. The number circles are 28px, Geist Mono.
+- **Command:** the one-line command in Geist Mono 13px in a box with a Surface fill, Line border and 6px corners. Lines break only after a slash or a space. After Copy the box turns Soft Fern with a Fern Edge border over 300ms.
+- **One action:** the current step carries the only Fern button. Copy is primary first; once copied it becomes a secondary "Copied" with a tick, and Add to Chrome becomes primary.
+- **Footer:** a hairline, then one Meta line in Muted with the system needs.
+
+### Photo Band (site)
+A section on deep Forest with Cream text and the photograph at 25% behind it. Its points are separated by Cream hairlines (25%), not cards. One per page.
+
+### Screenshots (site)
+Real app screens on demo data are the proof. Each sits in an 8px frame with a Line border and a Surface 2 fill while it loads, in both themes (light and evening images follow the system). Phones get a tighter crop of the same screen so the text stays readable. Every caption says the data is demo data.
+
+### Planned Label (site)
+A small Dawn label with Forest text (12px, weight 500, 4px corners) next to a roadmap item heading. It marks work that is not built yet.
+
 ## Do's and Don'ts
 
 ### Do:
-- **Do** use the tokens in `apps/web/app/app.css` for every color, radius, shadow and curve.
+- **Do** use the tokens in `apps/web/app/app.css` (and `apps/site/app/app.css` on the site) for every color, radius, shadow and curve.
 - **Do** keep Fern for the main action on a screen and for active states.
 - **Do** show active tabs and chips with the Soft Fern fill and Forest text.
 - **Do** use Lake only for links inside report text, and Danger only for errors.
-- **Do** use Outfit 800 to 900 only for the logo, empty-state titles and the hero; Figtree for everything else; Geist Mono with tabular numbers for numbers.
+- **Do** use Outfit 800 to 900 only for the logo, empty-state titles, the hero and site section titles; Figtree for everything else; Geist Mono with tabular numbers for numbers.
 - **Do** keep corners at 6px for controls, 4px for media and 8px for sheets; circles only for avatars.
 - **Do** keep tiles 3:4 with author, duration and caption below the image.
 - **Do** use the horizontal lockup (`<LogoLockup />`) in the top bar, and the small symbol below 24px.
@@ -330,6 +409,7 @@ Danger text with a short sentence: what happened and what to do.
 - **Do** gate hover motion behind a real mouse (`hover: hover` and `pointer: fine`).
 - **Do** use Hugeicons only, stroke 1.5, 16px in controls and 14px in meta.
 - **Do** give every state text: skeletons while loading, how to fill it when empty, what happened and what to do on error.
+- **Do** on the site, show the real app on demo data and say so in the caption.
 - **Do** write plain, short, simple English in sentence case.
 
 ### Don't:
@@ -339,7 +419,7 @@ Danger text with a short sentence: what happened and what to do.
 - **Don't** use Outfit for body text or controls.
 - **Don't** make anything a pill except avatars.
 - **Don't** put text on top of tile images.
-- **Don't** put the photograph behind the grid, in sheets, in menus or in the player.
+- **Don't** put the photograph behind the grid, in sheets, in menus or in the player. On the site it lives only in the hero and the Forest band.
 - **Don't** rotate, stretch, shadow, outline or recolor the logo outside the palette, and don't use the arc as an underline or decoration.
 - **Don't** animate keyboard actions: arrow keys between posts, `/` to search, Esc.
 - **Don't** use spinners for content; use skeletons. Syncs and reports use the brand loading mark.

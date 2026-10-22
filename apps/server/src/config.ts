@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { DEFAULT_PORT, EXTENSION_ID } from "@no-fomo/core";
+import { appPaths } from "./paths";
 
 export interface ServerConfig {
   port: number;
@@ -19,7 +19,7 @@ const list = (v: string | undefined) => (v ?? "").split(",").map((s) => s.trim()
 /** `pnpm dev` passes --dev, so only then does the server trust the web dev server on :5173. */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env, argv: string[] = process.argv.slice(2)): ServerConfig {
   const dev = argv.includes("--dev");
-  const webDist = fileURLToPath(new URL("../../web/build/client", import.meta.url));
+  const { webDist } = appPaths(env);
   return {
     port: Number(env.NO_FOMO_PORT ?? DEFAULT_PORT),
     dataDir: env.NO_FOMO_HOME ?? join(homedir(), ".no-fomo"),

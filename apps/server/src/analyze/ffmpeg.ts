@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
 import { SCENE_THRESHOLD } from "@no-fomo/core";
+import { appPaths } from "../paths";
 
 export class ToolMissingError extends Error {}
 export interface ProbeInfo { durationSec: number; hasAudio: boolean }
@@ -21,7 +22,7 @@ const FRAME_SCALE = "scale='if(lt(iw,ih),min(iw,768),-2)':'if(lt(iw,ih),-2,min(i
 
 function run(bin: "ffmpeg" | "ffprobe", args: string[], timeoutMs = 120_000): Promise<{ stdout: Buffer; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(bin, args, { stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(appPaths()[bin], args, { stdio: ["ignore", "pipe", "pipe"] });
     const out: Buffer[] = [];
     let err = "";
     const timer = setTimeout(() => child.kill("SIGKILL"), timeoutMs);
