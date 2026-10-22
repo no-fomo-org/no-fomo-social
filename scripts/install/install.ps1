@@ -82,7 +82,7 @@
   Write-Host ''
   if (-not $chrome) { Write-Host '  * no-fomo-social works with Google Chrome. Get it at https://www.google.com/chrome/' }
   Write-Host "  * Add the extension to Chrome: $StoreUrl"
-  Write-Host '  * Log in to instagram.com in Chrome, then press Sync in no-fomo.'
+  Write-Host '  * Log in to instagram.com in Chrome, then press Sync in no-fomo-social.'
   Write-Host ''
   Write-Host '  Open no-fomo-social any time from the Start Menu or the Desktop icon.'
   Write-Host "  Your library stays in $HomeDir."
