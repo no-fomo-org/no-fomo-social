@@ -49,7 +49,7 @@ export function PostGrid(props: {
     return (
       <section className="py-16">
         <h2 className="text-[17px] font-semibold">Could not load your posts</h2>
-        <p className="mt-1 text-muted">The no-fomo app on your computer did not answer. Check that it is running.</p>
+        <p className="mt-1 text-muted">The no-fomo-social app on your computer did not answer. Check that it is running.</p>
         <Button className="mt-4" onClick={() => void query.refetch()}>Try again</Button>
       </section>
     );

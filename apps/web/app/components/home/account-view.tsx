@@ -77,7 +77,7 @@ export function AccountView({ username }: { username: string }) {
   if (ext.missing) {
     body = (
       <section className="py-10">
-        <h2 className="text-[17px] font-semibold">The no-fomo extension is needed to open accounts</h2>
+        <h2 className="text-[17px] font-semibold">The no-fomo-social extension is needed to open accounts</h2>
         <SetupSteps />
       </section>
     );

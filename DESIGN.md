@@ -1,5 +1,5 @@
 ---
-name: no-fomo
+name: no-fomo-social
 description: A calm personal library for saved Instagram posts. Brand "First Light".
 colors:
   mist: "#F6F7F3"
@@ -197,7 +197,7 @@ components:
     rounded: "{rounded.sheet}"
 ---
 
-# Design System: no-fomo
+# Design System: no-fomo-social
 
 **Brand:** First Light. The full guide, logo files, photographs and the token source live in `docs/brand/first-light/`. If this file and the brand guide ever disagree, the guide wins.
 

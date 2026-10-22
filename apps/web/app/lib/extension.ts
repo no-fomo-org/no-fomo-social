@@ -59,7 +59,7 @@ export function loadErrorText(code: string, detail?: string, until?: number): st
     case "bad_response":
     case "internal": return `Could not load from Instagram.${detail ? ` ${detail}` : ""}`;
     case "unknown_type":
-      return "Your no-fomo extension is out of date. Open chrome://extensions, turn on Developer mode and press Update.";
+      return "Your no-fomo-social extension is out of date. Open chrome://extensions, turn on Developer mode and press Update.";
     case "not_found":
     case "profile_not_found": return "No Instagram account has this name.";
     case "private":
@@ -69,7 +69,7 @@ export function loadErrorText(code: string, detail?: string, until?: number): st
     case "rate_limited": return "Instagram asked to slow down. Try again in a few minutes.";
     case "timeout": return "The extension did not answer. Reload this page and try again.";
     case "instagram_tab_failed": return "Could not open Instagram. Open instagram.com in this browser and try again.";
-    case "no_extension": return "The no-fomo extension is not installed.";
+    case "no_extension": return "The no-fomo-social extension is not installed.";
     default: return `Could not load from Instagram (${code}).`;
   }
 }

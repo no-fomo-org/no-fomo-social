@@ -17,15 +17,15 @@ Load `apps/extension/.output/chrome-mv3-dev` in `chrome://extensions` (Developer
 For UI work without touching your real Instagram account, use fake posts:
 
 ```bash
-NO_FOMO_HOME=$PWD/.dev-data pnpm --filter @no-fomo-social/server seed
-NO_FOMO_HOME=$PWD/.dev-data pnpm dev
+NO_FOMO_SOCIAL_HOME=$PWD/.dev-data pnpm --filter @no-fomo-social/server seed
+NO_FOMO_SOCIAL_HOME=$PWD/.dev-data pnpm dev
 ```
 
 To run the app like a user does: `pnpm ext:build && pnpm start`, then open http://localhost:4747.
 
 Only `pnpm dev` and `ext:build:dev` trust the web dev server on port 5173. `pnpm start` and the normal extension build never do, so another project on that port cannot use your Instagram session.
 
-Set `NO_FOMO_DUMP=1` to save raw Instagram responses to `~/.no-fomo/dumps`. They contain personal data. Never commit them; test fixtures must be made-up data.
+Set `NO_FOMO_SOCIAL_DUMP=1` to save raw Instagram responses to `~/.no-fomo-social/dumps`. They contain personal data. Never commit them; test fixtures must be made-up data.
 
 ## Before you open a pull request
 
@@ -42,7 +42,7 @@ pnpm typecheck
 
 ## Instagram safety
 
-no-fomo uses Instagram with the user's own account. Any change that adds Instagram calls must go through the shared request gate (`packages/core/src/ig/gate.ts`) and keep its limits. Pull requests that make the app faster by calling Instagram more often will not be merged.
+no-fomo-social uses Instagram with the user's own account. Any change that adds Instagram calls must go through the shared request gate (`packages/core/src/ig/gate.ts`) and keep its limits. Pull requests that make the app faster by calling Instagram more often will not be merged.
 
 ## Code of Conduct
 
@@ -53,6 +53,6 @@ By taking part you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
 1. Set the new version in `package.json`, `apps/extension/package.json` and `APP_VERSION` in `packages/core/src/constants.ts`. Add a `CHANGELOG.md` entry.
 2. Merge to `main`, then tag: `git tag v0.2.0 && git push --tags`.
 3. The Release workflow builds the Mac and Windows bundles, installs them on real machines, and creates a draft release. Check it and press Publish. The install scripts always download the latest published release.
-4. Upload `no-fomo-extension.zip` from the release to the Chrome Web Store if the extension changed.
+4. Upload `no-fomo-social-extension.zip` from the release to the Chrome Web Store if the extension changed.
 
-To test bundles locally: `pnpm --filter @no-fomo-social/web build && pnpm release:bundle darwin-arm64`, then run `scripts/install/install.sh` with `NO_FOMO_DOWNLOAD_BASE=file://$PWD/dist/release`.
+To test bundles locally: `pnpm --filter @no-fomo-social/web build && pnpm release:bundle darwin-arm64`, then run `scripts/install/install.sh` with `NO_FOMO_SOCIAL_DOWNLOAD_BASE=file://$PWD/dist/release`.

@@ -13,7 +13,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>no-fomo</title>
+        <title>no-fomo-social</title>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -50,7 +50,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
   const text = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : "Something went wrong. Reload the page.";
   return (
     <main className="mx-auto max-w-xl px-4 py-24">
-      <h1 className="text-xl font-semibold">no-fomo stopped working</h1>
+      <h1 className="text-xl font-semibold">no-fomo-social stopped working</h1>
       <p className="mt-2 text-muted">{text}</p>
     </main>
   );

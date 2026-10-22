@@ -9,7 +9,7 @@ Notes for AI coding agents. Setup and user docs are in [README.md](README.md) an
 - `apps/web` — React Router SPA (no SSR). TanStack Query for server data. Talks to the extension through `app/components/home/use-extension.ts`.
 - `apps/extension` — WXT, Manifest V3. Content scripts make Instagram calls with the user's own session; the background worker relays results to the local server.
 
-Data lives in `~/.no-fomo` (`NO_FOMO_HOME` overrides it).
+Data lives in `~/.no-fomo-social` (`NO_FOMO_SOCIAL_HOME` overrides it).
 
 ## Rules that must not break
 
@@ -17,15 +17,16 @@ Data lives in `~/.no-fomo` (`NO_FOMO_HOME` overrides it).
 - **Trust only the app.** The extension accepts messages only from `appOrigins()` (`apps/extension/src/origins.ts`); the server checks Host and Origin (`apps/server/src/http/security.ts`). Port 5173 is trusted only in dev builds (`--dev`, `ext:build:dev`). Never widen these lists for convenience.
 - **The OpenAI key** is stored encrypted and is sent only to OpenAI. Never log it or return it from an API.
 - **Media downloads** are limited to Instagram CDN hosts (`isMediaUrl` in `apps/server/src/media/store.ts`).
-- **Test fixtures are made-up data.** Never commit real Instagram responses (`NO_FOMO_DUMP` output).
+- **Test fixtures are made-up data.** Never commit real Instagram responses (`NO_FOMO_SOCIAL_DUMP` output).
 
 ## How to work here
 
 - One test file: `pnpm vitest run apps/server/test/ingest.test.ts`. Tests sit in each package's `test/` folder, not next to the code.
 - Schema change: edit `schema.ts`, then `pnpm --filter @no-fomo-social/server db:generate`; commit the SQL. `migration.test.ts` checks it applies.
-- UI work: seed fake posts with `NO_FOMO_HOME=$PWD/.dev-data pnpm --filter @no-fomo-social/server seed` and run with the same `NO_FOMO_HOME`.
+- UI work: seed fake posts with `NO_FOMO_SOCIAL_HOME=$PWD/.dev-data pnpm --filter @no-fomo-social/server seed` and run with the same `NO_FOMO_SOCIAL_HOME`.
 - UI follows [DESIGN.md](DESIGN.md) (First Light). Colors and type come from tokens in `apps/web/app/app.css`; do not hard-code new colors. Brand files are in `docs/brand/first-light/`.
 - UI text: short, plain English, no jargon. Users are creators, not developers.
 - Code style: match nearby code; short JSDoc on exported functions explaining *why*. No new dependencies without a clear reason.
 - Commits: Conventional Commits with a scope (`feat(web):`, `fix(server):`, `docs:`).
+- Had a dev install before the rename? Move `~/.no-fomo` to `~/.no-fomo-social` by hand; the app does not migrate it.
 - Before finishing: `pnpm test` and `pnpm typecheck`.
