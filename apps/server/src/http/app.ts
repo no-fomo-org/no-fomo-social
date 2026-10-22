@@ -5,7 +5,7 @@ import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
-import { APP_VERSION, isReportLanguage, isReportModel, isTranscribeModel } from "@no-fomo/core";
+import { APP_VERSION, isReportLanguage, isReportModel, isTranscribeModel } from "@no-fomo-social/core";
 import type { ServerConfig } from "../config";
 import type { Db } from "../db/open";
 import { authors, posts } from "../db/schema";
@@ -226,7 +226,7 @@ export function createApp(deps: { db: Db; config: ServerConfig; media: MediaStor
   app.get("/media/*", (c) => c.notFound());
 
   app.get("*", async (c) => {
-    if (!config.webDist) return c.text("Web app is not built. Run: pnpm --filter @no-fomo/web build", 404);
+    if (!config.webDist) return c.text("Web app is not built. Run: pnpm --filter @no-fomo-social/web build", 404);
     const rel = decodeURIComponent(new URL(c.req.url).pathname).replace(/^\/+/, "");
     const file = resolve(config.webDist, rel);
     if (rel && file.startsWith(config.webDist + sep) && existsSync(file) && statSync(file).isFile()) {

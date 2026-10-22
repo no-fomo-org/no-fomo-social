@@ -1,7 +1,7 @@
 import {
   assembleReport, cleanModelSections, hasSummary, mergeScreenText, postContext, screenPrompt, systemPrompt,
   type AnalyzeChoice, type PostListItem, type PostMedia, type ReportStep,
-} from "@no-fomo/core";
+} from "@no-fomo-social/core";
 import type { Downloader } from "./download";
 import { AnalyzeError } from "./errors";
 import type { MediaTools } from "./ffmpeg";

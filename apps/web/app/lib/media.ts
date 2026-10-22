@@ -1,4 +1,4 @@
-export { needsRefresh } from "@no-fomo/core";
+export { needsRefresh } from "@no-fomo-social/core";
 import type { ExtResponse } from "./extension";
 
 /** Wait this long on a post before asking Instagram, so flipping fast through posts sends no requests. */
@@ -38,8 +38,8 @@ export function mediaErrorCode(reply: ExtResponse | null): MediaErrorCode {
 
 export function mediaErrorText(code: MediaErrorCode): string {
   switch (code) {
-    case "no_extension": return "Install the no-fomo extension to play posts.";
-    case "old_extension": return "Your no-fomo extension is out of date. Reload it on the chrome://extensions page, then try again.";
+    case "no_extension": return "Install the no-fomo-social extension to play posts.";
+    case "old_extension": return "Your no-fomo-social extension is out of date. Reload it on the chrome://extensions page, then try again.";
     case "login_required": return "Log in to Instagram in this browser, then try again.";
     case "rate_limited": return "Instagram asked to slow down. Try again in a few minutes.";
     case "not_found": return "This post was deleted on Instagram.";

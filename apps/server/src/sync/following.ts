@@ -1,5 +1,5 @@
 import { eq, lt, sql } from "drizzle-orm";
-import { parseFollowingPage, type SyncResult } from "@no-fomo/core";
+import { parseFollowingPage, type SyncResult } from "@no-fomo-social/core";
 import type { Db } from "../db/open";
 import { following, followingRuns } from "../db/schema";
 import { setSetting, type Q } from "../db/settings";

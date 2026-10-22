@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GATE_STORAGE_KEY } from "@no-fomo/core";
+import { GATE_STORAGE_KEY } from "@no-fomo-social/core";
 import { readGateState, storageGateStore } from "../src/gate-store";
 
 function fakeArea() {

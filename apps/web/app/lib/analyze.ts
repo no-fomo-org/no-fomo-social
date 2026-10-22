@@ -1,4 +1,4 @@
-import type { AnalyzeChoice, PostMedia } from "@no-fomo/core";
+import type { AnalyzeChoice, PostMedia } from "@no-fomo-social/core";
 import { api, ApiError } from "./api";
 import { refreshExtensionMedia } from "./extension";
 import { mediaErrorCode } from "./media";

@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Menu } from "@base-ui/react/menu";
 import { Popover } from "@base-ui/react/popover";
 import { ArrowDown01Icon, RefreshIcon } from "@hugeicons/core-free-icons";
-import type { SyncMode } from "@no-fomo/core";
+import type { SyncMode } from "@no-fomo-social/core";
 import { api } from "../lib/api";
 import { pingExtension, startExtensionSync, syncErrorText } from "../lib/extension";
 import { formatAgo, fullCheckDue, runResultNote } from "../lib/format";
@@ -97,7 +97,7 @@ export function SyncControl() {
         <Popover.Portal>
           <Popover.Positioner sideOffset={6} align="end" className="z-30">
             <Popover.Popup className={`w-[min(420px,calc(100vw-32px))] p-4 ${POPUP}`}>
-              <Popover.Title className="text-[15px] font-semibold">The no-fomo extension is not installed</Popover.Title>
+              <Popover.Title className="text-[15px] font-semibold">The no-fomo-social extension is not installed</Popover.Title>
               <SetupSteps />
             </Popover.Popup>
           </Popover.Positioner>

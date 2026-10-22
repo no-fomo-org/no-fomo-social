@@ -7,7 +7,7 @@
  * New tokens are marked NEW.
  *
  * Fonts (install first):
- *   pnpm --filter @no-fomo/web add @fontsource-variable/outfit @fontsource-variable/figtree
+ *   pnpm --filter @no-fomo-social/web add @fontsource-variable/outfit @fontsource-variable/figtree
  *   Geist Mono is already installed (@fontsource-variable/geist-mono).
  *   In root.tsx import:
  *     import "@fontsource-variable/outfit";

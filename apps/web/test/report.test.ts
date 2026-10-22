@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ModelsInfo, PostReport } from "@no-fomo/core";
+import type { ModelsInfo, PostReport } from "@no-fomo-social/core";
 import { analyzeErrorText, isWorking, reportFileName, reportView, safeMarkdownUrl, startingChoice, stepText, usableModels } from "../app/lib/report";
 
 const r = (over: Partial<PostReport>): PostReport => ({

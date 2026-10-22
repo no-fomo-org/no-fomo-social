@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import page1 from "@no-fomo/core/fixtures/saved-page-1.json";
-import page2 from "@no-fomo/core/fixtures/saved-page-2.json";
-import mediaInfo from "@no-fomo/core/fixtures/media-info.json";
+import page1 from "@no-fomo-social/core/fixtures/saved-page-1.json";
+import page2 from "@no-fomo-social/core/fixtures/saved-page-2.json";
+import mediaInfo from "@no-fomo-social/core/fixtures/media-info.json";
 import { eq } from "drizzle-orm";
 import { openDb, type Db } from "../src/db/open";
 import { posts, savedPosts } from "../src/db/schema";

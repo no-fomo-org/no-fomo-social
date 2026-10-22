@@ -18,6 +18,6 @@ export async function handleRelay(msg: RelayMessage, fetchFn: typeof fetch): Pro
     if (!res.ok) return { ok: false, error: data?.error ?? `Server error ${res.status}` };
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: `Cannot reach no-fomo app: ${(e as Error).message}` };
+    return { ok: false, error: `Cannot reach the no-fomo-social app: ${(e as Error).message}` };
   }
 }

@@ -1,10 +1,10 @@
-import { EXTENSION_STORE_URL } from "@no-fomo/core";
+import { EXTENSION_STORE_URL } from "@no-fomo-social/core";
 
 const STEPS = [
   <>
     Add the{" "}
     <a href={EXTENSION_STORE_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-text underline underline-offset-2">
-      no-fomo extension
+      no-fomo-social extension
     </a>{" "}
     to Chrome.
   </>,

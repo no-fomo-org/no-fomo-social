@@ -1,8 +1,8 @@
-# Installs or updates no-fomo on Windows. Your library in %USERPROFILE%\.no-fomo is never touched.
+# Installs or updates no-fomo-social on Windows. Your library in %USERPROFILE%\.no-fomo-social is never touched.
 #
-#   irm https://raw.githubusercontent.com/no-fomo/no-fomo/main/scripts/install/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/no-fomo-org/no-fomo-social/main/scripts/install/install.ps1 | iex
 #
-# NO_FOMO_DOWNLOAD_BASE points at another folder of release files (for testing).
+# NO_FOMO_SOCIAL_DOWNLOAD_BASE points at another folder of release files (for testing).
 
 # Everything is inside one block, so a half-downloaded script never runs.
 & {
@@ -10,18 +10,18 @@
   $ProgressPreference = 'SilentlyContinue'
   [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-  $Base = if ($env:NO_FOMO_DOWNLOAD_BASE) { $env:NO_FOMO_DOWNLOAD_BASE } else { 'https://github.com/no-fomo/no-fomo/releases/latest/download' }
-  $HomeDir = if ($env:NO_FOMO_HOME) { $env:NO_FOMO_HOME } else { Join-Path $env:USERPROFILE '.no-fomo' }
+  $Base = if ($env:NO_FOMO_SOCIAL_DOWNLOAD_BASE) { $env:NO_FOMO_SOCIAL_DOWNLOAD_BASE } else { 'https://github.com/no-fomo-org/no-fomo-social/releases/latest/download' }
+  $HomeDir = if ($env:NO_FOMO_SOCIAL_HOME) { $env:NO_FOMO_SOCIAL_HOME } else { Join-Path $env:USERPROFILE '.no-fomo-social' }
   $AppDir = Join-Path $HomeDir 'app'
   $StoreUrl = 'https://chromewebstore.google.com/detail/EXTENSION_STORE_ID'
-  $File = 'no-fomo-win32-x64.zip'
+  $File = 'no-fomo-social-win32-x64.zip'
 
-  function Fail($msg) { Write-Host "`n$msg" -ForegroundColor Red; throw 'no-fomo install stopped.' }
+  function Fail($msg) { Write-Host "`n$msg" -ForegroundColor Red; throw 'no-fomo-social install stopped.' }
 
-  if (-not [Environment]::Is64BitOperatingSystem) { Fail 'no-fomo needs 64-bit Windows 10 or newer.' }
+  if (-not [Environment]::Is64BitOperatingSystem) { Fail 'no-fomo-social needs 64-bit Windows 10 or newer.' }
 
-  Write-Host 'Installing no-fomo for Windows...' -ForegroundColor White
-  $Tmp = Join-Path ([IO.Path]::GetTempPath()) ("no-fomo-" + [Guid]::NewGuid())
+  Write-Host 'Installing no-fomo-social for Windows...' -ForegroundColor White
+  $Tmp = Join-Path ([IO.Path]::GetTempPath()) ("no-fomo-social-" + [Guid]::NewGuid())
   New-Item -ItemType Directory -Force -Path $Tmp | Out-Null
   try {
     Write-Host 'Downloading (about 120 MB)...'
@@ -39,7 +39,7 @@
     Expand-Archive -Force (Join-Path $Tmp $File) -DestinationPath $Tmp
 
     # Stop the old version before its files are replaced.
-    $old = Join-Path $AppDir 'bin\no-fomo.ps1'
+    $old = Join-Path $AppDir 'bin\no-fomo-social.ps1'
     if (Test-Path $old) { try { & $old stop } catch {} }
     if (Test-Path "$AppDir.old") { Remove-Item -Recurse -Force "$AppDir.old" }
     if (Test-Path $AppDir) { Move-Item $AppDir "$AppDir.old" }
@@ -53,16 +53,16 @@
   $shell = New-Object -ComObject WScript.Shell
   $targets = @([Environment]::GetFolderPath('Programs'), [Environment]::GetFolderPath('Desktop'))
   foreach ($dir in $targets) {
-    $lnk = $shell.CreateShortcut((Join-Path $dir 'no-fomo.lnk'))
+    $lnk = $shell.CreateShortcut((Join-Path $dir 'no-fomo-social.lnk'))
     $lnk.TargetPath = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-    $lnk.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$AppDir\bin\no-fomo.ps1`" start"
-    $lnk.IconLocation = "$AppDir\icons\no-fomo.ico"
+    $lnk.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$AppDir\bin\no-fomo-social.ps1`" start"
+    $lnk.IconLocation = "$AppDir\icons\no-fomo-social.ico"
     $lnk.WorkingDirectory = $HomeDir
-    $lnk.Description = 'Open no-fomo'
+    $lnk.Description = 'Open no-fomo-social'
     $lnk.Save()
   }
 
-  # The `no-fomo` command, for people who like the terminal.
+  # The `no-fomo-social` command, for people who like the terminal.
   $bin = Join-Path $AppDir 'bin'
   $path = [Environment]::GetEnvironmentVariable('Path', 'User')
   if (-not (($path -split ';') -contains $bin)) {
@@ -74,16 +74,16 @@
     (Test-Path "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe")
 
   Write-Host 'Starting no-fomo...' -ForegroundColor White
-  & (Join-Path $AppDir 'bin\no-fomo.ps1') start
+  & (Join-Path $AppDir 'bin\no-fomo-social.ps1') start
 
   $version = Get-Content (Join-Path $AppDir 'VERSION')
   Write-Host ''
-  Write-Host "Done! no-fomo $version is installed." -ForegroundColor Green
+  Write-Host "Done! no-fomo-social $version is installed." -ForegroundColor Green
   Write-Host ''
-  if (-not $chrome) { Write-Host '  * no-fomo works with Google Chrome. Get it at https://www.google.com/chrome/' }
+  if (-not $chrome) { Write-Host '  * no-fomo-social works with Google Chrome. Get it at https://www.google.com/chrome/' }
   Write-Host "  * Add the extension to Chrome: $StoreUrl"
-  Write-Host '  * Log in to instagram.com in Chrome, then press Sync in no-fomo.'
+  Write-Host '  * Log in to instagram.com in Chrome, then press Sync in no-fomo-social.'
   Write-Host ''
-  Write-Host '  Open no-fomo any time from the Start Menu or the Desktop icon.'
+  Write-Host '  Open no-fomo-social any time from the Start Menu or the Desktop icon.'
   Write-Host "  Your library stays in $HomeDir."
 }

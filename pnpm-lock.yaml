@@ -189,7 +189,7 @@ importers:
 
   apps/extension:
     dependencies:
-      '@no-fomo/core':
+      '@no-fomo-social/core':
         specifier: workspace:*
         version: link:../../packages/core
     devDependencies:
@@ -205,7 +205,7 @@ importers:
       '@hono/node-server':
         specifier: ^2.1.3
         version: 2.1.3(hono@4.13.13)
-      '@no-fomo/core':
+      '@no-fomo-social/core':
         specifier: workspace:*
         version: link:../../packages/core
       ai:
@@ -251,7 +251,7 @@ importers:
       '@hugeicons/react':
         specifier: ^1.1.10
         version: 1.1.10(react@19.3.0)
-      '@no-fomo/core':
+      '@no-fomo-social/core':
         specifier: workspace:*
         version: link:../../packages/core
       isbot:
@@ -315,7 +315,7 @@ importers:
       '@hugeicons/react':
         specifier: ^1.1.10
         version: 1.1.10(react@19.3.0)
-      '@no-fomo/core':
+      '@no-fomo-social/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@react-router/node':

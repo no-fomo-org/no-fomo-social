@@ -1,5 +1,5 @@
 {
-  "name": "@no-fomo/web",
+  "name": "@no-fomo-social/web",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,7 +15,7 @@
     "@fontsource-variable/outfit": "^5.3.0",
     "@hugeicons/core-free-icons": "^4.3.5",
     "@hugeicons/react": "^1.1.10",
-    "@no-fomo/core": "workspace:*",
+    "@no-fomo-social/core": "workspace:*",
     "@react-router/node": "^8.4.0",
     "@tanstack/react-query": "^5.104.1",
     "@videojs/react": "10.0.1",

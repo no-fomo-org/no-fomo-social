@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft01Icon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
-import type { LivePost, LiveProfile } from "@no-fomo/core";
+import type { LivePost, LiveProfile } from "@no-fomo-social/core";
 import { api } from "../../lib/api";
 import { loadErrorText, openProfile, profilePage } from "../../lib/extension";
 import { NO_FILTERS } from "../../lib/filters";
@@ -77,7 +77,7 @@ export function AccountView({ username }: { username: string }) {
   if (ext.missing) {
     body = (
       <section className="py-10">
-        <h2 className="text-[17px] font-semibold">The no-fomo extension is needed to open accounts</h2>
+        <h2 className="text-[17px] font-semibold">The no-fomo-social extension is needed to open accounts</h2>
         <SetupSteps />
       </section>
     );

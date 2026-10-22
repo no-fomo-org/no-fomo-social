@@ -1,7 +1,7 @@
 import {
   IgError, parseFeedOwner, parseMediaPage, parseUserSearch, runFollowingUpdate, toLivePost,
   type IgClient, type LivePage, type LiveProfile, type LoadStart, type ParsedAuthor,
-} from "@no-fomo/core";
+} from "@no-fomo-social/core";
 import { createFollowingSink } from "./relay-sink";
 import type { RelayMessage, RelayResponse } from "./relay";
 
@@ -72,7 +72,7 @@ export function createTabJobs(deps: { ig: IgClient; send: (m: RelayMessage) => P
     updating = true;
     return new Promise<LoadStart>((resolve) => {
       void runFollowingUpdate({ ig: deps.ig, sink: createFollowingSink(serverUrl, deps.send), viewerId: deps.viewerId(), onStart: resolve })
-        .then((r) => console.info("[no-fomo] following update finished", r))
+        .then((r) => console.info("[no-fomo-social] following update finished", r))
         .finally(() => { updating = false; });
     });
   }

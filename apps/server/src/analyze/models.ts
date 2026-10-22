@@ -1,4 +1,4 @@
-import { REPORT_MODELS, TRANSCRIBE_MODELS, type ModelInfo, type ModelsInfo } from "@no-fomo/core";
+import { REPORT_MODELS, TRANSCRIBE_MODELS, type ModelInfo, type ModelsInfo } from "@no-fomo-social/core";
 import type { KeyStore } from "../secrets/key-store";
 
 const MODELS_URL = "https://api.openai.com/v1/models";

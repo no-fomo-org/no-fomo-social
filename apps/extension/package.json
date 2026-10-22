@@ -1,5 +1,5 @@
 {
-  "name": "@no-fomo/extension",
+  "name": "@no-fomo-social/extension",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,12 +7,12 @@
     "dev": "wxt",
     "build": "wxt build",
     "build:dev": "wxt build --mode development",
-    "zip:store": "NO_FOMO_STORE_BUILD=1 wxt zip",
+    "zip:store": "NO_FOMO_SOCIAL_STORE_BUILD=1 wxt zip",
     "postinstall": "wxt prepare",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@no-fomo/core": "workspace:*"
+    "@no-fomo-social/core": "workspace:*"
   },
   "devDependencies": {
     "wxt": "^0.21.4"

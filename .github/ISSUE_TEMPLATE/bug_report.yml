@@ -19,7 +19,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: no-fomo version
+      label: no-fomo-social version
       description: Shown in Settings (gear icon, top right).
   - type: dropdown
     id: os

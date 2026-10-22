@@ -1,4 +1,4 @@
-import type { ReportSource } from "@no-fomo/core";
+import type { ReportSource } from "@no-fomo-social/core";
 import { Segmented } from "./ui/segmented";
 
 const OPTIONS: Array<{ value: ReportSource | null; label: string }> = [

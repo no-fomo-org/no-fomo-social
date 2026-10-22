@@ -1,5 +1,5 @@
 import { and, count, desc, eq, isNull, lt, sql } from "drizzle-orm";
-import { parseCollectionsPage, parseMediaPage, type ParsedAuthor, type ParsedPost, type SyncMode, type SyncResult } from "@no-fomo/core";
+import { parseCollectionsPage, parseMediaPage, type ParsedAuthor, type ParsedPost, type SyncMode, type SyncResult } from "@no-fomo-social/core";
 import type { Db } from "../db/open";
 import { authors, collections, postCollections, postParts, posts, savedPosts, syncRuns } from "../db/schema";
 import { getSetting, setSetting, type Q } from "../db/settings";

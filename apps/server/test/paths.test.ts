@@ -16,8 +16,8 @@ describe("app paths", () => {
     const root = mkdtempSync(join(tmpdir(), "nf-app-"));
     mkdirSync(join(root, "ffmpeg"));
     writeFileSync(join(root, "ffmpeg", "ffmpeg"), "");
-    const p = appPaths({ NO_FOMO_APP_DIR: root }, "darwin");
+    const p = appPaths({ NO_FOMO_SOCIAL_APP_DIR: root }, "darwin");
     expect(p).toEqual({ webDist: join(root, "web"), migrations: join(root, "drizzle"), ffmpeg: join(root, "ffmpeg", "ffmpeg"), ffprobe: "ffprobe" });
-    expect(appPaths({ NO_FOMO_APP_DIR: root }, "win32").ffmpeg).toBe("ffmpeg");
+    expect(appPaths({ NO_FOMO_SOCIAL_APP_DIR: root }, "win32").ffmpeg).toBe("ffmpeg");
   });
 });

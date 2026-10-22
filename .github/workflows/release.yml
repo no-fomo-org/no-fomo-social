@@ -30,9 +30,9 @@ jobs:
           test "$(node -p 'require("./apps/extension/package.json").version')" = "$v"
           grep -q "APP_VERSION = \"$v\"" packages/core/src/constants.ts
       - run: pnpm test
-      - run: pnpm --filter @no-fomo/web build
+      - run: pnpm --filter @no-fomo-social/web build
       - run: pnpm release:bundle
-      - run: pnpm ext:zip && cp apps/extension/.output/no-fomo-extension-*.zip dist/release/no-fomo-extension.zip
+      - run: pnpm ext:zip && cp apps/extension/.output/no-fomo-social-extension-*.zip dist/release/no-fomo-social-extension.zip
       - name: FFmpeg source code (GPL requires it next to the binaries)
         run: curl -fsSL -o dist/release/ffmpeg-9.0.2.tar.xz https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz
       - uses: actions/upload-artifact@v4
@@ -55,17 +55,17 @@ jobs:
           path: release
       - name: Install, check, uninstall
         env:
-          NO_FOMO_NO_BROWSER: "1"
-          NO_FOMO_DOWNLOAD_BASE: http://127.0.0.1:8000
+          NO_FOMO_SOCIAL_NO_BROWSER: "1"
+          NO_FOMO_SOCIAL_DOWNLOAD_BASE: http://127.0.0.1:8000
         run: |
           python3 -m http.server 8000 --directory release >/dev/null 2>&1 &
           sleep 1
           bash scripts/install/install.sh
           curl -fsS http://localhost:4747/api/config | grep extensionId
-          curl -fsS http://localhost:4747/ | grep -q '<title>no-fomo</title>'
-          ~/.no-fomo/app/ffmpeg/ffprobe -version | head -1
-          ~/.no-fomo/app/bin/no-fomo uninstall
-          test ! -d ~/.no-fomo/app
+          curl -fsS http://localhost:4747/ | grep -q '<title>no-fomo-social</title>'
+          ~/.no-fomo-social/app/ffmpeg/ffprobe -version | head -1
+          ~/.no-fomo-social/app/bin/no-fomo-social uninstall
+          test ! -d ~/.no-fomo-social/app
 
   test-windows:
     needs: build
@@ -79,18 +79,18 @@ jobs:
       - name: Install, check, uninstall
         shell: powershell
         env:
-          NO_FOMO_NO_BROWSER: "1"
-          NO_FOMO_DOWNLOAD_BASE: http://127.0.0.1:8000
+          NO_FOMO_SOCIAL_NO_BROWSER: "1"
+          NO_FOMO_SOCIAL_DOWNLOAD_BASE: http://127.0.0.1:8000
         run: |
           Start-Process -WindowStyle Hidden python -ArgumentList '-m', 'http.server', '8000', '--directory', 'release'
           Start-Sleep -Seconds 2
           Get-Content -Raw scripts/install/install.ps1 | Invoke-Expression
           $r = Invoke-WebRequest -UseBasicParsing http://localhost:4747/api/config
           if ($r.Content -notmatch 'extensionId') { throw 'server did not answer' }
-          & "$env:USERPROFILE\.no-fomo\app\ffmpeg\ffprobe.exe" -version | Select-Object -First 1
-          if (-not (Test-Path ([Environment]::GetFolderPath('Programs') + '\no-fomo.lnk'))) { throw 'no Start Menu shortcut' }
-          & "$env:USERPROFILE\.no-fomo\app\bin\no-fomo.ps1" uninstall
-          if (Test-Path "$env:USERPROFILE\.no-fomo\app") { throw 'app folder still there' }
+          & "$env:USERPROFILE\.no-fomo-social\app\ffmpeg\ffprobe.exe" -version | Select-Object -First 1
+          if (-not (Test-Path ([Environment]::GetFolderPath('Programs') + '\no-fomo-social.lnk'))) { throw 'no Start Menu shortcut' }
+          & "$env:USERPROFILE\.no-fomo-social\app\bin\no-fomo-social.ps1" uninstall
+          if (Test-Path "$env:USERPROFILE\.no-fomo-social\app") { throw 'app folder still there' }
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -107,4 +107,4 @@ jobs:
       - name: Draft release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" release/* --draft --generate-notes --title "no-fomo ${GITHUB_REF_NAME#v}"
+        run: gh release create "$GITHUB_REF_NAME" release/* --draft --generate-notes --title "no-fomo-social ${GITHUB_REF_NAME#v}"

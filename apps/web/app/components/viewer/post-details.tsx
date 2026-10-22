@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { Tabs } from "@base-ui/react/tabs";
-import type { PostListItem } from "@no-fomo/core";
+import type { PostListItem } from "@no-fomo-social/core";
 import { ArrowDown01Icon, ArrowUp01Icon, Cancel01Icon, Location01Icon, MusicNote01Icon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
 import { formatCount, formatDate, formatDuration } from "../../lib/format";
 import { Button, buttonClass } from "../ui/button";

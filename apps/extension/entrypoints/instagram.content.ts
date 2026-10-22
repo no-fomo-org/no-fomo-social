@@ -1,4 +1,4 @@
-import { createIgClient, createRequestGate, gateClient, runSync, type IgCallLog, type IgClient, type PostsTemplate, type SyncMode } from "@no-fomo/core";
+import { createIgClient, createRequestGate, gateClient, runSync, type IgCallLog, type IgClient, type PostsTemplate, type SyncMode } from "@no-fomo-social/core";
 import { createPagePosts } from "../src/page-posts";
 import { storageGateStore } from "../src/gate-store";
 import { createRelaySink } from "../src/relay-sink";
@@ -67,7 +67,7 @@ export default defineContentScript({
       const sink = createRelaySink(msg.serverUrl, send);
       // The gate spaces requests, so the sync loop adds no pause of its own.
       void runSync({ ig: backgroundIg, sink, sleep, delayMs: () => 0, mode: msg.mode === "full" ? "full" : "incremental" })
-        .then((r) => console.info("[no-fomo] sync finished", r))
+        .then((r) => console.info("[no-fomo-social] sync finished", r))
         .finally(() => { running = false; });
     });
   },

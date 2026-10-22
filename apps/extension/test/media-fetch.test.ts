@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { IgError, type IgClient } from "@no-fomo/core";
+import { IgError, type IgClient } from "@no-fomo-social/core";
 import { fetchMedia } from "../src/media-fetch";
 
 const ig = (mediaInfo: IgClient["mediaInfo"]): IgClient => ({

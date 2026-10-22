@@ -1,15 +1,15 @@
 {
-  "name": "no-fomo",
+  "name": "no-fomo-social",
   "version": "0.1.0",
   "private": true,
   "description": "Let AI watch the reels. Your Instagram saves and any account, turned into knowledge on your own computer.",
   "license": "MIT",
-  "homepage": "https://github.com/no-fomo/no-fomo#readme",
+  "homepage": "https://github.com/no-fomo-org/no-fomo-social#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/no-fomo/no-fomo.git"
+    "url": "git+https://github.com/no-fomo-org/no-fomo-social.git"
   },
-  "bugs": "https://github.com/no-fomo/no-fomo/issues",
+  "bugs": "https://github.com/no-fomo-org/no-fomo-social/issues",
   "type": "module",
   "packageManager": "pnpm@12.9.1",
   "engines": {
@@ -18,11 +18,11 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "pnpm -r typecheck",
-    "dev": "concurrently -k -n server,web -c blue,magenta \"pnpm --filter @no-fomo/server dev\" \"pnpm --filter @no-fomo/web dev\"",
-    "ext:build": "pnpm --filter @no-fomo/extension build",
-    "ext:build:dev": "pnpm --filter @no-fomo/extension build:dev",
-    "ext:zip": "pnpm --filter @no-fomo/extension zip:store",
-    "start": "pnpm --filter @no-fomo/web build && pnpm --filter @no-fomo/server start",
+    "dev": "concurrently -k -n server,web -c blue,magenta \"pnpm --filter @no-fomo-social/server dev\" \"pnpm --filter @no-fomo-social/web dev\"",
+    "ext:build": "pnpm --filter @no-fomo-social/extension build",
+    "ext:build:dev": "pnpm --filter @no-fomo-social/extension build:dev",
+    "ext:zip": "pnpm --filter @no-fomo-social/extension zip:store",
+    "start": "pnpm --filter @no-fomo-social/web build && pnpm --filter @no-fomo-social/server start",
     "release:bundle": "node scripts/release/build-bundle.mjs"
   },
   "devDependencies": {

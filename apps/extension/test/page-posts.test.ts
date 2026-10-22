@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { IgError, parsePostsRequest, type PostsTemplate } from "@no-fomo/core";
+import { IgError, parsePostsRequest, type PostsTemplate } from "@no-fomo-social/core";
 import { createPagePosts } from "../src/page-posts";
 
 const NAME = "PolarisProfilePostsTabContentQuery_connection";

@@ -1,4 +1,4 @@
-import type { MediaKind, ReportSource } from "@no-fomo/core";
+import type { MediaKind, ReportSource } from "@no-fomo-social/core";
 
 export interface Filters {
   q: string | null;

@@ -1,6 +1,6 @@
 import {
   DEFAULT_REPORT_LANGUAGE, DEFAULT_REPORT_MODEL, DEFAULT_TRANSCRIBE_MODEL, type AnalyzeChoice, type AppSettings, type SettingsUpdate,
-} from "@no-fomo/core";
+} from "@no-fomo-social/core";
 import type { Db } from "./db/open";
 import { getSetting, setSetting } from "./db/settings";
 import type { KeyStore } from "./secrets/key-store";

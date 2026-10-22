@@ -1,4 +1,4 @@
-import { IgError, parseMediaPage, toLivePost, type IgClient, type PostMedia } from "@no-fomo/core";
+import { IgError, parseMediaPage, toLivePost, type IgClient, type PostMedia } from "@no-fomo-social/core";
 import type { RelayMessage, RelayResponse } from "./relay";
 
 export type MediaFetchResult = { ok: true; media: PostMedia } | { ok: false; error: string; until?: number };

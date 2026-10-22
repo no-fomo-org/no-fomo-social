@@ -1,5 +1,5 @@
 // Writes real reports for a few known posts and checks that facts shown on screen made it into them.
-// Usage: pnpm --filter @no-fomo/server eval [--model gpt-5.4-mini]
+// Usage: pnpm --filter @no-fomo-social/server eval [--model gpt-5.4-mini]
 // Uses your saved OpenAI key and report settings. Stores nothing in the app; reports are saved next to the video cache.
 // Videos are kept in <data folder>/eval-cache after the first run, so cases still work after Instagram links expire.
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -19,7 +19,7 @@ import { analyzeOptions } from "../src/settings";
 interface Case { postId: string; note: string; mustContain: string[]; mustNotContain: string[] }
 
 const config = loadConfig();
-const db = openDb(join(config.dataDir, "no-fomo.db"));
+const db = openDb(join(config.dataDir, "no-fomo-social.db"));
 const key = createKeyStore(config.dataDir).get().openai;
 if (!key) throw new Error("No OpenAI key saved. Add it in the app settings first.");
 const modelArg = process.argv.indexOf("--model");
