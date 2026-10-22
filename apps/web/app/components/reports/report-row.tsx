@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ImageNotFound01Icon } from "@hugeicons/core-free-icons";
-import type { ReportListItem } from "@no-fomo/core";
+import type { ReportListItem } from "@no-fomo-social/core";
 import { formatDate } from "../../lib/format";
 import { Icon } from "../ui/icon";
 import { DeleteReport } from "./delete-report";

@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_PORT, EXTENSION_ID } from "@no-fomo/core";
+import { DEFAULT_PORT, EXTENSION_ID } from "@no-fomo-social/core";
 import { appPaths } from "./paths";
 
 export interface ServerConfig {

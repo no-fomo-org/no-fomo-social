@@ -1,5 +1,5 @@
 import { lte } from "drizzle-orm";
-import type { IgCallLog } from "@no-fomo/core";
+import type { IgCallLog } from "@no-fomo-social/core";
 import type { Db } from "../db/open";
 import { igCalls } from "../db/schema";
 

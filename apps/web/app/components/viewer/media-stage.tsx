@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { LivePost, PostListItem } from "@no-fomo/core";
+import type { LivePost, PostListItem } from "@no-fomo-social/core";
 import { Alert02Icon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
 import { mediaErrorText } from "../../lib/media";
 import { usePostMedia } from "../../lib/use-post-media";

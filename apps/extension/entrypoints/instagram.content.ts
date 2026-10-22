@@ -1,4 +1,4 @@
-import { createIgClient, createRequestGate, gateClient, runSync, type IgCallLog, type IgClient, type PostsTemplate, type SyncMode } from "@no-fomo/core";
+import { createIgClient, createRequestGate, gateClient, runSync, type IgCallLog, type IgClient, type PostsTemplate, type SyncMode } from "@no-fomo-social/core";
 import { createPagePosts } from "../src/page-posts";
 import { storageGateStore } from "../src/gate-store";
 import { createRelaySink } from "../src/relay-sink";

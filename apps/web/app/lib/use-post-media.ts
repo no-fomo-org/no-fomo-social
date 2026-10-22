@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { PostMedia } from "@no-fomo/core";
+import type { PostMedia } from "@no-fomo-social/core";
 import { api } from "./api";
 import { refreshExtensionMedia } from "./extension";
 import { canRefresh, mediaErrorCode, needsRefresh, REFRESH_DELAY_MS, staleAction, type MediaErrorCode } from "./media";

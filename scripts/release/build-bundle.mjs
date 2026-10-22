@@ -5,7 +5,7 @@
 //   pnpm release:bundle                       # all targets
 //   pnpm release:bundle darwin-arm64          # one target
 //
-// Run `pnpm --filter @no-fomo/web build` first.
+// Run `pnpm --filter @no-fomo-social/web build` first.
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -194,7 +194,7 @@ function notices(name) {
 const wanted = process.argv.slice(2);
 const names = wanted.length ? wanted : Object.keys(TARGETS);
 for (const n of names) if (!TARGETS[n]) throw new Error(`Unknown target ${n}. Use: ${Object.keys(TARGETS).join(", ")}`);
-if (!existsSync(join(ROOT, "apps/web/build/client/index.html"))) throw new Error("Build the web app first: pnpm --filter @no-fomo/web build");
+if (!existsSync(join(ROOT, "apps/web/build/client/index.html"))) throw new Error("Build the web app first: pnpm --filter @no-fomo-social/web build");
 
 mkdirSync(OUT, { recursive: true });
 const serverFile = join(OUT, "server.mjs");

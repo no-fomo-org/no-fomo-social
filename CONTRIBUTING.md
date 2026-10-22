@@ -17,7 +17,7 @@ Load `apps/extension/.output/chrome-mv3-dev` in `chrome://extensions` (Developer
 For UI work without touching your real Instagram account, use fake posts:
 
 ```bash
-NO_FOMO_HOME=$PWD/.dev-data pnpm --filter @no-fomo/server seed
+NO_FOMO_HOME=$PWD/.dev-data pnpm --filter @no-fomo-social/server seed
 NO_FOMO_HOME=$PWD/.dev-data pnpm dev
 ```
 
@@ -36,7 +36,7 @@ pnpm typecheck
 
 - Keep the change focused on one thing.
 - Add or update tests for behavior you change.
-- Changed the database schema? Run `pnpm --filter @no-fomo/server db:generate` and commit the new migration.
+- Changed the database schema? Run `pnpm --filter @no-fomo-social/server db:generate` and commit the new migration.
 - Changed the UI? Follow [DESIGN.md](DESIGN.md) and add a screenshot to the pull request.
 - Commit messages use [Conventional Commits](https://www.conventionalcommits.org): `feat(web): ...`, `fix(server): ...`, `docs: ...`.
 
@@ -55,4 +55,4 @@ By taking part you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
 3. The Release workflow builds the Mac and Windows bundles, installs them on real machines, and creates a draft release. Check it and press Publish. The install scripts always download the latest published release.
 4. Upload `no-fomo-extension.zip` from the release to the Chrome Web Store if the extension changed.
 
-To test bundles locally: `pnpm --filter @no-fomo/web build && pnpm release:bundle darwin-arm64`, then run `scripts/install/install.sh` with `NO_FOMO_DOWNLOAD_BASE=file://$PWD/dist/release`.
+To test bundles locally: `pnpm --filter @no-fomo-social/web build && pnpm release:bundle darwin-arm64`, then run `scripts/install/install.sh` with `NO_FOMO_DOWNLOAD_BASE=file://$PWD/dist/release`.

@@ -1,4 +1,4 @@
-import type { GateStatus } from "@no-fomo/core";
+import type { GateStatus } from "@no-fomo-social/core";
 
 /** Why calls to Instagram are held back, and until when. */
 export type IgLimit = { kind: "paused" | "budget"; until: number; reason: string | null };

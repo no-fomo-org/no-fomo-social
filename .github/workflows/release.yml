@@ -30,7 +30,7 @@ jobs:
           test "$(node -p 'require("./apps/extension/package.json").version')" = "$v"
           grep -q "APP_VERSION = \"$v\"" packages/core/src/constants.ts
       - run: pnpm test
-      - run: pnpm --filter @no-fomo/web build
+      - run: pnpm --filter @no-fomo-social/web build
       - run: pnpm release:bundle
       - run: pnpm ext:zip && cp apps/extension/.output/no-fomo-extension-*.zip dist/release/no-fomo-extension.zip
       - name: FFmpeg source code (GPL requires it next to the binaries)

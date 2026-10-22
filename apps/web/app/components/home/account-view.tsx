@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft01Icon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
-import type { LivePost, LiveProfile } from "@no-fomo/core";
+import type { LivePost, LiveProfile } from "@no-fomo-social/core";
 import { api } from "../../lib/api";
 import { loadErrorText, openProfile, profilePage } from "../../lib/extension";
 import { NO_FILTERS } from "../../lib/filters";

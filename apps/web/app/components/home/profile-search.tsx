@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckmarkBadge01Icon, Search01Icon, SquareLock02Icon } from "@hugeicons/core-free-icons";
-import type { UserSuggestion } from "@no-fomo/core";
+import type { UserSuggestion } from "@no-fomo-social/core";
 import { loadErrorText, searchInstagram } from "../../lib/extension";
 import { isLimitCode } from "../../lib/ig-limit";
 import { LIVE_LIST_OPTIONS } from "../../lib/live-pages";

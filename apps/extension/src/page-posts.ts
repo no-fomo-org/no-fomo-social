@@ -1,4 +1,4 @@
-import { IgError, postsPageFromResponse, readIgResponse, replayRequest, templateUsername, type PostsTemplate } from "@no-fomo/core";
+import { IgError, postsPageFromResponse, readIgResponse, replayRequest, templateUsername, type PostsTemplate } from "@no-fomo-social/core";
 
 /** What the Instagram page shows right now: its path and visible text, to tell a login, a private or a missing account. */
 export interface PageView { path: string; text: string }

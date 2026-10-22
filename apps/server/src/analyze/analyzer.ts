@@ -1,7 +1,7 @@
 import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
-import { needsRefresh, type AnalyzeChoice, type PostReport } from "@no-fomo/core";
+import { needsRefresh, type AnalyzeChoice, type PostReport } from "@no-fomo-social/core";
 import type { Db } from "../db/open";
 import { getPostItem, getPostMedia } from "../queries";
 import type { KeyStore } from "../secrets/key-store";

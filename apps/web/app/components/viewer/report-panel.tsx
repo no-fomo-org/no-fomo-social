@@ -3,7 +3,7 @@ import Markdown from "react-markdown";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Menu } from "@base-ui/react/menu";
 import { Alert02Icon, Copy01Icon, Delete02Icon, Download04Icon, MoreHorizontalIcon, RefreshIcon, Tick02Icon } from "@hugeicons/core-free-icons";
-import { REPORT_LANGUAGES, REPORT_MODELS, TRANSCRIBE_MODELS, type AnalyzeChoice, type ModelsInfo, type PostListItem, type PostMedia } from "@no-fomo/core";
+import { REPORT_LANGUAGES, REPORT_MODELS, TRANSCRIBE_MODELS, type AnalyzeChoice, type ModelsInfo, type PostListItem, type PostMedia } from "@no-fomo-social/core";
 import { api } from "../../lib/api";
 import { startAnalysis } from "../../lib/analyze";
 import {

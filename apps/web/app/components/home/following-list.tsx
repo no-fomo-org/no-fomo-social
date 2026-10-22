@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import type { FollowingPage } from "@no-fomo/core";
+import type { FollowingPage } from "@no-fomo-social/core";
 import { followingRunError, formatAgo } from "../../lib/format";
 import { Avatar } from "../avatar";
 import { EmptyHero } from "../empty-hero";

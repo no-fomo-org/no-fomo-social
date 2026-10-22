@@ -1,9 +1,9 @@
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, lt, sql, type SQL } from "drizzle-orm";
-import { buildPostMedia, permalinkOf, summaryPreview } from "@no-fomo/core";
+import { buildPostMedia, permalinkOf, summaryPreview } from "@no-fomo-social/core";
 import type {
   AuthorFacet, AuthorScope, CollectionFacet, FollowingPage, FollowingRunInfo, MediaPart, PostListItem, PostMedia, PostsPage, PostsQuery,
   ReportsPage, ReportsQuery, SyncStatus,
-} from "@no-fomo/core";
+} from "@no-fomo-social/core";
 import type { Db } from "./db/open";
 import { getSetting } from "./db/settings";
 import { authors, collections, following, followingRuns, postCollections, postParts, posts, reports, savedPosts } from "./db/schema";

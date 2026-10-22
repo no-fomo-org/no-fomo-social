@@ -3,7 +3,7 @@ import { join } from "node:path";
 import {
   candidateTimes, carouselVideoCap, dropNearDuplicates, formatClock, frameCap, spreadEvenly,
   type MediaPart, type PostMedia, type ReportStep,
-} from "@no-fomo/core";
+} from "@no-fomo-social/core";
 import type { Downloader } from "./download";
 import { AnalyzeError } from "./errors";
 import type { MediaTools } from "./ffmpeg";

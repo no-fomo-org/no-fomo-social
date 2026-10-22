@@ -1,4 +1,4 @@
-import type { GateStatus, LivePage, LiveProfile, PostMedia, SyncMode, UserSuggestion } from "@no-fomo/core";
+import type { GateStatus, LivePage, LiveProfile, PostMedia, SyncMode, UserSuggestion } from "@no-fomo-social/core";
 import { isAppOrigin } from "./origins";
 
 export type ExtResponse =

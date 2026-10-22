@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import page1 from "@no-fomo/core/fixtures/saved-page-1.json";
+import page1 from "@no-fomo-social/core/fixtures/saved-page-1.json";
 import { openDb, type Db } from "../src/db/open";
 import { deleteReport, failReport, failStaleReports, finishReport, getReport, queueReport, setReportStep } from "../src/analyze/report-store";
 import { listPosts, listReports } from "../src/queries";

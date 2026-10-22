@@ -2,7 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
-import type { AppSettings, SettingsUpdate } from "@no-fomo/core";
+import type { AppSettings, SettingsUpdate } from "@no-fomo-social/core";
 import { api } from "../lib/api";
 import { Button, buttonClass } from "./ui/button";
 import { Icon } from "./ui/icon";

@@ -1,4 +1,4 @@
-export { needsRefresh } from "@no-fomo/core";
+export { needsRefresh } from "@no-fomo-social/core";
 import type { ExtResponse } from "./extension";
 
 /** Wait this long on a post before asking Instagram, so flipping fast through posts sends no requests. */

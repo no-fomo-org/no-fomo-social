@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PostMedia } from "@no-fomo/core";
+import type { PostMedia } from "@no-fomo-social/core";
 import { canRefresh, MIN_REFRESH_GAP_MS, mediaErrorCode, mediaErrorText, needsRefresh, REFRESH_DELAY_MS, staleAction } from "../app/lib/media";
 
 const media = (over: Partial<PostMedia> = {}): PostMedia => ({

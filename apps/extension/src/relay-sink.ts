@@ -1,4 +1,4 @@
-import type { FollowingSink, SyncSink } from "@no-fomo/core";
+import type { FollowingSink, SyncSink } from "@no-fomo-social/core";
 import type { RelayMessage, RelayResponse } from "./relay";
 
 export function createRelaySink(serverUrl: string, send: (m: RelayMessage) => Promise<RelayResponse>): SyncSink {

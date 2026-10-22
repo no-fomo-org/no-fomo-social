@@ -1,5 +1,5 @@
 // Fills a local data folder with fake saved posts so the UI can be checked without Instagram.
-// Usage: NO_FOMO_HOME=$PWD/.dev-data pnpm --filter @no-fomo/server seed
+// Usage: NO_FOMO_HOME=$PWD/.dev-data pnpm --filter @no-fomo-social/server seed
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { loadConfig } from "../src/config";

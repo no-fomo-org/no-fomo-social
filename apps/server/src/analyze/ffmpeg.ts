@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
-import { SCENE_THRESHOLD } from "@no-fomo/core";
+import { SCENE_THRESHOLD } from "@no-fomo-social/core";
 import { appPaths } from "../paths";
 
 export class ToolMissingError extends Error {}

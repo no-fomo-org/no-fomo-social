@@ -1,4 +1,4 @@
-import { EXTENSION_STORE_URL } from "@no-fomo/core";
+import { EXTENSION_STORE_URL } from "@no-fomo-social/core";
 
 const STEPS = [
   <>

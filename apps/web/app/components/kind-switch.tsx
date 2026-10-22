@@ -1,4 +1,4 @@
-import type { MediaKind } from "@no-fomo/core";
+import type { MediaKind } from "@no-fomo-social/core";
 import { Segmented } from "./ui/segmented";
 
 const OPTIONS: Array<{ value: MediaKind | null; label: string }> = [

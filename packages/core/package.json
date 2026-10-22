@@ -1,5 +1,5 @@
 {
-  "name": "@no-fomo/core",
+  "name": "@no-fomo-social/core",
   "private": true,
   "type": "module",
   "exports": {

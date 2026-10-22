@@ -1,4 +1,4 @@
-import { DEFAULT_PORT } from "@no-fomo/core";
+import { DEFAULT_PORT } from "@no-fomo-social/core";
 
 const DEV_SERVER = "http://localhost:5173";
 /** True only in `wxt` dev and `wxt build --mode development`. Normal builds never trust the dev server. */

@@ -1,7 +1,7 @@
 import {
   IgError, parseFeedOwner, parseMediaPage, parseUserSearch, runFollowingUpdate, toLivePost,
   type IgClient, type LivePage, type LiveProfile, type LoadStart, type ParsedAuthor,
-} from "@no-fomo/core";
+} from "@no-fomo-social/core";
 import { createFollowingSink } from "./relay-sink";
 import type { RelayMessage, RelayResponse } from "./relay";
 

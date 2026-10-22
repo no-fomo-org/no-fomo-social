@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { UseInfiniteQueryResult, InfiniteData } from "@tanstack/react-query";
-import type { PostListItem } from "@no-fomo/core";
+import type { PostListItem } from "@no-fomo-social/core";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { hasFilters, type Filters } from "../lib/filters";
 import { listBody } from "../lib/live-pages";

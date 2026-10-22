@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { MediaPart } from "@no-fomo/core";
+import type { MediaPart } from "@no-fomo-social/core";
 import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { keyBelongsToWidget } from "../../lib/keys";
 import { Player } from "../player/player";

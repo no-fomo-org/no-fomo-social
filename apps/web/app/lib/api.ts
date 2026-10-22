@@ -1,7 +1,7 @@
 import type {
   AnalyzeChoice, AppConfig, AppSettings, AuthorFacet, AuthorScope, CollectionFacet, FollowingPage, ModelsInfo, PostMedia, PostReport, PostsPage,
   ReportsPage, SettingsUpdate, SyncStatus,
-} from "@no-fomo/core";
+} from "@no-fomo-social/core";
 
 /** `message` is the server's error code when it sent one. */
 export class ApiError extends Error {

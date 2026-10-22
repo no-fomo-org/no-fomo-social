@@ -1,4 +1,4 @@
-import { EXTENSION_STORE_URL } from "@no-fomo/core";
+import { EXTENSION_STORE_URL } from "@no-fomo-social/core";
 
 export const GITHUB_URL = "https://github.com/no-fomo/no-fomo";
 export const STORE_URL = EXTENSION_STORE_URL;

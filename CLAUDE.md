@@ -22,8 +22,8 @@ Data lives in `~/.no-fomo` (`NO_FOMO_HOME` overrides it).
 ## How to work here
 
 - One test file: `pnpm vitest run apps/server/test/ingest.test.ts`. Tests sit in each package's `test/` folder, not next to the code.
-- Schema change: edit `schema.ts`, then `pnpm --filter @no-fomo/server db:generate`; commit the SQL. `migration.test.ts` checks it applies.
-- UI work: seed fake posts with `NO_FOMO_HOME=$PWD/.dev-data pnpm --filter @no-fomo/server seed` and run with the same `NO_FOMO_HOME`.
+- Schema change: edit `schema.ts`, then `pnpm --filter @no-fomo-social/server db:generate`; commit the SQL. `migration.test.ts` checks it applies.
+- UI work: seed fake posts with `NO_FOMO_HOME=$PWD/.dev-data pnpm --filter @no-fomo-social/server seed` and run with the same `NO_FOMO_HOME`.
 - UI follows [DESIGN.md](DESIGN.md) (First Light). Colors and type come from tokens in `apps/web/app/app.css`; do not hard-code new colors. Brand files are in `docs/brand/first-light/`.
 - UI text: short, plain English, no jargon. Users are creators, not developers.
 - Code style: match nearby code; short JSDoc on exported functions explaining *why*. No new dependencies without a clear reason.

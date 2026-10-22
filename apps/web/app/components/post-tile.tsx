@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { PostListItem } from "@no-fomo/core";
+import type { PostListItem } from "@no-fomo-social/core";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { Album02Icon, ImageNotFound01Icon, Tick02Icon, Video01Icon } from "@hugeicons/core-free-icons";
 import { formatDuration } from "../lib/format";

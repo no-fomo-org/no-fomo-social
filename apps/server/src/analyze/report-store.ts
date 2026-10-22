@@ -1,5 +1,5 @@
 import { eq, inArray, sql } from "drizzle-orm";
-import type { AnalyzeErrorCode, PostReport, ReportStep } from "@no-fomo/core";
+import type { AnalyzeErrorCode, PostReport, ReportStep } from "@no-fomo-social/core";
 import type { Db } from "../db/open";
 import { reports } from "../db/schema";
 

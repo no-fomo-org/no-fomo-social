@@ -1,4 +1,4 @@
-import { GATE_STORAGE_KEY, type GateState, type GateStore } from "@no-fomo/core";
+import { GATE_STORAGE_KEY, type GateState, type GateStore } from "@no-fomo-social/core";
 
 /** The part of `browser.storage.local` the gate needs. */
 export type StorageArea = {

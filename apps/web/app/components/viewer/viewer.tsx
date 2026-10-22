@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { useQuery } from "@tanstack/react-query";
-import type { PostListItem } from "@no-fomo/core";
+import type { PostListItem } from "@no-fomo-social/core";
 import { api } from "../../lib/api";
 import { keyBelongsToWidget } from "../../lib/keys";
 import { tabOnOpen } from "../../lib/viewer-tab";

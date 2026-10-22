@@ -1,4 +1,4 @@
-import { parsePostsRequest } from "@no-fomo/core";
+import { parsePostsRequest } from "@no-fomo-social/core";
 
 /** Marks the messages this script sends to the extension's other script in the same page. */
 const SOURCE = "no-fomo-ig";

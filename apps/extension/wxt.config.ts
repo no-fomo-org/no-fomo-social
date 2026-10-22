@@ -1,5 +1,5 @@
 import { defineConfig } from "wxt";
-import { EXTENSION_PUBLIC_KEY } from "@no-fomo/core/extension-id";
+import { EXTENSION_PUBLIC_KEY } from "@no-fomo-social/core/extension-id";
 import { appOrigins } from "./src/origins";
 
 export default defineConfig({

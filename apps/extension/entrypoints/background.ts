@@ -1,4 +1,4 @@
-import { APP_VERSION, DEFAULT_PORT, gateStatus } from "@no-fomo/core";
+import { APP_VERSION, DEFAULT_PORT, gateStatus } from "@no-fomo-social/core";
 import { handleExternalMessage } from "../src/external";
 import { readGateState } from "../src/gate-store";
 import { handleRelay, type RelayMessage } from "../src/relay";
