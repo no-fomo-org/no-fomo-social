@@ -1,4 +1,4 @@
-import { mkdirSync } from "node:fs";
+import { chmodSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { serve } from "@hono/node-server";
@@ -17,7 +17,9 @@ import { failStaleRuns, markMediaSaved } from "./sync/ingest";
 import { failStaleFollowingRuns } from "./sync/following";
 
 const config = loadConfig();
-mkdirSync(config.dataDir, { recursive: true });
+// Only this user may read the library and keys, also on a folder an older version or the installer made.
+mkdirSync(config.dataDir, { recursive: true, mode: 0o700 });
+if (process.platform !== "win32") chmodSync(config.dataDir, 0o700);
 const db = openDb(join(config.dataDir, "no-fomo-social.db"));
 failStaleRuns(db);
 failStaleFollowingRuns(db);
@@ -52,4 +54,15 @@ server.on("error", (err: NodeJS.ErrnoException) => {
     process.exit(1);
   }
   throw err;
+});
+
+// Chrome tries ::1 first for "localhost". Holding that address too keeps another program
+// from answering as the app while this one runs. Machines without IPv6 loopback just skip it.
+const server6 = serve({ fetch: app.fetch, port: config.port, hostname: "::1" });
+server6.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`Another program holds [::1]:${config.port}. Stop it, then start no-fomo-social again.`);
+    process.exit(1);
+  }
+  if (err.code !== "EADDRNOTAVAIL" && err.code !== "EAFNOSUPPORT") throw err;
 });

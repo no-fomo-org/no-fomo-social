@@ -53,7 +53,7 @@ export function createMediaStore(opts: {
   async function download(job: MediaJob): Promise<boolean> {
     if (!/^\d+$/.test(job.id) || !isMediaUrl(job.url, opts.extraHosts)) return false;
     try {
-      const res = await fetchFn(job.url, { signal: AbortSignal.timeout(15_000) });
+      const res = await fetchFn(job.url, { redirect: "error", signal: AbortSignal.timeout(15_000) });
       if (!res.ok) return false;
       const buf = Buffer.from(await res.arrayBuffer());
       if (buf.length === 0 || buf.length > MAX_BYTES || !imageType(buf)) return false;

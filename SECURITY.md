@@ -10,10 +10,14 @@ Tell us what you found, how to reproduce it, and what an attacker could do. We a
 
 ## What counts
 
-- Another website or program on the computer can read the library, start a sync, or use the Instagram session.
+- Another website, or another user account on the same computer, can read the library, start a sync, or use the Instagram session.
 - The OpenAI key leaves the computer to anywhere except OpenAI.
 - The install script can be tricked into running code that is not from our releases.
 - The extension sends Instagram data anywhere except the local no-fomo-social app.
+
+## What the app cannot defend against
+
+A program running under your own user account can read `~/.no-fomo-social` directly, including the key store and its secret, and can call the local API. Keep such programs off your computer; the app has no way to tell them from you. The last review is in [docs/audits](docs/audits/).
 
 ## Supported versions
 

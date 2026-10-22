@@ -85,6 +85,22 @@ describe("security", () => {
   it("rejects path traversal in media ids", async () => {
     expect((await get("/media/thumbs/..%2F..%2Fetc")).status).toBe(404);
   });
+  it("accepts the IPv6 loopback host", async () => {
+    expect((await app.request("/api/config", { headers: { host: "[::1]:4747" } })).status).toBe(200);
+  });
+  it("forbids framing the app from other sites", async () => {
+    const res = await get("/api/config");
+    expect(res.headers.get("x-frame-options")).toBe("DENY");
+    expect(res.headers.get("content-security-policy")).toBe("frame-ancestors 'none'");
+  });
+  it("refuses cross-site loads of media, so other sites cannot probe the library", async () => {
+    await syncFixtures();
+    const media = (path: string, site: string) => app.request(path, { headers: { host: HOST, "sec-fetch-site": site } });
+    expect((await media("/media/thumbs/3500000000000000001", "cross-site")).status).toBe(403);
+    expect((await media("/media/thumbs/3500000000000000001", "same-origin")).status).toBe(200);
+    expect((await media("/media/thumbs/3500000000000000001", "same-site")).status).toBe(200);
+    expect((await media("/api/config", "cross-site")).status).toBe(200);
+  });
 });
 
 describe("sync + read API", () => {

@@ -36,6 +36,18 @@ describe("media store", () => {
     expect(await store.fetchNow({ kind: "thumb", id: "2", url: "https://scontent.cdninstagram.com/a.jpg" })).toBe(false);
   });
 
+  it("never follows redirects, so a link cannot bounce off the Instagram CDN", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "nf-media-"));
+    let redirect: RequestInit["redirect"];
+    const store = createMediaStore({
+      dir,
+      fetch: (async (_url: string | URL | Request, init?: RequestInit) => { redirect = init?.redirect; return new Response(JPEG); }) as typeof fetch,
+      onSaved: () => {},
+    });
+    expect(await store.fetchNow({ kind: "thumb", id: "1", url: "https://scontent.cdninstagram.com/a.jpg" })).toBe(true);
+    expect(redirect).toBe("error");
+  });
+
   it("detects image types", () => {
     expect(imageType(JPEG)).toBe("image/jpeg");
     expect(imageType(Buffer.from("RIFF0000WEBPVP8 "))).toBe("image/webp");
