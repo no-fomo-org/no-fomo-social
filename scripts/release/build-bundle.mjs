@@ -153,13 +153,13 @@ async function buildTarget(name, serverFile) {
   mkdirSync(join(app, "icons"));
   const launcher = join(ROOT, "scripts/install/launcher");
   if (win) {
-    copyFileSync(join(launcher, "no-fomo.ps1"), join(app, "bin/no-fomo.ps1"));
-    copyFileSync(join(launcher, "no-fomo.cmd"), join(app, "bin/no-fomo.cmd"));
-    copyFileSync(join(ROOT, "scripts/install/assets/no-fomo.ico"), join(app, "icons/no-fomo.ico"));
+    copyFileSync(join(launcher, "no-fomo-social.ps1"), join(app, "bin/no-fomo-social.ps1"));
+    copyFileSync(join(launcher, "no-fomo-social.cmd"), join(app, "bin/no-fomo-social.cmd"));
+    copyFileSync(join(ROOT, "scripts/install/assets/no-fomo-social.ico"), join(app, "icons/no-fomo-social.ico"));
   } else {
-    copyFileSync(join(launcher, "no-fomo.sh"), join(app, "bin/no-fomo"));
-    copyFileSync(join(ROOT, "scripts/install/assets/no-fomo.icns"), join(app, "icons/no-fomo.icns"));
-    for (const f of ["bin/no-fomo", "node/node", "ffmpeg/ffmpeg", "ffmpeg/ffprobe"]) chmodSync(join(app, f), 0o755);
+    copyFileSync(join(launcher, "no-fomo-social.sh"), join(app, "bin/no-fomo-social"));
+    copyFileSync(join(ROOT, "scripts/install/assets/no-fomo-social.icns"), join(app, "icons/no-fomo-social.icns"));
+    for (const f of ["bin/no-fomo-social", "node/node", "ffmpeg/ffmpeg", "ffmpeg/ffprobe"]) chmodSync(join(app, f), 0o755);
   }
 
   copyFileSync(join(ROOT, "LICENSE"), join(app, "LICENSE"));
@@ -168,7 +168,7 @@ async function buildTarget(name, serverFile) {
 
   for (const d of readdirSync(join(OUT, name))) if (d.startsWith("tmp-")) rmSync(join(OUT, name, d), { recursive: true });
 
-  const archive = `no-fomo-${name}.${t.archive}`;
+  const archive = `no-fomo-social-${name}.${t.archive}`;
   rmSync(join(OUT, archive), { force: true });
   if (t.archive === "zip") run("zip", ["-q", "-r", join(OUT, archive), "app"], join(OUT, name));
   else run("tar", ["-czf", join(OUT, archive), "app"], join(OUT, name));
@@ -180,12 +180,12 @@ function notices(name) {
   const ffmpegSource = `https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz`;
   const ffmpegBuild = name.startsWith("win32") ? "https://www.gyan.dev/ffmpeg/builds/" : "https://ffmpeg.martin-riedl.de/";
   return [
-    "no-fomo bundles these programs, each under its own license.",
+    "no-fomo-social bundles these programs, each under its own license.",
     "",
     `Node.js ${NODE_VERSION} — MIT and others, see node/LICENSE. https://nodejs.org`,
     "better-sqlite3 — MIT, see node_modules/better-sqlite3/LICENSE. Includes SQLite (public domain).",
     `FFmpeg ${FFMPEG_VERSION} (ffmpeg, ffprobe) — GPL v3. Unmodified build from ${ffmpegBuild}`,
-    `  Source code: ${ffmpegSource} (also attached to every no-fomo release).`,
+    `  Source code: ${ffmpegSource} (also attached to every no-fomo-social release).`,
     "JavaScript libraries in server.mjs — see server.mjs.LEGAL.txt.",
     "",
   ].join("\n");
