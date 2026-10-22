@@ -18,6 +18,13 @@ describe("handleRelay", () => {
       .toEqual({ ok: false, error: "bad_relay" });
   });
 
+  it("refuses paths that leave /api/sync/ once resolved", async () => {
+    expect(await handleRelay({ type: "relay", serverUrl: "http://localhost:4747", path: "/api/sync/../settings", body: {} }, okFetch))
+      .toEqual({ ok: false, error: "bad_relay" });
+    expect(await handleRelay({ type: "relay", serverUrl: "http://localhost:4747", path: "/api/sync/runs?x=1#f", body: {} }, okFetch))
+      .toEqual({ ok: false, error: "bad_relay" });
+  });
+
   it("refuses other local ports", async () => {
     expect(await handleRelay({ type: "relay", serverUrl: "http://localhost:9999", path: "/api/sync/runs", body: { mode: "full" } }, okFetch))
       .toEqual({ ok: false, error: "bad_relay" });

@@ -4,12 +4,18 @@ export interface RelayMessage { type: "relay"; serverUrl: string; path: string; 
 export type RelayResponse = { ok: true; data: unknown } | { ok: false; error: string };
 
 
+/** Only sync routes, checked on the resolved path, so ".." or a query cannot reach another route. */
+function syncUrl(path: unknown, serverUrl: string): URL | null {
+  if (typeof path !== "string" || !path.startsWith("/api/sync/")) return null;
+  const url = new URL(path, serverUrl);
+  return url.pathname.startsWith("/api/sync/") && url.search === "" && url.hash === "" ? url : null;
+}
+
 export async function handleRelay(msg: RelayMessage, fetchFn: typeof fetch): Promise<RelayResponse> {
-  if (msg?.type !== "relay" || !isAppOrigin(msg.serverUrl) || typeof msg.path !== "string" || !msg.path.startsWith("/api/sync/")) {
-    return { ok: false, error: "bad_relay" };
-  }
+  const url = msg?.type === "relay" && isAppOrigin(msg.serverUrl) ? syncUrl(msg.path, msg.serverUrl) : null;
+  if (!url) return { ok: false, error: "bad_relay" };
   try {
-    const res = await fetchFn(new URL(msg.path, msg.serverUrl).toString(), {
+    const res = await fetchFn(url.toString(), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(msg.body ?? {}),
