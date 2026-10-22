@@ -21,12 +21,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, argv: string[] 
   const dev = argv.includes("--dev");
   const { webDist } = appPaths(env);
   return {
-    port: Number(env.NO_FOMO_PORT ?? DEFAULT_PORT),
-    dataDir: env.NO_FOMO_HOME ?? join(homedir(), ".no-fomo"),
+    port: Number(env.NO_FOMO_SOCIAL_PORT ?? DEFAULT_PORT),
+    dataDir: env.NO_FOMO_SOCIAL_HOME ?? join(homedir(), ".no-fomo-social"),
     webDist: existsSync(join(webDist, "index.html")) ? webDist : null,
-    extensionId: env.NO_FOMO_EXTENSION_ID ?? EXTENSION_ID,
-    devOrigins: env.NO_FOMO_DEV_ORIGINS ? list(env.NO_FOMO_DEV_ORIGINS) : dev ? ["http://localhost:5173"] : [],
-    dumpPayloads: env.NO_FOMO_DUMP === "1",
-    extraMediaHosts: list(env.NO_FOMO_EXTRA_MEDIA_HOSTS),
+    extensionId: env.NO_FOMO_SOCIAL_EXTENSION_ID ?? EXTENSION_ID,
+    devOrigins: env.NO_FOMO_SOCIAL_DEV_ORIGINS ? list(env.NO_FOMO_SOCIAL_DEV_ORIGINS) : dev ? ["http://localhost:5173"] : [],
+    dumpPayloads: env.NO_FOMO_SOCIAL_DUMP === "1",
+    extraMediaHosts: list(env.NO_FOMO_SOCIAL_EXTRA_MEDIA_HOSTS),
   };
 }

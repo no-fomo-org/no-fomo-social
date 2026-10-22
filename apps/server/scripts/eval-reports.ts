@@ -19,7 +19,7 @@ import { analyzeOptions } from "../src/settings";
 interface Case { postId: string; note: string; mustContain: string[]; mustNotContain: string[] }
 
 const config = loadConfig();
-const db = openDb(join(config.dataDir, "no-fomo.db"));
+const db = openDb(join(config.dataDir, "no-fomo-social.db"));
 const key = createKeyStore(config.dataDir).get().openai;
 if (!key) throw new Error("No OpenAI key saved. Add it in the app settings first.");
 const modelArg = process.argv.indexOf("--model");

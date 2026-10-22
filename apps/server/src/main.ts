@@ -18,7 +18,7 @@ import { failStaleFollowingRuns } from "./sync/following";
 
 const config = loadConfig();
 mkdirSync(config.dataDir, { recursive: true });
-const db = openDb(join(config.dataDir, "no-fomo.db"));
+const db = openDb(join(config.dataDir, "no-fomo-social.db"));
 failStaleRuns(db);
 failStaleFollowingRuns(db);
 failStaleReports(db, Date.now());
@@ -40,14 +40,14 @@ const analyzer = createAnalyzer({
 const app = createApp({ db, config, media, keys, analyzer, models: createModelCatalog({ keys }) });
 
 const server = serve({ fetch: app.fetch, port: config.port, hostname: "127.0.0.1" }, () => {
-  console.log(`no-fomo is running at http://localhost:${config.port}`);
+  console.log(`no-fomo-social is running at http://localhost:${config.port}`);
   console.log(`Data folder: ${config.dataDir}`);
   if (!config.webDist) console.log("Web app not built yet. In dev, open http://localhost:5173");
 });
 
 server.on("error", (err: NodeJS.ErrnoException) => {
   if (err.code === "EADDRINUSE") {
-    console.error(`Port ${config.port} is busy. no-fomo may already be running: open http://localhost:${config.port}`);
+    console.error(`Port ${config.port} is busy. no-fomo-social may already be running: open http://localhost:${config.port}`);
     console.error(`To stop the old copy, run: kill $(lsof -ti tcp:${config.port})`);
     process.exit(1);
   }

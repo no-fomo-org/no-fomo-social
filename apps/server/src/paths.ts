@@ -11,10 +11,10 @@ export interface AppPaths {
 
 /**
  * Where the app's own files are. Run from source, they sit next to the code and ffmpeg comes from PATH.
- * The installed app sets NO_FOMO_APP_DIR to its folder, which also holds its own ffmpeg in `ffmpeg/`.
+ * The installed app sets NO_FOMO_SOCIAL_APP_DIR to its folder, which also holds its own ffmpeg in `ffmpeg/`.
  */
 export function appPaths(env: NodeJS.ProcessEnv = process.env, platform: NodeJS.Platform = process.platform): AppPaths {
-  const root = env.NO_FOMO_APP_DIR;
+  const root = env.NO_FOMO_SOCIAL_APP_DIR;
   if (!root) {
     return {
       webDist: fileURLToPath(new URL("../../web/build/client", import.meta.url)),
