@@ -141,6 +141,8 @@ sqlite3 ~/.no-fomo-social/no-fomo-social.db "select datetime(at/1000,'unixepoch'
 
 ## Contributing
 
+The website lives in its own repo: [no-fomo-website](https://github.com/no-fomo-org/no-fomo-website).
+
 Bug reports, ideas and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) to run no-fomo-social from source, and [SECURITY.md](SECURITY.md) to report a security problem privately.
 
 ## License

@@ -209,7 +209,7 @@ A star rises over a calm horizon at first light. The horizon is the calm overvie
 
 Density is medium (dial 5), variance is low (dial 3), motion is calm and quick (dial 4). Hierarchy comes from space and single hairlines, not from cards, shadows or color. Fern green is rare on purpose, so the one main action on a screen is always obvious. A dark "evening" theme of deep forest green-black follows the system setting and is as complete as the light one.
 
-The public site (`apps/site`) is the same world, louder by one step. It uses the same tokens, buttons and hairlines, with a bigger Outfit display ramp, the photograph as its first screen, and one deep Forest band that stays dark in both themes.
+The public site (the `no-fomo-website` repo) is the same world, louder by one step. It uses the same tokens, buttons and hairlines, with a bigger Outfit display ramp, the photograph as its first screen, and one deep Forest band that stays dark in both themes.
 
 **Key Characteristics:**
 - Light first, with a first-class dark "evening" theme that follows the system.
@@ -222,7 +222,7 @@ The public site (`apps/site`) is the same world, louder by one step. It uses the
 
 ## Colors
 
-A calm, nature-tinted neutral palette (mist, paper, forest) with a single Fern green accent and a few rare brand tones. All values are tokens in `apps/web/app/app.css` and the matching `apps/site/app/app.css` (source `docs/brand/first-light/tokens.css`); components never use raw hex. Light values are listed first; the `evening-*` keys are the same roles in the dark theme.
+A calm, nature-tinted neutral palette (mist, paper, forest) with a single Fern green accent and a few rare brand tones. All values are tokens in `apps/web/app/app.css` and the matching `app/app.css` in the `no-fomo-website` repo (source `docs/brand/first-light/tokens.css`); components never use raw hex. Light values are listed first; the `evening-*` keys are the same roles in the dark theme.
 
 ### Primary
 - **Fern** (light and evening values above): the primary button, focus rings, the progress fill, and the tick on a chosen option. Text on Fern is **Accent Ink**.
@@ -396,7 +396,7 @@ A small Dawn label with Forest text (12px, weight 500, 4px corners) next to a ro
 ## Do's and Don'ts
 
 ### Do:
-- **Do** use the tokens in `apps/web/app/app.css` (and `apps/site/app/app.css` on the site) for every color, radius, shadow and curve.
+- **Do** use the tokens in `apps/web/app/app.css` (and `app/app.css` in the website repo) for every color, radius, shadow and curve.
 - **Do** keep Fern for the main action on a screen and for active states.
 - **Do** show active tabs and chips with the Soft Fern fill and Forest text.
 - **Do** use Lake only for links inside report text, and Danger only for errors.
