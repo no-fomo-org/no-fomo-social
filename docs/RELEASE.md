@@ -56,7 +56,7 @@ Needs: a Google account you will keep for years, a one-time 5 USD developer fee,
 1. Open https://chrome.google.com/webstore/devconsole, pay the fee, fill the publisher profile (name "no-fomo", website https://no-fomo.ai, a contact email; Google requires a verified email).
 2. **New item** → upload the zip. Do not press Submit yet.
 3. Open the item → **Package** → copy the **Item ID** (32 letters, like `abcdefghijklmnopabcdefghijklmnop`) and press **View public key** → copy the key (one long base64 line). You need both in Phase 3.
-4. Fill **Store listing** with the text in Appendix A. Upload the 128 px icon from `docs/brand/first-light/logo/png/extension-icon-128.png`, a 440×280 small promo tile (make one from the brand board), and at least one 1280×800 screenshot (crop `.github/assets/saved-light.webp` and `viewer-report-light.webp`).
+4. Fill **Store listing** with the text in Appendix A. Every image is ready in the design folder next to this repo: `../design/store/chrome-web-store/` holds the 128 px icon, five 1280×800 screenshots and both promo tiles; `listing.md` there has the same text with the exact field names.
 5. Fill **Privacy** with Appendix B: single purpose, one justification per permission, the data-use checkboxes, and the privacy policy URL `https://no-fomo.ai/privacy`. Check that the privacy page actually says what Appendix B says (data goes only to the user's computer; nothing is sent to us).
 6. **Distribution**: Public, all regions. Save the draft.
 7. Press **Submit for review**. Reviews take from one day to about a week. `tabs` and the `instagram.com` host permission usually get a human look; the justifications in Appendix B answer the questions they ask. If the review comes back with a question, answer it in the dashboard; the item id does not change.
@@ -76,7 +76,7 @@ The web app asks the server for the extension id and sends messages to the exten
 
 ## Phase 4. Contact address
 
-`SECURITY.md` and `CODE_OF_CONDUCT.md` point people at the contact form on https://no-fomo.ai/social. That works today. If you would rather give an email, create one on the domain (Cloudflare Email Routing, for example `security@no-fomo.ai` forwarding to your inbox), put it in both files, and use the same address as the Chrome Web Store support email.
+Done on 2026-11-02: `hello@no-fomo.ai` is in `SECURITY.md` and `CODE_OF_CONDUCT.md`. Use the same address as the Chrome Web Store contact and support email.
 
 ## Phase 5. Make the repository public
 
@@ -89,7 +89,7 @@ Check first:
 Then, from a terminal with `gh` logged in as the org owner:
 
 ```bash
-gh repo edit no-fomo-org/no-fomo-social --description "Let AI watch the reels. Your Instagram saves and any account, turned into knowledge on your own computer." --homepage https://no-fomo.ai --enable-discussions --enable-issues --delete-branch-on-merge
+gh repo edit no-fomo-org/no-fomo-social --description "Keep up with everything you save. The Instagram posts you save, turned into notes, steps and ideas on your own computer." --homepage https://no-fomo.ai --enable-discussions --enable-issues --delete-branch-on-merge
 ```
 
 ```bash
@@ -107,7 +107,7 @@ In the GitHub web UI (no CLI for these):
 1. Settings → General → Social preview → upload `.github/assets/social-preview.jpg`.
 2. Settings → Code security → turn on Dependabot alerts, Secret scanning, Push protection, and **Private vulnerability reporting** (this makes the "Report a vulnerability" link in `SECURITY.md` work).
 3. Settings → Rules → New branch ruleset for `main`: require a pull request, require the `check` status check from CI to pass, block force pushes.
-4. Org profile (https://github.com/no-fomo-org): description "Free, open-source tools that turn Instagram reels into knowledge, on your own computer.", website https://no-fomo.ai, avatar `docs/brand/first-light/logo/png/app-icon-fern-512.png`.
+4. Org profile (https://github.com/no-fomo-org): description "Free, open-source tools that turn Instagram reels into knowledge, on your own computer.", website https://no-fomo.ai, avatar `docs/brand/first-light/logo/png/app-icon-fern-512.png` (also `../design/github/org-avatar-512.png`).
 5. Delete merged branches on GitHub (`brand-first-light`, `impeccable-audit`, `security-review`, `fix-review-findings`, `remove-site`, `rename-social`, and so on). Locally: `git fetch --prune` and `git branch --merged main | grep -v main | xargs git branch -d`.
 
 The website repo `no-fomo-org/no-fomo-website` can stay private; nothing in the app links to its source.
@@ -153,27 +153,22 @@ git tag v0.1.0 && git push origin v0.1.0
 ## Appendix A. Chrome Web Store listing
 
 - **Name:** no-fomo-social
-- **Summary (132 characters max):** Connects Instagram to the no-fomo-social app on your computer, so you can sync saved posts and get AI reports on reels.
+- **Summary (132 characters max, from the extension manifest):** Keep up with everything you save. Turns the Instagram posts you save into notes, steps and ideas, on your computer.
 - **Category:** Productivity. **Language:** English.
 - **Description:**
 
-  no-fomo-social turns Instagram reels into notes, steps and ideas. This extension is the bridge between instagram.com and the free no-fomo-social app that runs on your computer.
+  Keep up with everything you save.
 
-  What it does:
-  • Syncs your saved posts and collections into the no-fomo-social app on your computer.
-  • Opens the accounts you choose, so you can study their posts in no-fomo-social.
-  • Refreshes video links when they expire.
+  You save Instagram posts faster than you can watch them. no-fomo-social watches them for you and turns each one into notes, steps and ideas, on your own computer.
 
-  What it does not do:
-  • It sends nothing to us or to any server. Data goes only to the no-fomo-social app on your own computer (localhost).
-  • It never acts on its own: every request starts from a button you press in no-fomo-social.
-  • It is slow on purpose: one request at a time, at most 150 per hour, with automatic pauses.
+  This extension connects instagram.com to the free no-fomo-social app. It syncs your saved posts and the accounts you open, using your own login, and sends nothing anywhere except to the app on your computer. It never acts on its own, and it is slow on purpose, so your account stays safe.
 
-  You need the no-fomo-social app first. Install it in one step from https://no-fomo.ai/social. The app is open source: https://github.com/no-fomo-org/no-fomo-social
+  Start in three steps: install the app at https://no-fomo.ai/social, add this extension, log in to instagram.com and press Sync.
 
+  Open source: https://github.com/no-fomo-org/no-fomo-social
   Not affiliated with Instagram or Meta.
 
-- **Website:** https://no-fomo.ai/social. **Support:** https://github.com/no-fomo-org/no-fomo-social/issues
+- **Website:** https://no-fomo.ai/social. **Support:** https://no-fomo.ai/social while the repo is private (Google checks the link), then https://github.com/no-fomo-org/no-fomo-social/issues
 - **Images:** icon 128 px (`docs/brand/first-light/logo/png/extension-icon-128.png`); screenshots 1280×800 from `.github/assets`; small promo tile 440×280.
 
 ## Appendix B. Privacy tab
