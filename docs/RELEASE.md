@@ -168,7 +168,7 @@ git tag v0.1.0 && git push origin v0.1.0
   Open source: https://github.com/no-fomo-org/no-fomo-social
   Not affiliated with Instagram or Meta.
 
-- **Website:** https://no-fomo.ai/social. **Support:** https://github.com/no-fomo-org/no-fomo-social/issues
+- **Website:** https://no-fomo.ai/social. **Support:** https://no-fomo.ai/social while the repo is private (Google checks the link), then https://github.com/no-fomo-org/no-fomo-social/issues
 - **Images:** icon 128 px (`docs/brand/first-light/logo/png/extension-icon-128.png`); screenshots 1280×800 from `.github/assets`; small promo tile 440×280.
 
 ## Appendix B. Privacy tab
