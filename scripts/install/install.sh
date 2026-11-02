@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs or updates no-fomo-social on macOS. Your library in ~/.no-fomo-social is never touched.
+# Installs or updates no-fomo social on macOS. Your library in ~/.no-fomo-social is never touched.
 #
 #   curl -fsSL https://raw.githubusercontent.com/no-fomo-org/no-fomo-social/main/scripts/install/install.sh | bash
 #
@@ -29,7 +29,7 @@ main() {
   if [ "$(uname -m)" = "arm64" ] || [ "$(sysctl -in sysctl.proc_translated 2>/dev/null)" = "1" ]; then arch="arm64"; fi
   local file="no-fomo-social-darwin-$arch.tar.gz"
 
-  say "Installing no-fomo-social for Mac ($arch)…"
+  say "Installing no-fomo social for Mac ($arch)…"
   local tmp
   tmp="$(mktemp -d)"
   # shellcheck disable=SC2064 # expand now: $tmp is gone when the trap runs
@@ -60,7 +60,7 @@ main() {
   mv "$tmp/app" "$app_dir"
   rm -rf "$app_dir.old"
 
-  # A small app in ~/Applications, so no-fomo-social opens from Launchpad, Spotlight and the Dock.
+  # A small app in ~/Applications, so no-fomo social opens from Launchpad, Spotlight and the Dock.
   local bundle="$HOME/Applications/no-fomo-social.app"
   rm -rf "$bundle"
   mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources"
@@ -75,14 +75,14 @@ EOF
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>no-fomo-social</string>
-  <key>CFBundleDisplayName</key><string>no-fomo-social</string>
+  <key>CFBundleName</key><string>no-fomo social</string>
+  <key>CFBundleDisplayName</key><string>no-fomo social</string>
   <key>CFBundleIdentifier</key><string>app.no-fomo.social.launcher</string>
   <key>CFBundleVersion</key><string>$(cat "$app_dir/VERSION")</string>
   <key>CFBundleShortVersionString</key><string>$(cat "$app_dir/VERSION")</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleExecutable</key><string>no-fomo-social</string>
-  <key>CFBundleIconFile</key><string>no-fomo-social</string>
+  <key>CFBundleExecutable</key><string>no-fomo social</string>
+  <key>CFBundleIconFile</key><string>no-fomo social</string>
   <key>LSUIElement</key><true/>
 </dict>
 </plist>
@@ -96,19 +96,19 @@ EOF
   local chrome=0
   if [ -d "/Applications/Google Chrome.app" ] || [ -d "$HOME/Applications/Google Chrome.app" ]; then chrome=1; fi
 
-  say "Starting no-fomo-social…"
+  say "Starting no-fomo social…"
   "$app_dir/bin/no-fomo-social" start || fail "no-fomo-social was installed but did not start. Run: $app_dir/bin/no-fomo-social logs"
 
   echo
-  say "Done! no-fomo-social $(cat "$app_dir/VERSION") is installed."
+  say "Done! no-fomo social $(cat "$app_dir/VERSION") is installed."
   echo
   if [ "$chrome" = 0 ]; then
-    echo "  • no-fomo-social works with Google Chrome. Get it at https://www.google.com/chrome/"
+    echo "  • no-fomo social works with Google Chrome. Get it at https://www.google.com/chrome/"
   fi
   echo "  • Add the extension to Chrome: $store_url"
   echo "  • Log in to instagram.com in Chrome, then press Sync in no-fomo-social."
   echo
-  echo "  Open no-fomo-social any time from Launchpad or Spotlight (Cmd + Space, type no-fomo-social)."
+  echo "  Open no-fomo social any time from Launchpad or Spotlight (Cmd + Space, type no-fomo social)."
   echo "  Your library stays in $home_dir."
 }
 

@@ -7,7 +7,7 @@ export default defineConfig({
   manifest: ({ mode }) => {
     const origins = appOrigins(mode === "development").map((o) => `${o}/*`);
     return {
-      name: "no-fomo-social",
+      name: "no-fomo social",
       description: "Keep up with everything you save. Turns the Instagram posts you save into notes, steps and ideas, on your computer.",
       // The Chrome Web Store sets its own key and refuses uploads that carry one.
       ...(process.env.NO_FOMO_SOCIAL_STORE_BUILD ? {} : { key: EXTENSION_PUBLIC_KEY }),
@@ -15,7 +15,7 @@ export default defineConfig({
       permissions: ["storage"],
       host_permissions: ["https://www.instagram.com/*", ...origins],
       externally_connectable: { matches: origins },
-      action: { default_title: "Open no-fomo-social" },
+      action: { default_title: "Open no-fomo social" },
     };
   },
 });

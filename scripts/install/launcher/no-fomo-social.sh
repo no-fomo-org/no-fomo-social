@@ -1,5 +1,5 @@
 #!/bin/sh
-# Starts and manages the installed no-fomo-social app on macOS.
+# Starts and manages the installed no-fomo social app on macOS.
 # Usage: no-fomo-social [start|stop|restart|status|logs|update|uninstall]
 set -eu
 
@@ -12,7 +12,7 @@ LOG="$LOG_DIR/server.log"
 PID_FILE="$HOME_DIR/server.pid"
 INSTALL_URL="https://raw.githubusercontent.com/no-fomo-org/no-fomo-social/main/scripts/install/install.sh"
 
-# True when a no-fomo-social server answers on the port (its config has an extension id).
+# True when a no-fomo social server answers on the port (its config has an extension id).
 running() {
   /usr/bin/curl -fsS --max-time 2 "$URL/api/config" 2>/dev/null | grep -q extensionId
 }

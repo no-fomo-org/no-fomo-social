@@ -1,4 +1,4 @@
-# Installs or updates no-fomo-social on Windows. Your library in %USERPROFILE%\.no-fomo-social is never touched.
+# Installs or updates no-fomo social on Windows. Your library in %USERPROFILE%\.no-fomo-social is never touched.
 #
 #   irm https://raw.githubusercontent.com/no-fomo-org/no-fomo-social/main/scripts/install/install.ps1 | iex
 #
@@ -20,7 +20,7 @@
 
   if (-not [Environment]::Is64BitOperatingSystem) { Fail 'no-fomo-social needs 64-bit Windows 10 or newer.' }
 
-  Write-Host 'Installing no-fomo-social for Windows...' -ForegroundColor White
+  Write-Host 'Installing no-fomo social for Windows...' -ForegroundColor White
   $Tmp = Join-Path ([IO.Path]::GetTempPath()) ("no-fomo-social-" + [Guid]::NewGuid())
   New-Item -ItemType Directory -Force -Path $Tmp | Out-Null
   try {
@@ -58,7 +58,7 @@
     $lnk.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$AppDir\bin\no-fomo-social.ps1`" start"
     $lnk.IconLocation = "$AppDir\icons\no-fomo-social.ico"
     $lnk.WorkingDirectory = $HomeDir
-    $lnk.Description = 'Open no-fomo-social'
+    $lnk.Description = 'Open no-fomo social'
     $lnk.Save()
   }
 
@@ -78,12 +78,12 @@
 
   $version = Get-Content (Join-Path $AppDir 'VERSION')
   Write-Host ''
-  Write-Host "Done! no-fomo-social $version is installed." -ForegroundColor Green
+  Write-Host "Done! no-fomo social $version is installed." -ForegroundColor Green
   Write-Host ''
-  if (-not $chrome) { Write-Host '  * no-fomo-social works with Google Chrome. Get it at https://www.google.com/chrome/' }
+  if (-not $chrome) { Write-Host '  * no-fomo social works with Google Chrome. Get it at https://www.google.com/chrome/' }
   Write-Host "  * Add the extension to Chrome: $StoreUrl"
   Write-Host '  * Log in to instagram.com in Chrome, then press Sync in no-fomo-social.'
   Write-Host ''
-  Write-Host '  Open no-fomo-social any time from the Start Menu or the Desktop icon.'
+  Write-Host '  Open no-fomo social any time from the Start Menu or the Desktop icon.'
   Write-Host "  Your library stays in $HomeDir."
 }

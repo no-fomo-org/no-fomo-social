@@ -97,7 +97,7 @@ export function SyncControl() {
         <Popover.Portal>
           <Popover.Positioner sideOffset={6} align="end" className="z-30">
             <Popover.Popup className={`w-[min(420px,calc(100vw-32px))] p-4 ${POPUP}`}>
-              <Popover.Title className="text-[15px] font-semibold">The no-fomo-social extension is not installed</Popover.Title>
+              <Popover.Title className="text-[15px] font-semibold">The no-fomo social extension is not installed</Popover.Title>
               <SetupSteps />
             </Popover.Popup>
           </Popover.Positioner>

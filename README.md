@@ -5,7 +5,7 @@
 <h3 align="center">Keep up with everything you save.</h3>
 
 <p align="center">
-  You save posts faster than you can watch them. no-fomo-social watches them for you and turns each one into notes, steps and ideas you can use.<br>
+  You save posts faster than you can watch them. no-fomo social watches them for you and turns each one into notes, steps and ideas you can use.<br>
   Free, open source, and it runs on your computer.
 </p>
 
@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <img src=".github/assets/demo.gif" alt="Opening a saved reel in no-fomo-social and reading its AI report" width="860">
+  <img src=".github/assets/demo.gif" alt="Opening a saved reel in no-fomo social and reading its AI report" width="860">
 </p>
 
 ## Install
@@ -46,11 +46,11 @@ On **Windows**, open PowerShell (press the Windows key, type *PowerShell*, press
 irm https://raw.githubusercontent.com/no-fomo-org/no-fomo-social/main/scripts/install/install.ps1 | iex
 ```
 
-**2. Add the [no-fomo-social extension](https://chromewebstore.google.com/detail/mjakjbjejpmchdgghkgjkjgmkdainedj) to Chrome.**
+**2. Add the [no-fomo social extension](https://chromewebstore.google.com/detail/mjakjbjejpmchdgghkgjkjgmkdainedj) to Chrome.**
 
 **3. Log in to instagram.com in Chrome, then press Sync in no-fomo-social.**
 
-no-fomo-social opens at `http://localhost:4747`. Next time, open it from Launchpad or Spotlight (Mac) or the Start Menu (Windows). To make reports, add your OpenAI key under the gear icon. Each report usually costs a few cents.
+no-fomo social opens at `http://localhost:4747`. Next time, open it from Launchpad or Spotlight (Mac) or the Start Menu (Windows). To make reports, add your OpenAI key under the gear icon. Each report usually costs a few cents.
 
 <details>
 <summary>Update, remove, and what the installer does</summary>
@@ -65,7 +65,7 @@ no-fomo-social opens at `http://localhost:4747`. Next time, open it from Launchp
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset=".github/assets/viewer-report-dark.webp">
-  <img src=".github/assets/viewer-report-light.webp" alt="A reel open in no-fomo-social with its report: summary, key points and steps" width="100%">
+  <img src=".github/assets/viewer-report-light.webp" alt="A reel open in no-fomo social with its report: summary, key points and steps" width="100%">
 </picture>
 
 **A report on any reel.** Summary, key points, steps, everything shown on screen, and the full transcript, built from the video's frames and audio. Download it as Markdown and take it to ChatGPT, Claude or your notes. Reports work in about 45 languages.
@@ -74,7 +74,7 @@ no-fomo-social opens at `http://localhost:4747`. Next time, open it from Launchp
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset=".github/assets/saved-dark.webp">
-  <img src=".github/assets/saved-light.webp" alt="The no-fomo-social library: a grid of saved reels with filters" width="100%">
+  <img src=".github/assets/saved-light.webp" alt="The no-fomo social library: a grid of saved reels with filters" width="100%">
 </picture>
 
 **Your saved posts, in order.** Everything you saved on Instagram in one grid, with filters by author, collection and type, search that also finds words inside reports, and a real video player with keyboard controls.
@@ -90,12 +90,12 @@ no-fomo-social opens at `http://localhost:4747`. Next time, open it from Launchp
 
 ## Privacy and safety
 
-- **Your data stays on your computer.** The library lives in `~/.no-fomo-social`. There is no no-fomo-social server that sees your posts, reports or account.
+- **Your data stays on your computer.** The library lives in `~/.no-fomo-social`. There is no no-fomo social server that sees your posts, reports or account.
 - **You bring the AI key.** Your OpenAI key is stored encrypted on your computer and sent only to OpenAI.
-- **Careful with Instagram.** no-fomo-social uses your own Instagram login, the same way the website does. It makes one request at a time, at most 150 an hour, and stops for 15 minutes, then 1 hour, then 6 hours if Instagram refuses. Every request is logged on your computer.
+- **Careful with Instagram.** no-fomo social uses your own Instagram login, the same way the website does. It makes one request at a time, at most 150 an hour, and stops for 15 minutes, then 1 hour, then 6 hours if Instagram refuses. Every request is logged on your computer.
 
 > [!WARNING]
-> no-fomo-social uses Instagram's private web API, not an official one. It is slow on purpose to keep your account safe, but there is still a small risk. Use it at your own risk.
+> no-fomo social uses Instagram's private web API, not an official one. It is slow on purpose to keep your account safe, but there is still a small risk. Use it at your own risk.
 
 ## Questions
 
@@ -108,7 +108,7 @@ Yes. The app is free and open source under the MIT license. You only pay OpenAI 
 <details>
 <summary><b>Do I need to know how to code?</b></summary>
 
-No. You paste one line, and the installer does the rest. After that, no-fomo-social opens like any other app.
+No. You paste one line, and the installer does the rest. After that, no-fomo social opens like any other app.
 </details>
 
 <details>
@@ -130,7 +130,7 @@ Up and Down: previous or next post. Esc: close. Video: Space play or pause, Left
 </details>
 
 <details>
-<summary><b>Where can I see what no-fomo-social sent to Instagram?</b></summary>
+<summary><b>Where can I see what no-fomo social sent to Instagram?</b></summary>
 
 Every call is logged on your computer:
 
@@ -143,10 +143,10 @@ sqlite3 ~/.no-fomo-social/no-fomo-social.db "select datetime(at/1000,'unixepoch'
 
 The website lives in its own repo: [no-fomo-website](https://github.com/no-fomo-org/no-fomo-website).
 
-Bug reports, ideas and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) to run no-fomo-social from source, and [SECURITY.md](SECURITY.md) to report a security problem privately.
+Bug reports, ideas and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) to run no-fomo social from source, and [SECURITY.md](SECURITY.md) to report a security problem privately.
 
 ## License
 
 [MIT](LICENSE) for the code. The no-fomo name, logo and brand photographs are not covered by the MIT license; please do not use them for other products.
 
-no-fomo-social is not affiliated with Instagram or Meta. Instagram is a trademark of Meta Platforms, Inc.
+no-fomo social is not affiliated with Instagram or Meta. Instagram is a trademark of Meta Platforms, Inc.
