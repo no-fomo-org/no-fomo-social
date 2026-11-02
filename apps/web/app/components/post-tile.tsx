@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import type { PostListItem } from "@no-fomo-social/core";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { Album02Icon, ImageNotFound01Icon, Tick02Icon, Video01Icon } from "@hugeicons/core-free-icons";
@@ -6,7 +6,8 @@ import { formatDuration } from "../lib/format";
 import { Icon } from "./ui/icon";
 import { POPUP } from "./ui/popup";
 
-export function PostTile({ post, onOpen }: { post: PostListItem; onOpen: (id: string) => void }) {
+/** Memoized: a fetch tick re-renders the grid, not every tile. Owners keep `post` and `onOpen` stable. */
+export const PostTile = memo(function PostTile({ post, onOpen }: { post: PostListItem; onOpen: (id: string) => void }) {
   const [failed, setFailed] = useState(false);
   return (
     <button
@@ -42,7 +43,7 @@ export function PostTile({ post, onOpen }: { post: PostListItem; onOpen: (id: st
       <p className="mt-0.5 truncate text-[13px] text-muted">{captionLine(post.caption)}</p>
     </button>
   );
-}
+});
 
 /** Marks a post that has a report: you already worked with it. The tile's label says the same for screen readers. */
 function ReportTick() {

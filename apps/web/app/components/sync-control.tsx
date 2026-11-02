@@ -121,11 +121,11 @@ export function SyncControl() {
 
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <p className={`truncate text-[13px] ${errorTone ? "text-danger" : "text-muted"}`} role="status" aria-live="polite" title={note}>
+      <p className={`line-clamp-2 text-[13px] ${errorTone ? "text-danger" : "text-muted"}`} role="status" aria-live="polite">
         {note}
       </p>
       {due && !errorTone && !disabled && (
-        <button type="button" onClick={() => start("full")} className="shrink-0 text-[13px] text-text underline underline-offset-2 transition-colors duration-150 hover:text-accent">
+        <button type="button" onClick={() => start("full")} className="shrink-0 py-2 text-[13px] text-text underline underline-offset-2 transition-colors duration-150 hover:text-accent">
           Full check suggested
         </button>
       )}

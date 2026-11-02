@@ -7,8 +7,8 @@ import { Icon } from "../ui/icon";
 
 const SWIPE_PX = 50;
 const arrow =
-  "absolute top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur " +
-  "transition-opacity duration-200 hover:bg-black/70 disabled:pointer-events-none disabled:opacity-0 focus-visible:outline-2 focus-visible:outline-accent";
+  "absolute top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-control bg-black/60 text-white " +
+  "transition-opacity duration-200 hover:bg-black/80 disabled:pointer-events-none disabled:opacity-0 focus-visible:outline-2 focus-visible:outline-accent";
 
 export function Carousel({
   parts,
@@ -87,7 +87,7 @@ export function Carousel({
       </button>
 
       <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center">
-        <p className="rounded-full bg-black/50 px-2.5 py-0.5 font-mono text-[12px] tabular-nums text-white backdrop-blur" aria-live="polite">
+        <p className="rounded-control bg-black/60 px-2.5 py-0.5 font-mono text-[12px] tabular-nums text-white" aria-live="polite">
           {index + 1} of {parts.length}
         </p>
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { UseInfiniteQueryResult, InfiniteData } from "@tanstack/react-query";
 import type { PostListItem } from "@no-fomo-social/core";
 import { Tooltip } from "@base-ui/react/tooltip";
@@ -6,6 +6,7 @@ import { hasFilters, type Filters } from "../lib/filters";
 import { listBody } from "../lib/live-pages";
 import { PostTile } from "./post-tile";
 import { Button } from "./ui/button";
+import { StateSection } from "./ui/state-section";
 
 const GRID =
   "grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4 lg:gap-x-5 lg:gap-y-8 xl:grid-cols-5 min-[1680px]:grid-cols-6";
@@ -30,6 +31,10 @@ export function PostGrid(props: {
   // After a failed page, wait for the owner: loading again by itself would repeat the failing request in a loop.
   const autoLoad = (props.autoLoad ?? true) && !query.isFetchNextPageError;
   const intro = useIntro(props.items);
+  // Owners pass a new onOpen each render; one stable function keeps the memoized tiles from re-rendering.
+  const onOpenRef = useRef(props.onOpen);
+  onOpenRef.current = props.onOpen;
+  const onOpen = useCallback((id: string) => onOpenRef.current(id), []);
 
   useEffect(() => {
     const el = sentinel.current;
@@ -47,34 +52,34 @@ export function PostGrid(props: {
   if (query.isPending) return <Skeleton count={12} />;
   if (listBody({ isError: query.isError, hasData: !!query.data }) === "error") {
     return (
-      <section className="py-16">
-        <h2 className="text-[17px] font-semibold">Could not load your posts</h2>
+      <StateSection title="Could not load your posts">
         <p className="mt-1 text-muted">The no-fomo-social app on your computer did not answer. Check that it is running.</p>
         <Button className="mt-4" onClick={() => void query.refetch()}>Try again</Button>
-      </section>
+      </StateSection>
     );
   }
   const otherFilters = Boolean(props.filters.author || props.filters.collection || props.filters.kind || props.filters.source);
   if (props.items.length === 0) {
     return hasFilters(props.filters) ? (
-      <section className="py-16">
-        <h2 className="text-[17px] font-semibold">
-          {props.filters.q ? (
+      <StateSection
+        title={
+          props.filters.q ? (
             <>
               Nothing matches <span className="break-words">“{props.filters.q}”</span>
               {otherFilters ? " with these filters" : ""}
             </>
           ) : (
             "No posts match these filters"
-          )}
-        </h2>
+          )
+        }
+      >
         <p className="mt-1 max-w-[60ch] text-muted">
           {props.filters.q && !otherFilters
             ? "Search looks at captions, authors, music, places and image descriptions. Try a shorter word."
             : "Try removing a filter."}
         </p>
         <Button className="mt-4" onClick={props.onClearFilters}>Clear search and filters</Button>
-      </section>
+      </StateSection>
     ) : (
       props.empty
     );
@@ -87,7 +92,7 @@ export function PostGrid(props: {
         <ul className={GRID}>
           {props.items.map((p) => (
             <li key={p.id} className={intro.has(p.id) ? "fl-rise" : undefined} style={intro.has(p.id) ? ({ "--i": intro.get(p.id) } as CSSProperties) : undefined}>
-              <PostTile post={p} onOpen={props.onOpen} />
+              <PostTile post={p} onOpen={onOpen} />
             </li>
           ))}
         </ul>
@@ -97,7 +102,7 @@ export function PostGrid(props: {
       {query.isFetchNextPageError && !query.isFetchingNextPage && (
         <p role="alert" className="mt-6 text-[14px] text-danger">
           {props.nextErrorText ?? "Could not load more posts."}{" "}
-          <button type="button" onClick={() => void query.fetchNextPage()} className="text-text underline underline-offset-2 hover:text-accent">
+          <button type="button" onClick={() => void query.fetchNextPage()} className="py-2 text-text underline underline-offset-2 hover:text-accent">
             Try again
           </button>
         </p>

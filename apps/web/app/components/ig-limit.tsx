@@ -24,7 +24,7 @@ export function IgLimitBanner() {
   if (!limit) return null;
   return (
     <div role="status" aria-live="polite" className="border-t border-line bg-surface">
-      <p className="mx-auto max-w-[1600px] px-4 py-2 text-[13px] text-danger md:px-6" title={limit.reason ?? undefined}>
+      <p className="mx-auto max-w-[1600px] px-4 py-2 text-[13px] text-danger md:px-6">
         {limitText(limit.kind, limit.until)}
       </p>
     </div>

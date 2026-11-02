@@ -140,8 +140,9 @@ body { font-family: var(--font-sans); }
 }
 
 .report-md { font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
-.report-md h1 { font-size: 17px; font-weight: 600; margin: 0 0 12px; }
-.report-md h2 { font-size: 15px; font-weight: 600; margin: 20px 0 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+/* Markdown h1 and h2 render as h3 and h4 (the sheet already has the page's h1 and h2); the sizes stay the same. */
+.report-md h3 { font-size: 17px; font-weight: 600; margin: 0 0 12px; }
+.report-md h4 { font-size: 15px; font-weight: 600; margin: 20px 0 6px; padding-top: 12px; border-top: 1px solid var(--line); }
 .report-md p, .report-md ul, .report-md ol { margin: 0 0 8px; }
 .report-md ul { list-style: disc; padding-inline-start: 20px; }
 .report-md ol { list-style: decimal; padding-inline-start: 20px; }

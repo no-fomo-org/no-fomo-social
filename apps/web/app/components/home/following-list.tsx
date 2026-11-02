@@ -33,7 +33,7 @@ export function FollowingList(props: {
     <section aria-labelledby="following-title" className="mt-10">
       {empty ? (
         <>
-          <EmptyHero variant="banner" title={<h2 id="following-title">People you follow</h2>} />
+          <EmptyHero variant="banner" priority title={<h2 id="following-title">People you follow</h2>} />
           <p className="mt-4 max-w-[60ch] text-[15px] text-muted">Load the list of accounts you follow once, so you can open them here without searching Instagram. It takes about 2 minutes for 1,000 accounts.</p>
           <div className="mt-4 flex flex-wrap items-center gap-3">{update}{status}</div>
         </>

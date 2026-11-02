@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { BufferingIndicator, Container, Gesture, Hotkey, useMedia } from "@videojs/react";
 import { Video, VideoPlayer } from "@videojs/react/video";
-import { Loading03Icon } from "@hugeicons/core-free-icons";
 import { browserStore, loadPosition, loadVolume, resumeAt, savePosition, saveVolume } from "../../lib/player-prefs";
-import { Icon } from "../ui/icon";
+import { LogoSymbol } from "../logo";
 import { PlayerControls } from "./player-controls";
 
 /** How often the playing position is written to storage. */
@@ -41,10 +40,11 @@ export function Player({
         <Gesture type="doubletap" action="seekStep" value={-5} region="left" />
         <Gesture type="doubletap" action="seekStep" value={5} region="right" />
 
+        {/* The brand loading mark is the one loading signal; no spinners. */}
         <BufferingIndicator
           className="pointer-events-none absolute inset-0 flex items-center justify-center"
           render={(props, state) => (
-            <div {...props}>{state.visible && <Icon icon={Loading03Icon} size={32} className="text-white/80 motion-safe:animate-spin" />}</div>
+            <div {...props}>{state.visible && <LogoSymbol size={32} loading title="" className="text-cream" />}</div>
           )}
         />
         <PlayerControls loop={loop} onLoopChange={setLoop} arrowSeek={arrowSeek} />

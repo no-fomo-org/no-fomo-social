@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft01Icon, SquareArrowUpRightIcon } from "@hugeicons/core-free-icons";
@@ -19,6 +20,7 @@ import { LazyViewer } from "../viewer/lazy-viewer";
 import { useExtension } from "./use-extension";
 import { Button, buttonClass } from "../ui/button";
 import { Icon } from "../ui/icon";
+import { StateSection } from "../ui/state-section";
 
 type AccountPage = { items: LivePost[]; nextCursor: string | null; total: number; profile: LiveProfile | null };
 
@@ -65,10 +67,13 @@ export function AccountView({ username }: { username: string }) {
     placeholderData: (prev) => prev,
   });
   /** A post the app stores may be saved or have a report: show that here too. */
-  const mark = (p: LivePost): LivePost => {
-    const k = known.data?.get(p.id);
+  const knownMap = known.data;
+  const mark = useCallback((p: LivePost): LivePost => {
+    const k = knownMap?.get(p.id);
     return k ? { ...p, saved: k.saved, hasReport: k.hasReport } : p;
-  };
+  }, [knownMap]);
+  // Same objects until the list or the known states change, so memoized tiles stay put.
+  const marked = useMemo(() => list.items.map(mark), [list.items, mark]);
 
   const profile = list.query.data?.pages[0]?.profile ?? null;
   const closed = profile ? profile.isPrivate && !profile.followedByViewer : false;
@@ -76,18 +81,16 @@ export function AccountView({ username }: { username: string }) {
   let body;
   if (ext.missing) {
     body = (
-      <section className="py-10">
-        <h2 className="text-[17px] font-semibold">The no-fomo-social extension is needed to open accounts</h2>
+      <StateSection className="py-10" title="The no-fomo-social extension is needed to open accounts">
         <SetupSteps />
-      </section>
+      </StateSection>
     );
   } else if (listBody({ isError: list.query.isError, hasData: !!list.query.data }) === "error") {
     body = (
-      <section className="py-16">
-        <h2 className="text-[17px] font-semibold">Could not open @{username}</h2>
+      <StateSection title={<>Could not open @{username}</>}>
         <p className="mt-1 max-w-[60ch] text-muted">{(list.query.error as Error).message}</p>
         <Button className="mt-4" onClick={() => void list.query.refetch()}>Try again</Button>
-      </section>
+      </StateSection>
     );
   } else if (closed) {
     body = <p className="py-16 text-[15px] text-muted">This account is private and you do not follow it, so its posts cannot be shown.</p>;
@@ -96,13 +99,13 @@ export function AccountView({ username }: { username: string }) {
       <div className="pt-4">
         <PostGrid
           query={list.query}
-          items={list.items.map(mark)}
+          items={marked}
           filters={NO_FILTERS}
           onOpen={(id) => list.setPost(id)}
           onClearFilters={() => {}}
           autoLoad={false}
           nextErrorText={list.query.isFetchNextPageError ? (list.query.error as Error).message : undefined}
-          empty={<section className="py-16"><h2 className="text-[17px] font-semibold">This account has no posts.</h2></section>}
+          empty={<StateSection title="This account has no posts." />}
         />
         {list.query.hasNextPage && !list.query.isFetchNextPageError && (
           <div className="mt-6 flex justify-center">
