@@ -1,6 +1,6 @@
 # Security
 
-no-fomo-social runs on your computer and holds your Instagram session (through the extension) and your OpenAI key. We take reports about either seriously.
+no-fomo social runs on your computer and holds your Instagram session (through the extension) and your OpenAI key. We take reports about either seriously.
 
 ## Report a problem
 
@@ -13,7 +13,7 @@ Tell us what you found, how to reproduce it, and what an attacker could do. We a
 - Another website, or another user account on the same computer, can read the library, start a sync, or use the Instagram session.
 - The OpenAI key leaves the computer to anywhere except OpenAI.
 - The install script can be tricked into running code that is not from our releases.
-- The extension sends Instagram data anywhere except the local no-fomo-social app.
+- The extension sends Instagram data anywhere except the local no-fomo social app.
 
 ## What the app cannot defend against
 

@@ -74,7 +74,7 @@ export function ProfileSearch(props: {
         <section aria-label="All Instagram" className="mt-3 rounded-control border border-line p-2">
           <h2 className="px-2.5 pb-1 text-[13px] text-muted">All Instagram</h2>
           {!props.ready ? (
-            <p className="px-2.5 py-2 text-[13px] text-muted">Needs the no-fomo-social extension.</p>
+            <p className="px-2.5 py-2 text-[13px] text-muted">Needs the no-fomo social extension.</p>
           ) : ig.isFetching ? (
             <p className="px-2.5 py-2 text-[13px] text-muted">Searching Instagram…</p>
           ) : ig.isError ? (

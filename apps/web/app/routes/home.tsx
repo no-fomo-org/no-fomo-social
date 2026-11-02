@@ -57,7 +57,7 @@ function HomeList() {
         <h1 className="sr-only">Search</h1>
         {ext.missing && (
           <section className="mb-6 rounded-control border border-line p-4">
-            <h2 className="text-[15px] font-semibold">The no-fomo-social extension is needed to open accounts</h2>
+            <h2 className="text-[15px] font-semibold">The no-fomo social extension is needed to open accounts</h2>
             <SetupSteps />
           </section>
         )}

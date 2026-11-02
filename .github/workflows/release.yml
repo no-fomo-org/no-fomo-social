@@ -66,7 +66,7 @@ jobs:
           sleep 1
           bash scripts/install/install.sh
           curl -fsS http://localhost:4747/api/config | grep extensionId
-          curl -fsS http://localhost:4747/ | grep -q '<title>no-fomo-social</title>'
+          curl -fsS http://localhost:4747/ | grep -q '<title>no-fomo social</title>'
           ~/.no-fomo-social/app/ffmpeg/ffprobe -version | head -1
           ~/.no-fomo-social/app/bin/no-fomo-social uninstall
           test ! -d ~/.no-fomo-social/app

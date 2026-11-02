@@ -1,4 +1,4 @@
-# Releasing no-fomo-social 0.1.0
+# Releasing no-fomo social 0.1.0
 
 The maintainer's runbook for the first public release. Written 2026-11-02. Do the phases in order: each one needs the one before it. After 0.1.0, only the "Every release" section at the end applies.
 
@@ -152,16 +152,16 @@ git tag v0.1.0 && git push origin v0.1.0
 
 ## Appendix A. Chrome Web Store listing
 
-- **Name:** no-fomo-social
+- **Name:** no-fomo social
 - **Summary (132 characters max, from the extension manifest):** Keep up with everything you save. Turns the Instagram posts you save into notes, steps and ideas, on your computer.
 - **Category:** Productivity. **Language:** English.
 - **Description:**
 
   Keep up with everything you save.
 
-  You save Instagram posts faster than you can watch them. no-fomo-social watches them for you and turns each one into notes, steps and ideas, on your own computer.
+  You save Instagram posts faster than you can watch them. no-fomo social watches them for you and turns each one into notes, steps and ideas, on your own computer.
 
-  This extension connects instagram.com to the free no-fomo-social app. It syncs your saved posts and the accounts you open, using your own login, and sends nothing anywhere except to the app on your computer. It never acts on its own, and it is slow on purpose, so your account stays safe.
+  This extension connects instagram.com to the free no-fomo social app. It syncs your saved posts and the accounts you open, using your own login, and sends nothing anywhere except to the app on your computer. It never acts on its own, and it is slow on purpose, so your account stays safe.
 
   Start in three steps: install the app at https://no-fomo.ai/social, add this extension, log in to instagram.com and press Sync.
 
@@ -173,11 +173,11 @@ git tag v0.1.0 && git push origin v0.1.0
 
 ## Appendix B. Privacy tab
 
-- **Single purpose:** Sync the user's Instagram saved posts and chosen accounts to the no-fomo-social app running on the user's own computer.
+- **Single purpose:** Sync the user's Instagram saved posts and chosen accounts to the no-fomo social app running on the user's own computer.
 - **Permission justifications:**
   - `storage`: keep Instagram request limits and pause times, so the extension stays slow and safe across tabs and restarts.
   - Host `https://www.instagram.com/*`: read the user's saved posts and chosen accounts with the user's own login, only when the user presses Sync or opens an account in the app.
-  - Host `http://localhost:4747/*` and `http://127.0.0.1:4747/*`: pass that data to the no-fomo-social app on the user's computer. Nothing else.
+  - Host `http://localhost:4747/*` and `http://127.0.0.1:4747/*`: pass that data to the no-fomo social app on the user's computer. Nothing else.
 - **Remote code:** No.
 - **Data use:** The extension handles "Website content" (the user's saved Instagram posts) and "Personally identifiable information" (Instagram usernames). Certify: not sold to third parties; not used or transferred for purposes unrelated to the single purpose; not used to determine creditworthiness or for lending.
 - **Privacy policy URL:** https://no-fomo.ai/privacy

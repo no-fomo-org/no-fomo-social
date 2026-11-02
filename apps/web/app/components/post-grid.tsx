@@ -53,7 +53,7 @@ export function PostGrid(props: {
   if (listBody({ isError: query.isError, hasData: !!query.data }) === "error") {
     return (
       <StateSection title="Could not load your posts">
-        <p className="mt-1 text-muted">The no-fomo-social app on your computer did not answer. Check that it is running.</p>
+        <p className="mt-1 text-muted">The no-fomo social app on your computer did not answer. Check that it is running.</p>
         <Button className="mt-4" onClick={() => void query.refetch()}>Try again</Button>
       </StateSection>
     );

@@ -1,4 +1,4 @@
-# Starts and manages the installed no-fomo-social app on Windows.
+# Starts and manages the installed no-fomo social app on Windows.
 # Usage: no-fomo-social [start|stop|restart|status|logs|update|uninstall|version]
 param([string]$Command = 'start')
 $ErrorActionPreference = 'Stop'
@@ -13,7 +13,7 @@ $ErrLog = Join-Path $LogDir 'server-errors.log'
 $PidFile = Join-Path $HomeDir 'server.pid'
 $InstallUrl = 'https://raw.githubusercontent.com/no-fomo-org/no-fomo-social/main/scripts/install/install.ps1'
 
-# True when a no-fomo-social server answers on the port (its config has an extension id).
+# True when a no-fomo social server answers on the port (its config has an extension id).
 function Test-Running {
   try {
     $r = Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 "$Url/api/config"
