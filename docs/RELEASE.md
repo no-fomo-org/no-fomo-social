@@ -7,7 +7,7 @@ The maintainer's runbook for the first public release. Written 2026-11-02. Do th
 Done:
 
 - Code is complete for 0.1.0. `pnpm test` (383 tests) and `pnpm typecheck` pass. CI is green on `main`.
-- Security: the 2026-10-22 review is fixed and merged. A second, independent review ran on 2026-11-02 ([docs/audits/2026-11-02-security-review.md](audits/2026-11-02-security-review.md)).
+- Security: the 2026-10-22 review is fixed and merged. A second, independent review ran on 2026-11-02 ([docs/audits/2026-11-02-security-review.md](audits/2026-11-02-security-review.md)): no Critical or Important findings; of its 2 Medium and 8 Low items, 6 are fixed in this branch (the OpenAI base URL pin, response headers, launcher stop check, the `tabs` permission, dependency advisories, untracked audit files). `pnpm audit --prod` reports no known vulnerabilities.
 - UI: every item from the 2026-10-22 Impeccable audit is fixed except the store link, which needs the real store id (below).
 - Release pipeline: `.github/workflows/release.yml` builds the Mac (arm64, x64) and Windows bundles, installs each on a real GitHub runner, checks that the server answers, uninstalls, then drafts a GitHub Release with every file and its SHA-256. **It has never run yet.**
 - Install script: tested by hand on this Mac from a local bundle (install, server answers on `localhost:4747` and `[::1]:4747`, Host and Origin checks refuse other sites, uninstall leaves nothing behind). One real bug was found and fixed on the way: macOS ships bash 3.2, where the installer crashed on an empty option array.
@@ -27,6 +27,8 @@ Not done. These block the release:
 
 Why the order matters: the install line in the README downloads `releases/latest`, so nothing works for users until a release is published. The release must carry the real store id, and the store id exists only after the extension is uploaded. The extension can be uploaded before it is approved, so the store upload comes first.
 
+Everything in this document that changes code or settings is reversible except two steps: making the repository public (Phase 5) and publishing the release (Phase 6). Both are marked.
+
 ## Phase 0. Merge this branch and decide the Dependabot pull requests
 
 1. Merge the pull request that carries this guide (installer fix, release guard, audit fixes, new security review).
@@ -42,7 +44,8 @@ The workflow can run without a tag. This builds all three bundles and installs t
 1. GitHub → Actions → Release → Run workflow → branch `main`.
 2. Wait for `build`, `test-mac` and `test-windows` to turn green (about 15 minutes).
 3. If `test-windows` fails, the error is in `scripts/install/install.ps1` or `scripts/install/launcher/no-fomo-social.ps1`; nobody has run those on a real Windows machine yet. Fix, merge, run again.
-4. Download the `release` artifact from the run. It holds the exact files a release would ship, including `no-fomo-social-extension.zip` for the next phase.
+4. The workflow downloads the ffmpeg source tarball from ffmpeg.org without a checksum (review item L1). When ffmpeg.org is reachable, take the hash from https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz.sha256 and add after the download step in `release.yml`: `echo "<hash>  dist/release/ffmpeg-9.0.2.tar.xz" | sha256sum -c`. It was unreachable on 2026-11-02.
+5. Download the `release` artifact from the run. It holds the exact files a release would ship, including `no-fomo-social-extension.zip` for the next phase.
 
 Do not go on while this is red.
 
@@ -67,7 +70,7 @@ The web app asks the server for the extension id and sends messages to the exten
 1. In `packages/core/src/extension-id.ts`, replace `EXTENSION_PUBLIC_KEY` with the public key from Phase 2 step 3 and `EXTENSION_ID` with the Item ID. Keep the file's first comment line.
 2. Replace `EXTENSION_STORE_ID` with the Item ID in these four files: `packages/core/src/constants.ts`, `scripts/install/install.sh`, `scripts/install/install.ps1`, `README.md`.
 3. Check nothing is left: `grep -rn EXTENSION_STORE_ID --exclude-dir=node_modules --exclude-dir=.git .` must print nothing. The Release workflow refuses to build a tag while a placeholder remains.
-4. Run `pnpm ext:build:dev`, load `apps/extension/.output/chrome-mv3-dev` unpacked in Chrome, and check in `chrome://extensions` that its id equals the Item ID. Then open the dev app and press Sync once to prove the app and the extension still find each other.
+4. Run `pnpm ext:build:dev`, load `apps/extension/.output/chrome-mv3-dev` unpacked in Chrome, and check in `chrome://extensions` that its id equals the Item ID. Then open the dev app, press Sync once, and open one account from Search, to prove the app and the extension still find each other (the extension no longer asks for the `tabs` permission; the instagram.com host permission covers what it needs).
 5. Commit, open a pull request, merge.
 6. Website: replace the same placeholder in the `no-fomo-website` repo (`/social` page) and deploy.
 
@@ -92,6 +95,8 @@ gh repo edit no-fomo-org/no-fomo-social --description "Let AI watch the reels. Y
 ```bash
 gh repo edit no-fomo-org/no-fomo-social --add-topic instagram --add-topic reels --add-topic ai --add-topic openai --add-topic chrome-extension --add-topic local-first --add-topic creator-tools
 ```
+
+This one cannot be undone in practice (forks and caches keep a copy):
 
 ```bash
 gh repo edit no-fomo-org/no-fomo-social --visibility public --accept-visibility-change-consequences
@@ -134,6 +139,7 @@ git tag v0.1.0 && git push origin v0.1.0
 
 - **Signed releases.** Add `actions/attest-build-provenance` to `release.yml` so each bundle has a provenance record (free, no keys). Noted as L1 in the 2026-10-22 review.
 - **Extension verifies the server.** Today the extension trusts `localhost:4747` by origin alone; while the app is not running, another program under the same user could take the port. A per-install secret shown by the page would close it. Noted as M1.
+- **Media links from Instagram are shown without a host check** (review item L5). Downloads are checked; browser loads of thumbnails and videos are not. Defence in depth: drop links that are not on `cdninstagram.com` or `fbcdn.net` at ingest.
 - **Multi-user machines.** The local API has no per-request credential, so another user account on the same computer can read the library. Fine for a personal computer; say so in the docs if that question comes up.
 - Merge the deferred Dependabot pull requests one at a time.
 
@@ -174,7 +180,6 @@ git tag v0.1.0 && git push origin v0.1.0
 
 - **Single purpose:** Sync the user's Instagram saved posts and chosen accounts to the no-fomo-social app running on the user's own computer.
 - **Permission justifications:**
-  - `tabs`: open and reuse one Instagram tab to read an account the user picked, and open the no-fomo-social app from the toolbar button.
   - `storage`: keep Instagram request limits and pause times, so the extension stays slow and safe across tabs and restarts.
   - Host `https://www.instagram.com/*`: read the user's saved posts and chosen accounts with the user's own login, only when the user presses Sync or opens an account in the app.
   - Host `http://localhost:4747/*` and `http://127.0.0.1:4747/*`: pass that data to the no-fomo-social app on the user's computer. Nothing else.

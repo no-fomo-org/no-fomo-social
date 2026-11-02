@@ -43,8 +43,9 @@ export function createProvider(models: { language: (id: string) => LanguageModel
   };
 }
 
-export function createOpenAIProvider(apiKey: string): Provider {
-  const openai = createOpenAI({ apiKey });
+/** Pins the base URL: without it the SDK follows OPENAI_BASE_URL from the environment, and the key would go there. */
+export function createOpenAIProvider(apiKey: string, opts: { fetch?: typeof fetch } = {}): Provider {
+  const openai = createOpenAI({ apiKey, baseURL: "https://api.openai.com/v1", fetch: opts.fetch });
   return createProvider({ language: (id) => openai(id), transcription: (id) => openai.transcription(id) });
 }
 

@@ -10,5 +10,7 @@ dist/
 .claude/settings.local.json
 .superpowers/
 .impeccable/config.local.json
+.impeccable/hook.cache.json
+.impeccable/hook.pending.json
 .impeccable/live/*
 !.impeccable/live/config.json

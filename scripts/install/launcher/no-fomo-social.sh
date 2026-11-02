@@ -50,6 +50,8 @@ start() {
 stop() {
   if [ -f "$PID_FILE" ]; then
     pid="$(cat "$PID_FILE")"
+    # After a reboot the number can belong to another program; only stop our node.
+    case "$(ps -p "$pid" -o comm= 2>/dev/null)" in *node*) ;; *) rm -f "$PID_FILE"; return 0 ;; esac
     if kill -0 "$pid" 2>/dev/null; then
       kill "$pid" 2>/dev/null || true
       i=0
