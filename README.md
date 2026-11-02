@@ -46,7 +46,7 @@ On **Windows**, open PowerShell (press the Windows key, type *PowerShell*, press
 irm https://raw.githubusercontent.com/no-fomo-org/no-fomo-social/main/scripts/install/install.ps1 | iex
 ```
 
-**2. Add the [no-fomo-social extension](https://chromewebstore.google.com/detail/EXTENSION_STORE_ID) to Chrome.**
+**2. Add the [no-fomo-social extension](https://chromewebstore.google.com/detail/mjakjbjejpmchdgghkgjkjgmkdainedj) to Chrome.**
 
 **3. Log in to instagram.com in Chrome, then press Sync in no-fomo-social.**
 

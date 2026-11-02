@@ -13,7 +13,7 @@
   $Base = if ($env:NO_FOMO_SOCIAL_DOWNLOAD_BASE) { $env:NO_FOMO_SOCIAL_DOWNLOAD_BASE } else { 'https://github.com/no-fomo-org/no-fomo-social/releases/latest/download' }
   $HomeDir = if ($env:NO_FOMO_SOCIAL_HOME) { $env:NO_FOMO_SOCIAL_HOME } else { Join-Path $env:USERPROFILE '.no-fomo-social' }
   $AppDir = Join-Path $HomeDir 'app'
-  $StoreUrl = 'https://chromewebstore.google.com/detail/EXTENSION_STORE_ID'
+  $StoreUrl = 'https://chromewebstore.google.com/detail/mjakjbjejpmchdgghkgjkjgmkdainedj'
   $File = 'no-fomo-social-win32-x64.zip'
 
   function Fail($msg) { Write-Host "`n$msg" -ForegroundColor Red; throw 'no-fomo-social install stopped.' }

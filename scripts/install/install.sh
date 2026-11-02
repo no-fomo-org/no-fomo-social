@@ -12,7 +12,7 @@ main() {
   local base="${NO_FOMO_SOCIAL_DOWNLOAD_BASE:-https://github.com/no-fomo-org/no-fomo-social/releases/latest/download}"
   local home_dir="${NO_FOMO_SOCIAL_HOME:-$HOME/.no-fomo-social}"
   local app_dir="$home_dir/app"
-  local store_url="https://chromewebstore.google.com/detail/EXTENSION_STORE_ID"
+  local store_url="https://chromewebstore.google.com/detail/mjakjbjejpmchdgghkgjkjgmkdainedj"
 
   say() { printf '\033[1m%s\033[0m\n' "$*"; }
   fail() { printf '\n\033[31m%s\033[0m\n' "$*" >&2; exit 1; }
