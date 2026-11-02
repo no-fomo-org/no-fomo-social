@@ -76,7 +76,7 @@ The web app asks the server for the extension id and sends messages to the exten
 
 ## Phase 4. Contact address
 
-`SECURITY.md` and `CODE_OF_CONDUCT.md` point people at the contact form on https://no-fomo.ai/social. That works today. If you would rather give an email, create one on the domain (Cloudflare Email Routing, for example `security@no-fomo.ai` forwarding to your inbox), put it in both files, and use the same address as the Chrome Web Store support email.
+Done on 2026-11-02: `hello@no-fomo.ai` is in `SECURITY.md` and `CODE_OF_CONDUCT.md`. Use the same address as the Chrome Web Store contact and support email.
 
 ## Phase 5. Make the repository public
 
