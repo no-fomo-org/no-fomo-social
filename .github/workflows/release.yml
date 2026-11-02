@@ -29,6 +29,10 @@ jobs:
           test "$(node -p 'require("./package.json").version')" = "$v"
           test "$(node -p 'require("./apps/extension/package.json").version')" = "$v"
           grep -q "APP_VERSION = \"$v\"" packages/core/src/constants.ts
+      - name: No placeholder is left in what ships
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          ! grep -rn "EXTENSION_STORE_ID\|CONTACT_EMAIL" README.md SECURITY.md CODE_OF_CONDUCT.md scripts/install packages/core/src apps/web/app apps/extension/src
       - run: pnpm test
       - run: pnpm --filter @no-fomo-social/web build
       - run: pnpm release:bundle

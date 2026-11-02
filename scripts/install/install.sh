@@ -39,8 +39,9 @@ main() {
   # HTTPS only, even after a redirect.
   local -a curl_opts=(--proto '=https' --tlsv1.2)
   if [ "${base#http://127.0.0.1}" != "$base" ] || [ "${base#http://localhost}" != "$base" ]; then curl_opts=(); fi
-  curl "${curl_opts[@]}" -fL --progress-bar "$base/$file" -o "$tmp/$file" || fail "Download failed. Check your internet connection and try again."
-  curl "${curl_opts[@]}" -fsSL "$base/SHA256SUMS" -o "$tmp/SHA256SUMS" || fail "Could not download the checksum file."
+  # ${arr[@]+"${arr[@]}"}: an empty array is an error under set -u in the bash 3.2 that macOS ships.
+  curl ${curl_opts[@]+"${curl_opts[@]}"} -fL --progress-bar "$base/$file" -o "$tmp/$file" || fail "Download failed. Check your internet connection and try again."
+  curl ${curl_opts[@]+"${curl_opts[@]}"} -fsSL "$base/SHA256SUMS" -o "$tmp/SHA256SUMS" || fail "Could not download the checksum file."
 
   local expected actual
   expected="$(awk -v f="$file" '$2 == f { print $1 }' "$tmp/SHA256SUMS")"
