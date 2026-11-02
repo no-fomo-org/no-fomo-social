@@ -43,10 +43,10 @@ The symbol is a four-point star with soft, concave sides, rising just above a th
 | `symbol-regular-*.svg` | Symbol alone at 24px and larger |
 | `symbol-small-*.svg` | Symbol alone below 24px. It has a thicker arc and a fuller star so it stays clear |
 | `*-currentcolor.svg` | Inline use where color comes from CSS |
-| `app-icon-fern.svg` | Main app icon (Fern background, cream symbol) |
+| `app-icon-fern.svg` | Flat Fern icon, for places that cannot show a gradient |
 | `app-icon-forest.svg` | Dark app icon |
-| `app-icon-dawn.svg` | Dawn gradient app icon (deep teal to pale sage), the owner's favorite for special places |
-| `favicon.svg`, `png/favicon-32.png` | Browser tab |
+| `app-icon-dawn.svg` | Dawn gradient app icon (deep teal to pale sage). **The icon everywhere**: Mac and Windows app, favicon, extension, store, GitHub avatar |
+| `favicon.svg`, `png/favicon-32.png` | Browser tab (Dawn icon; the 32px uses the small symbol) |
 | `png/extension-icon-16/32/48/128.png` | Chrome extension (16 and 32 use the small symbol) |
 
 **Colors.** On light: symbol Fern `#4F6B3A`, wordmark Forest `#1E2A22`. On dark: symbol light Fern `#A3B98C`, wordmark Cream `#F4EEDC`. On the photo: everything Cream.
