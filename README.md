@@ -5,7 +5,7 @@
 <h3 align="center">Keep up with everything you save.</h3>
 
 <p align="center">
-  You save reels faster than you can watch them. no-fomo-social watches them for you and turns each one into notes, steps and ideas you can use.<br>
+  You save posts faster than you can watch them. no-fomo-social watches them for you and turns each one into notes, steps and ideas you can use.<br>
   Free, open source, and it runs on your computer.
 </p>
 
