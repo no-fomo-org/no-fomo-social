@@ -4,7 +4,7 @@ no-fomo-social runs on your computer and holds your Instagram session (through t
 
 ## Report a problem
 
-Please do not open a public issue. Use **[Report a vulnerability](https://github.com/no-fomo-org/no-fomo-social/security/advisories/new)** on GitHub, or write to hello@no-fomo.ai.
+Please do not open a public issue. Use **[Report a vulnerability](https://github.com/no-fomo-org/no-fomo-social/security/advisories/new)** on GitHub, or write to security@no-fomo.ai.
 
 Tell us what you found, how to reproduce it, and what an attacker could do. We answer within 7 days and tell you when a fix ships. We are happy to credit you in the release notes.
 
