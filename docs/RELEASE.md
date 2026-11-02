@@ -89,7 +89,7 @@ Check first:
 Then, from a terminal with `gh` logged in as the org owner:
 
 ```bash
-gh repo edit no-fomo-org/no-fomo-social --description "Let AI watch the reels. Your Instagram saves and any account, turned into knowledge on your own computer." --homepage https://no-fomo.ai --enable-discussions --enable-issues --delete-branch-on-merge
+gh repo edit no-fomo-org/no-fomo-social --description "Keep up with everything you save. The Instagram reels you save, turned into notes, steps and ideas on your own computer." --homepage https://no-fomo.ai --enable-discussions --enable-issues --delete-branch-on-merge
 ```
 
 ```bash
@@ -157,7 +157,7 @@ git tag v0.1.0 && git push origin v0.1.0
 - **Category:** Productivity. **Language:** English.
 - **Description:**
 
-  no-fomo-social turns Instagram reels into notes, steps and ideas. This extension is the bridge between instagram.com and the free no-fomo-social app that runs on your computer.
+  Keep up with everything you save. no-fomo-social turns the Instagram reels you save into notes, steps and ideas. This extension is the bridge between instagram.com and the free no-fomo-social app that runs on your computer.
 
   What it does:
   • Syncs your saved posts and collections into the no-fomo-social app on your computer.
