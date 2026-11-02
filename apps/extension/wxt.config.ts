@@ -8,7 +8,7 @@ export default defineConfig({
     const origins = appOrigins(mode === "development").map((o) => `${o}/*`);
     return {
       name: "no-fomo-social",
-      description: "Syncs your Instagram saved posts to the no-fomo-social app on your computer.",
+      description: "Keep up with everything you save. Turns the Instagram posts you save into notes, steps and ideas, on your computer.",
       // The Chrome Web Store sets its own key and refuses uploads that carry one.
       ...(process.env.NO_FOMO_SOCIAL_STORE_BUILD ? {} : { key: EXTENSION_PUBLIC_KEY }),
       // No `tabs`: the instagram.com host permission already lets the worker read urls of Instagram tabs.

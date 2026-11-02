@@ -153,24 +153,19 @@ git tag v0.1.0 && git push origin v0.1.0
 ## Appendix A. Chrome Web Store listing
 
 - **Name:** no-fomo-social
-- **Summary (132 characters max):** Connects Instagram to the no-fomo-social app on your computer, so you can sync saved posts and get AI reports on reels.
+- **Summary (132 characters max, from the extension manifest):** Keep up with everything you save. Turns the Instagram posts you save into notes, steps and ideas, on your computer.
 - **Category:** Productivity. **Language:** English.
 - **Description:**
 
-  Keep up with everything you save. no-fomo-social turns the Instagram posts you save into notes, steps and ideas. This extension is the bridge between instagram.com and the free no-fomo-social app that runs on your computer.
+  Keep up with everything you save.
 
-  What it does:
-  • Syncs your saved posts and collections into the no-fomo-social app on your computer.
-  • Opens the accounts you choose, so you can study their posts in no-fomo-social.
-  • Refreshes video links when they expire.
+  You save Instagram posts faster than you can watch them. no-fomo-social watches them for you and turns each one into notes, steps and ideas, on your own computer.
 
-  What it does not do:
-  • It sends nothing to us or to any server. Data goes only to the no-fomo-social app on your own computer (localhost).
-  • It never acts on its own: every request starts from a button you press in no-fomo-social.
-  • It is slow on purpose: one request at a time, at most 150 per hour, with automatic pauses.
+  This extension connects instagram.com to the free no-fomo-social app. It syncs your saved posts and the accounts you open, using your own login, and sends nothing anywhere except to the app on your computer. It never acts on its own, and it is slow on purpose, so your account stays safe.
 
-  You need the no-fomo-social app first. Install it in one step from https://no-fomo.ai/social. The app is open source: https://github.com/no-fomo-org/no-fomo-social
+  Start in three steps: install the app at https://no-fomo.ai/social, add this extension, log in to instagram.com and press Sync.
 
+  Open source: https://github.com/no-fomo-org/no-fomo-social
   Not affiliated with Instagram or Meta.
 
 - **Website:** https://no-fomo.ai/social. **Support:** https://github.com/no-fomo-org/no-fomo-social/issues
