@@ -50,9 +50,18 @@ By taking part you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Releasing (maintainers)
 
+The step-by-step runbook for the first public release is [docs/RELEASE.md](docs/RELEASE.md). For every release after it:
+
 1. Set the new version in `package.json`, `apps/extension/package.json` and `APP_VERSION` in `packages/core/src/constants.ts`. Add a `CHANGELOG.md` entry.
 2. Merge to `main`, then tag: `git tag v0.2.0 && git push --tags`.
 3. The Release workflow builds the Mac and Windows bundles, installs them on real machines, and creates a draft release. Check it and press Publish. The install scripts always download the latest published release.
 4. Upload `no-fomo-social-extension.zip` from the release to the Chrome Web Store if the extension changed.
 
-To test bundles locally: `pnpm --filter @no-fomo-social/web build && pnpm release:bundle darwin-arm64`, then run `scripts/install/install.sh` with `NO_FOMO_SOCIAL_DOWNLOAD_BASE=file://$PWD/dist/release`.
+To test a bundle locally, build it and serve `dist/release` over a local http server, the same way the Release workflow does (the installer refuses anything but HTTPS or 127.0.0.1):
+
+```bash
+pnpm --filter @no-fomo-social/web build && pnpm release:bundle darwin-arm64
+python3 -m http.server 8000 --directory dist/release &
+NO_FOMO_SOCIAL_HOME=/tmp/nfs-test NO_FOMO_SOCIAL_NO_BROWSER=1 NO_FOMO_SOCIAL_DOWNLOAD_BASE=http://127.0.0.1:8000 bash scripts/install/install.sh
+/tmp/nfs-test/app/bin/no-fomo-social uninstall
+```

@@ -50,8 +50,8 @@ export function FilterBar({ scope, filters, total, onChange }: {
       )}
       <KindSwitch value={filters.kind} onChange={(kind) => onChange({ kind })} />
       {scope === "reports" && <SourceSwitch value={filters.source} onChange={(source) => onChange({ source })} />}
-      {/* Right of the filters; it takes the room that is left, from 160 to 288px. */}
-      <div className="w-full sm:w-auto sm:min-w-40 sm:max-w-72 sm:flex-1">
+      {/* Right of the filters; it takes the room that is left, from 200 to 288px, so the placeholder is never clipped. The count wraps under the row when it must. */}
+      <div className="w-full sm:w-auto sm:min-w-[200px] sm:max-w-72 sm:flex-1">
         <SearchBox
           value={filters.q}
           onChange={(q) => onChange({ q })}

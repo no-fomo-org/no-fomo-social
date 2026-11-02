@@ -9,6 +9,7 @@ import { searchAction, type SearchAction } from "../../lib/home-url";
 import { refreshIgLimit } from "../ig-limit";
 import { Avatar } from "../avatar";
 import { Icon } from "../ui/icon";
+import { inputClass } from "../ui/input";
 
 /**
  * Typing filters the list of people you follow (stored, no Instagram call).
@@ -61,7 +62,7 @@ export function ProfileSearch(props: {
           aria-label="Find an Instagram account"
           autoComplete="off"
           spellCheck={false}
-          className="h-11 w-full rounded-control border border-line bg-surface ps-11 pe-3 text-[15px] text-text placeholder:text-muted focus-visible:border-accent-line focus-visible:bg-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent [&::-webkit-search-cancel-button]:hidden"
+          className={inputClass("h-11 ps-11 text-[15px] [&::-webkit-search-cancel-button]:hidden")}
         />
       </form>
       {props.text.trim() && !props.find && action && (
@@ -71,7 +72,7 @@ export function ProfileSearch(props: {
       )}
       {props.find && (
         <section aria-label="All Instagram" className="mt-3 rounded-control border border-line p-2">
-          <h3 className="px-2.5 pb-1 text-[13px] font-medium uppercase tracking-wide text-muted">All Instagram</h3>
+          <h2 className="px-2.5 pb-1 text-[13px] text-muted">All Instagram</h2>
           {!props.ready ? (
             <p className="px-2.5 py-2 text-[13px] text-muted">Needs the no-fomo-social extension.</p>
           ) : ig.isFetching ? (

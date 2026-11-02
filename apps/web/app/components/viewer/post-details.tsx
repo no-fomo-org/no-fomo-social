@@ -36,7 +36,8 @@ export function PostDetails({
         : null;
   return (
     <div className="flex min-h-full flex-col">
-      <div className="flex items-center gap-3 px-5 py-4">
+      {/* On a phone the whole viewer scrolls, so the header sticks: Close and the post arrows stay in reach. */}
+      <div className="flex items-center gap-3 px-5 py-4 max-md:sticky max-md:top-0 max-md:z-10 max-md:border-b max-md:border-line max-md:bg-paper">
         <img src={`/media/avatars/${p.author.id}`} alt="" className="size-9 rounded-full bg-surface-2 object-cover" />
         <div className="min-w-0 flex-1">
           <Dialog.Title className="truncate text-[15px] font-semibold">@{p.author.username}</Dialog.Title>
@@ -79,7 +80,7 @@ export function PostDetails({
             {onShowAuthor && <Button onClick={() => onShowAuthor(p.author.id)}>More from @{p.author.username}</Button>}
           </div>
 
-          {p.caption && <p className="whitespace-pre-wrap px-5 pt-5 text-[15px] leading-relaxed">{p.caption}</p>}
+          {p.caption && <p className="whitespace-pre-wrap px-5 pt-5 text-[15px] leading-relaxed [overflow-wrap:anywhere]">{p.caption}</p>}
 
           <dl className="mx-5 mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-4 text-[13px]">
             <Detail label="Posted" value={formatDate(p.takenAt)} />

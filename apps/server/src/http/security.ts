@@ -26,6 +26,10 @@ export function security(opts: { port: number; allowedOrigins: string[] }): Midd
     // Nothing frames the app, so no other site may put it in an iframe and trick clicks.
     c.res.headers.set("x-frame-options", "DENY");
     c.res.headers.set("content-security-policy", "frame-ancestors 'none'");
+    // Browsers refuse to hand any response to a page on another site (second line behind the Sec-Fetch-Site check),
+    // and never guess a content type.
+    c.res.headers.set("cross-origin-resource-policy", "same-origin");
+    c.res.headers.set("x-content-type-options", "nosniff");
     if (origin) for (const [k, v] of Object.entries(cors(origin))) c.res.headers.set(k, v);
   };
 }

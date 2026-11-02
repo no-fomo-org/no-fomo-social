@@ -92,6 +92,8 @@ describe("security", () => {
     const res = await get("/api/config");
     expect(res.headers.get("x-frame-options")).toBe("DENY");
     expect(res.headers.get("content-security-policy")).toBe("frame-ancestors 'none'");
+    expect(res.headers.get("cross-origin-resource-policy")).toBe("same-origin");
+    expect(res.headers.get("x-content-type-options")).toBe("nosniff");
   });
   it("refuses cross-site loads of media, so other sites cannot probe the library", async () => {
     await syncFixtures();

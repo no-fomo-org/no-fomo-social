@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
 
 const WIDE = [960, 1600, 2560, 3840];
+/** The banner is at most 1100px wide, so the 2560 and 3840 files are never worth their weight. */
+const BANNER = [960, 1600];
 const PORTRAIT = [828, 1440, 2480];
 const srcset = (name: string, widths: number[]) => widths.map((w) => `/brand/${name}-${w}.webp ${w}w`).join(", ");
 
@@ -9,13 +11,14 @@ const srcset = (name: string, widths: number[]) => widths.map((w) => `/brand/${n
  * `full`: the first-run view; the word and star are in the photo, the text sits bottom-left on the dark ridges.
  *   On a phone the photo keeps its own shape with the title on it, and the rest follows below, so the word stays whole.
  * `banner`: a calm strip with the clean photo and a heading on top.
+ * `priority`: the photo is the first thing on screen, so the browser fetches it before the rest.
  * Sage sits behind the photo, so there is no flash while it loads; it fades in once.
  */
-export function EmptyHero({ variant, title, children }: { variant: "full" | "banner"; title: ReactNode; children?: ReactNode }) {
+export function EmptyHero({ variant, title, children, priority }: { variant: "full" | "banner"; title: ReactNode; children?: ReactNode; priority?: boolean }) {
   const full = variant === "full";
   const photo = (
     <>
-      <Photo full={full} />
+      <Photo full={full} priority={priority} />
       {/* Keeps the cream text readable when it runs long. */}
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgb(20_28_22/0.55),transparent_60%)]" />
     </>
@@ -43,7 +46,7 @@ export function EmptyHero({ variant, title, children }: { variant: "full" | "ban
   );
 }
 
-function Photo({ full }: { full: boolean }) {
+function Photo({ full, priority }: { full: boolean; priority?: boolean }) {
   const [shown, setShown] = useState(false);
   // A photo already in the cache is simply there; only a real first load fades in.
   const [fade, setFade] = useState(true);
@@ -59,10 +62,12 @@ function Photo({ full }: { full: boolean }) {
           }
         }}
         src={`/brand/${name}-1600.webp`}
-        srcSet={srcset(name, WIDE)}
-        sizes="100vw"
+        srcSet={srcset(name, full ? WIDE : BANNER)}
+        // The banner fills its reading column (1100px at most); the first-run photo fills the screen.
+        sizes={full ? "100vw" : "(min-width: 1148px) 1100px, 100vw"}
         alt=""
         decoding="async"
+        fetchPriority={priority ? "high" : undefined}
         onLoad={() => setShown(true)}
         className={`absolute inset-0 -z-10 size-full object-cover ${full ? "object-[center_38%]" : "object-[center_40%]"} ${
           fade ? "transition-opacity duration-400 ease-out" : ""

@@ -65,15 +65,17 @@ export function PlayerControls({
 
   return (
     <Controls.Root>
-      <Controls.Backdrop className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 opacity-0 transition-opacity duration-300 data-[visible]:opacity-100" />
+      {/* A solid band under the controls, no gradient (the No Gradient Rule). */}
+      <Controls.Backdrop className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-black/50 opacity-0 transition-opacity duration-300 data-[visible]:opacity-100" />
       <Controls.Content className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-1 px-3 pb-2 opacity-0 transition-opacity duration-200 data-[visible]:opacity-100 has-[:focus-visible]:opacity-100">
         <Controls.Group aria-label="Seek" className="pointer-events-auto">
           <TimeSlider.Root className="group/seek relative flex h-6 cursor-pointer touch-none items-center">
-            <TimeSlider.Track className="relative h-1 w-full overflow-hidden rounded-full bg-white/25 transition-[height] duration-200 group-hover/seek:h-1.5">
+            {/* Grows by scale, not height, so a hover does not re-layout the bar. */}
+            <TimeSlider.Track className="relative h-1 w-full origin-center overflow-hidden rounded-full bg-white/25 transition-[scale] duration-200 group-hover/seek:scale-y-150">
               <TimeSlider.Buffer className="absolute inset-y-0 left-0 w-[var(--media-slider-buffer)] bg-white/30" />
               <TimeSlider.Fill className="absolute inset-y-0 left-0 w-[var(--media-slider-fill)] bg-accent" />
             </TimeSlider.Track>
-            <TimeSlider.Thumb className="absolute left-[var(--media-slider-fill)] size-3 -translate-x-1/2 rounded-full bg-white opacity-0 shadow transition-opacity duration-200 group-hover/seek:opacity-100 focus-visible:opacity-100" />
+            <TimeSlider.Thumb className="absolute left-[var(--media-slider-fill)] size-3 -translate-x-1/2 rounded-full bg-white opacity-0 transition-opacity duration-200 group-hover/seek:opacity-100 focus-visible:opacity-100" />
           </TimeSlider.Root>
         </Controls.Group>
 
@@ -150,7 +152,7 @@ function SpeedMenu({ container }: { container: RefObject<HTMLDivElement | null> 
       </Menu.Trigger>
       <Menu.Portal container={container}>
         <Menu.Positioner side="top" align="end" sideOffset={8} className="z-10">
-          <Menu.Popup className="min-w-24 origin-[var(--transform-origin)] rounded-control border border-white/10 bg-black/85 p-1 text-white shadow-pop backdrop-blur transition-[scale,opacity] duration-150 ease-out-soft data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0">
+          <Menu.Popup className="min-w-24 origin-[var(--transform-origin)] rounded-control border border-white/10 bg-black/60 p-1 text-white shadow-pop transition-[scale,opacity] duration-150 ease-out-soft data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0">
             <Menu.RadioGroup value={rate} onValueChange={(v) => store.setPlaybackRate(Number(v))}>
               {RATES.map((r) => (
                 <Menu.RadioItem

@@ -35,14 +35,14 @@ export function LogoSymbol({ size = 20, loading = false, className, title = "no-
 /**
  * Horizontal lockup for the top bar: symbol in accent color + wordmark in text color.
  * The wordmark is live text in Outfit 900 (font-display), so it stays crisp at any size.
+ * Hidden from assistive tech: the link around it carries the one accessible name.
  * For places where the font may not load (extension popup, emails), use logo/svg/lockup-horizontal-*.svg instead.
  */
 export function LogoLockup({ height = 22 }: { height?: number }) {
   return (
-    <span role="img" aria-label="no-fomo" className="inline-flex items-center gap-2 select-none">
+    <span aria-hidden="true" className="inline-flex items-center gap-2 select-none">
       <LogoSymbol size={Math.round(height * 1.1)} className="text-accent" title="" />
       <span
-        aria-hidden
         className="font-display font-black text-text tracking-[-0.02em] leading-none"
         style={{ fontSize: height }}
       >

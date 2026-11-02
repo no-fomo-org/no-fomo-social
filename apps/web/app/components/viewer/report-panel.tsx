@@ -170,6 +170,8 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
                 <Icon icon={copied ? Tick02Icon : Copy01Icon} />
                 {copied ? "Copied" : "Copy"}
               </Button>
+              {/* The label change is visual; this tells screen readers. Always present, so the change is announced. */}
+              <span role="status" className="sr-only">{copied ? "Report copied" : ""}</span>
               <ReportMenu
                 onAnalyzeAgain={hasKey ? () => { setDeleting(false); setChoosing(true); } : openSettings}
                 onDelete={() => { setChoosing(false); setDeleting(true); }}
@@ -188,6 +190,12 @@ export function ReportPanel({ post, extensionId }: { post: PostListItem; extensi
                     {children}
                   </a>
                 ),
+                // The report sits inside the sheet (h1 page, h2 author), so its headings step down two levels. Sizes live in .report-md.
+                h1: ({ children }) => <h3>{children}</h3>,
+                h2: ({ children }) => <h4>{children}</h4>,
+                h3: ({ children }) => <h5>{children}</h5>,
+                h4: ({ children }) => <h6>{children}</h6>,
+                h5: ({ children }) => <h6>{children}</h6>,
               }}
             >
               {markdown}

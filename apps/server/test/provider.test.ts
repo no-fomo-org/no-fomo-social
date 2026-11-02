@@ -1,7 +1,7 @@
 import { APICallError, RetryError } from "ai";
 import { MockLanguageModelV4, MockTranscriptionModelV4 } from "ai/test";
 import { describe, expect, it } from "vitest";
-import { createProvider, toAnalyzeError } from "../src/analyze/provider";
+import { createOpenAIProvider, createProvider, toAnalyzeError } from "../src/analyze/provider";
 
 const usage = {
   inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
@@ -12,6 +12,23 @@ const unused = () => {
 };
 
 describe("provider", () => {
+  it("sends the key only to api.openai.com, even when OPENAI_BASE_URL points elsewhere", async () => {
+    const urls: string[] = [];
+    const fetch = (async (input: string | URL | Request) => {
+      urls.push(String(input instanceof Request ? input.url : input));
+      throw new Error("stop");
+    }) as unknown as typeof globalThis.fetch;
+    process.env.OPENAI_BASE_URL = "https://evil.example/v1";
+    try {
+      const p = createOpenAIProvider("sk-test-key", { fetch });
+      await expect(p.generate({ model: "m", system: "s", content: [{ type: "text", text: "t" }] })).rejects.toThrow();
+    } finally {
+      delete process.env.OPENAI_BASE_URL;
+    }
+    expect(urls.length).toBeGreaterThan(0);
+    for (const u of urls) expect(u.startsWith("https://api.openai.com/")).toBe(true);
+  });
+
   it("sends the system prompt and images, returns the text", async () => {
     const lm = new MockLanguageModelV4({
       doGenerate: async () => ({ content: [{ type: "text", text: "## Summary\nok" }], finishReason: { unified: "stop", raw: undefined }, usage, warnings: [] }),

@@ -9,6 +9,7 @@ import { ReportRow } from "../components/reports/report-row";
 import { TopBar } from "../components/top-bar";
 import { LazyViewer } from "../components/viewer/lazy-viewer";
 import { Button } from "../components/ui/button";
+import { StateSection } from "../components/ui/state-section";
 
 export default function Reports() {
   const [params, setParams] = useSearchParams();
@@ -39,19 +40,17 @@ export default function Reports() {
         {query.isPending ? (
           <p className="py-16 text-muted">Loading reports…</p>
         ) : query.isError ? (
-          <section className="py-16">
-            <h2 className="text-[17px] font-semibold">Could not load reports</h2>
+          <StateSection title="Could not load reports">
             <Button className="mt-4" onClick={() => void query.refetch()}>Try again</Button>
-          </section>
+          </StateSection>
         ) : list.items.length === 0 && hasFilters(filters) ? (
-          <section className="py-16">
-            <h2 className="text-[17px] font-semibold">No reports match these filters</h2>
+          <StateSection title="No reports match these filters">
             <p className="mt-1 max-w-[60ch] text-muted">Try removing a filter.</p>
             <Button className="mt-4" onClick={() => update(NO_FILTERS)}>Clear search and filters</Button>
-          </section>
+          </StateSection>
         ) : list.items.length === 0 ? (
           <section>
-            <EmptyHero variant="banner" title={<h2>No reports yet</h2>} />
+            <EmptyHero variant="banner" priority title={<h2>No reports yet</h2>} />
             <p className="mt-4 max-w-[60ch] text-muted">Open any post, go to its Report tab and press Analyze. Every report shows up here.</p>
           </section>
         ) : (

@@ -6,12 +6,10 @@ import type { AppSettings, SettingsUpdate } from "@no-fomo-social/core";
 import { api } from "../lib/api";
 import { Button, buttonClass } from "./ui/button";
 import { Icon } from "./ui/icon";
+import { inputClass } from "./ui/input";
 
 const OpenSettings = createContext<() => void>(() => {});
 export const useOpenSettings = () => useContext(OpenSettings);
-
-const field =
-  "h-9 w-full min-w-0 rounded-control border border-line bg-surface px-3 text-[14px] focus-visible:outline-2 focus-visible:outline-accent";
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -90,7 +88,7 @@ function SettingsForm({ onDone }: { onDone: () => void }) {
           value={key}
           onChange={(e) => setKey(e.target.value)}
           placeholder={s?.openai.set ? "Paste a new key to replace it" : "sk-..."}
-          className={field}
+          className={inputClass()}
         />
         <p className="text-[13px] text-muted">Your key stays on this computer. It is only sent to OpenAI when you analyze a post. You pick the models and the report language in the Report tab of each post.</p>
       </section>

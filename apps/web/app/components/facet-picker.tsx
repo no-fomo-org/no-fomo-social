@@ -1,9 +1,11 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Popover } from "@base-ui/react/popover";
-import { ArrowDown01Icon, Cancel01Icon, Search01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { buttonClass } from "./ui/button";
 import { Icon } from "./ui/icon";
-import { POPUP, POPUP_ROW } from "./ui/popup";
+import { PickerRow } from "./ui/picker-row";
+import { POPUP } from "./ui/popup";
+import { PopoverSearch } from "./ui/popover-search";
 
 export interface FacetOption { id: string; label: string; sublabel?: string | null; count: number; leading?: ReactNode }
 
@@ -47,22 +49,12 @@ export function FacetPicker(props: {
           <Popover.Positioner sideOffset={6} align="start" className="z-30">
             <Popover.Popup className={`w-[min(320px,calc(100vw-32px))] ${POPUP}`}>
               {props.options.length > 8 && (
-                <label className="flex items-center gap-2 border-b border-line px-3">
-                  <Icon icon={Search01Icon} size={14} className="text-muted" />
-                  <span className="sr-only">Find {props.label.toLowerCase()}</span>
-                  <input
-                    autoFocus
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={props.searchPlaceholder ?? "Search"}
-                    className="h-10 w-full bg-transparent text-[14px] text-text outline-none placeholder:text-muted"
-                  />
-                </label>
+                <PopoverSearch label={props.label} placeholder={props.searchPlaceholder} value={query} onChange={setQuery} />
               )}
               <ul className="max-h-[min(360px,60dvh)] overflow-y-auto p-1" aria-label={props.label}>
-                <Row active={props.value === null} onClick={() => choose(null)} label={props.allLabel} />
+                <PickerRow active={props.value === null} onClick={() => choose(null)} label={props.allLabel} />
                 {shown.map((o) => (
-                  <Row key={o.id} active={o.id === props.value} onClick={() => choose(o.id)} label={o.label} sublabel={o.sublabel} count={o.count} leading={o.leading} />
+                  <PickerRow key={o.id} active={o.id === props.value} onClick={() => choose(o.id)} label={o.label} sublabel={o.sublabel} count={o.count} leading={o.leading} />
                 ))}
                 {shown.length === 0 && <li className="px-3 py-6 text-center text-[13px] text-muted">Nothing found</li>}
               </ul>
@@ -81,26 +73,5 @@ export function FacetPicker(props: {
         </button>
       )}
     </div>
-  );
-}
-
-function Row(p: { active: boolean; onClick: () => void; label: string; sublabel?: string | null; count?: number; leading?: ReactNode }) {
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={p.onClick}
-        aria-pressed={p.active}
-        className={`flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-[14px] ${POPUP_ROW}`}
-      >
-        {p.leading}
-        <span className="min-w-0 flex-1">
-          <span className="block truncate">{p.label}</span>
-          {p.sublabel && <span className="block truncate text-[13px] text-muted">{p.sublabel}</span>}
-        </span>
-        {p.count !== undefined && <span className="font-mono text-[13px] tabular-nums text-muted">{p.count}</span>}
-        <Icon icon={Tick02Icon} size={14} className={p.active ? "text-accent" : "invisible"} />
-      </button>
-    </li>
   );
 }
