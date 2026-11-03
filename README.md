@@ -37,13 +37,13 @@ You need a Mac (macOS 11 or newer) or a Windows 10/11 computer, and Google Chrom
 On a **Mac**, open Terminal (press <kbd>Cmd</kbd> + <kbd>Space</kbd>, type *Terminal*, press <kbd>Enter</kbd>) and paste:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/no-fomo-org/no-fomo-social/main/scripts/install/install.sh | bash
+curl -fsSL https://no-fomo.ai/install.sh | bash
 ```
 
 On **Windows**, open PowerShell (press the Windows key, type *PowerShell*, press <kbd>Enter</kbd>) and paste:
 
 ```powershell
-irm https://raw.githubusercontent.com/no-fomo-org/no-fomo-social/main/scripts/install/install.ps1 | iex
+irm https://no-fomo.ai/install.ps1 | iex
 ```
 
 **2. Add the [no-fomo social extension](https://chromewebstore.google.com/detail/mjakjbjejpmchdgghkgjkjgmkdainedj) to Chrome.**
@@ -57,7 +57,7 @@ no-fomo social opens at `http://localhost:4747`. Next time, open it from Launchp
 
 - **Update:** run the same line again.
 - **Remove:** run `no-fomo-social uninstall`. Your library in `~/.no-fomo-social` stays until you delete that folder.
-- The installer downloads the latest [release](https://github.com/no-fomo-org/no-fomo-social/releases), checks its SHA-256 checksum, and puts the app in `~/.no-fomo-social/app`. The app brings its own Node.js and ffmpeg, so nothing else is installed on your computer. Read the scripts: [install.sh](scripts/install/install.sh), [install.ps1](scripts/install/install.ps1).
+- `no-fomo.ai/install.sh` redirects to [install.sh](scripts/install/install.sh) in this repo (same for `install.ps1`). The installer downloads the latest [release](https://github.com/no-fomo-org/no-fomo-social/releases), checks its SHA-256 checksum, and puts the app in `~/.no-fomo-social/app`. The app brings its own Node.js and ffmpeg, so nothing else is installed on your computer. Read the scripts: [install.sh](scripts/install/install.sh), [install.ps1](scripts/install/install.ps1).
 
 </details>
 
