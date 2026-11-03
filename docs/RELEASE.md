@@ -112,15 +112,17 @@ In the GitHub web UI (no CLI for these):
 
 The website repo `no-fomo-org/no-fomo-website` can stay private; nothing in the app links to its source.
 
-## Phase 6. Tag and publish 0.1.0
+## Phase 6. Tag and publish 0.1.1
+
+The first release is 0.1.1, not 0.1.0: the store took 0.1.0 before the extension was renamed, and the renamed package needed a higher version.
 
 Wait for the Chrome Web Store approval (Phase 2) before this phase, so the first users can finish setup.
 
-1. In `CHANGELOG.md`, change `## 0.1.0 — unreleased` to `## 0.1.0 — 2026-MM-DD`. Versions are already `0.1.0` in `package.json`, `apps/extension/package.json` and `APP_VERSION` in `packages/core/src/constants.ts`; the workflow checks that all three equal the tag.
+1. In `CHANGELOG.md`, the entry is dated. Versions are `0.1.1` in `package.json`, `apps/extension/package.json` and `APP_VERSION` in `packages/core/src/constants.ts`; the workflow checks that all three equal the tag.
 2. Merge, then on an up-to-date `main`:
 
 ```bash
-git tag v0.1.0 && git push origin v0.1.0
+git tag v0.1.1 && git push origin v0.1.1
 ```
 
 3. Actions → Release: `build` → `test-mac` and `test-windows` → `release` (draft). About 20 minutes.
