@@ -106,7 +106,7 @@ EOF
     echo "  • no-fomo social works with Google Chrome. Get it at https://www.google.com/chrome/"
   fi
   echo "  • Add the extension to Chrome: $store_url"
-  echo "  • Log in to instagram.com in Chrome, then press Sync in no-fomo-social."
+  echo "  • Log in to instagram.com in Chrome, then press Sync in no-fomo social."
   echo
   echo "  Open no-fomo social any time from Launchpad or Spotlight (Cmd + Space, type no-fomo social)."
   echo "  Your library stays in $home_dir."

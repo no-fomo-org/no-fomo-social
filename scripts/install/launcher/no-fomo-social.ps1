@@ -68,7 +68,7 @@ function Uninstall-App {
   }
   Set-Location $env:USERPROFILE
   Remove-Item -Recurse -Force $AppDir
-  Write-Host 'no-fomo-social is removed.'
+  Write-Host 'no-fomo social is removed.'
   Write-Host "Your library is still in $HomeDir. Delete that folder too if you do not need it any more."
   Write-Host 'Remove the Chrome extension in chrome://extensions.'
 }

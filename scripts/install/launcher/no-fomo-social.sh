@@ -66,7 +66,7 @@ uninstall() {
   rm -rf "$HOME/Applications/no-fomo-social.app"
   if [ -L "$HOME/.local/bin/no-fomo-social" ]; then rm -f "$HOME/.local/bin/no-fomo-social"; fi
   rm -rf "$APP_DIR"
-  echo "no-fomo-social is removed."
+  echo "no-fomo social is removed."
   echo "Your library is still in $HOME_DIR. Delete that folder too if you do not need it any more."
   echo "Remove the Chrome extension in chrome://extensions."
 }
