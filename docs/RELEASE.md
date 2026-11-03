@@ -99,7 +99,7 @@ gh repo edit no-fomo-org/no-fomo-social --add-topic instagram --add-topic reels 
 This one cannot be undone in practice (forks and caches keep a copy):
 
 ```bash
-gh repo edit no-fomo-org/no-fomo-social --visibility public --accept-visibility-change-consequences
+gh repo edit no-fomo-org/no-fomo-social --visibility public
 ```
 
 In the GitHub web UI (no CLI for these):
