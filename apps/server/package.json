@@ -18,10 +18,10 @@
     "@ai-sdk/openai": "^4.0.106",
     "@hono/node-server": "^2.1.5",
     "@no-fomo-social/core": "workspace:*",
-    "ai": "^7.0.158",
+    "ai": "^7.0.159",
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.4",
-    "hono": "^4.13.14",
+    "hono": "^4.13.16",
     "tsx": "^4.23.15",
     "zod": "^4.6.5"
   }
